@@ -1,35 +1,28 @@
-const { getDb } = require('../firebase/firebaseAdmin');
 const { config } = require('../config/env');
+const { getStudentByIdCached, getAllStudentsCached, invalidateStudentCache } = require('../utils/studentCache');
+const { getStudentById, updateStudent } = require('../supabase/supabaseRepository');
 
 /**
  * Get current authenticated student profile with scores and platform stats
  */
 const getMe = async (req, res, next) => {
   try {
-    const db = getDb();
     const clerkUserId = req.auth.userId;
+    let student = req.student || (await getStudentByIdCached(clerkUserId));
 
-    const studentRef = db.collection('students').doc(clerkUserId);
-    const docSnap = await studentRef.get();
+    if (!student) {
+      student = await getStudentById(clerkUserId);
+    }
 
-    if (!docSnap.exists) {
+    if (!student) {
       return res.status(404).json({
         success: false,
         message: 'Student profile not found.',
       });
     }
 
-    const student = docSnap.data();
-
-    // Query total students count in college for dynamic rank display
-    const totalStudentsSnap = await db
-      .collection('students')
-      .where('collegeId', '==', student.collegeId || config.COLLEGE_ID)
-      .where('accountStatus', '==', 'ACTIVE')
-      .count()
-      .get();
-
-    const totalStudents = totalStudentsSnap.data().count || 1;
+    const allStudents = await getAllStudentsCached();
+    const totalStudents = allStudents.filter((s) => s.accountStatus === 'ACTIVE').length || 1;
 
     // Sanitize to remove internal scoring breakdown
     const { scores, ...sanitizedStudent } = student;
@@ -37,7 +30,7 @@ const getMe = async (req, res, next) => {
     return res.json({
       success: true,
       student: {
-        id: docSnap.id,
+        id: student.id || clerkUserId,
         ...sanitizedStudent,
         overallScore: student.finalScore || 0,
         totalCollegeStudents: totalStudents,
@@ -53,14 +46,11 @@ const getMe = async (req, res, next) => {
  */
 const updateProfile = async (req, res, next) => {
   try {
-    const db = getDb();
     const clerkUserId = req.auth.userId;
     const { name, rollNumber, department, year, profilePhoto } = req.body;
 
-    const studentRef = db.collection('students').doc(clerkUserId);
-    const docSnap = await studentRef.get();
-
-    if (!docSnap.exists) {
+    const existingStudent = await getStudentById(clerkUserId);
+    if (!existingStudent) {
       return res.status(404).json({
         success: false,
         message: 'Student profile not found.',
@@ -73,22 +63,20 @@ const updateProfile = async (req, res, next) => {
       ...(department && { department: department.trim() }),
       ...(year && { year: parseInt(year, 10) }),
       ...(profilePhoto !== undefined && { profilePhoto }),
-      updatedAt: new Date().toISOString(),
     };
 
-    await studentRef.update(updatePayload);
+    const updatedStudent = await updateStudent(existingStudent.id, updatePayload);
+    invalidateStudentCache();
 
-    const updatedSnap = await studentRef.get();
-    const studentData = updatedSnap.data();
-    const { scores, ...sanitizedData } = studentData;
+    const { scores, ...sanitizedData } = updatedStudent || {};
 
     return res.json({
       success: true,
       message: 'Profile information updated successfully.',
       student: {
-        id: updatedSnap.id,
+        id: updatedStudent?.id || clerkUserId,
         ...sanitizedData,
-        overallScore: studentData.finalScore || 0,
+        overallScore: updatedStudent?.finalScore || 0,
       },
     });
   } catch (error) {
@@ -101,29 +89,22 @@ const updateProfile = async (req, res, next) => {
  */
 const getStudentScore = async (req, res, next) => {
   try {
-    const db = getDb();
     const clerkUserId = req.auth.userId;
+    let student = req.student || (await getStudentByIdCached(clerkUserId));
 
-    const studentRef = db.collection('students').doc(clerkUserId);
-    const docSnap = await studentRef.get();
+    if (!student) {
+      student = await getStudentById(clerkUserId);
+    }
 
-    if (!docSnap.exists) {
+    if (!student) {
       return res.status(404).json({
         success: false,
         message: 'Student not found.',
       });
     }
 
-    const student = docSnap.data();
-
-    const totalStudentsSnap = await db
-      .collection('students')
-      .where('collegeId', '==', student.collegeId || config.COLLEGE_ID)
-      .where('accountStatus', '==', 'ACTIVE')
-      .count()
-      .get();
-
-    const totalStudents = totalStudentsSnap.data().count || 1;
+    const allStudents = await getAllStudentsCached();
+    const totalStudents = allStudents.filter((s) => s.accountStatus === 'ACTIVE').length || 1;
 
     return res.json({
       success: true,
@@ -143,29 +124,22 @@ const getStudentScore = async (req, res, next) => {
  */
 const getStudentRank = async (req, res, next) => {
   try {
-    const db = getDb();
     const clerkUserId = req.auth.userId;
+    let student = req.student || (await getStudentByIdCached(clerkUserId));
 
-    const studentRef = db.collection('students').doc(clerkUserId);
-    const docSnap = await studentRef.get();
+    if (!student) {
+      student = await getStudentById(clerkUserId);
+    }
 
-    if (!docSnap.exists) {
+    if (!student) {
       return res.status(404).json({
         success: false,
         message: 'Student not found.',
       });
     }
 
-    const student = docSnap.data();
-
-    const totalStudentsSnap = await db
-      .collection('students')
-      .where('collegeId', '==', student.collegeId || config.COLLEGE_ID)
-      .where('accountStatus', '==', 'ACTIVE')
-      .count()
-      .get();
-
-    const totalStudents = totalStudentsSnap.data().count || 1;
+    const allStudents = await getAllStudentsCached();
+    const totalStudents = allStudents.filter((s) => s.accountStatus === 'ACTIVE').length || 1;
 
     return res.json({
       success: true,

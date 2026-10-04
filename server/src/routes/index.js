@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const studentRoutes = require('./studentRoutes');
 const leaderboardRoutes = require('./leaderboardRoutes');
+const adminRoutes = require('./adminRoutes');
 
 // Health check endpoint
 router.get('/health', (req, res) => {
@@ -12,8 +13,9 @@ router.get('/health', (req, res) => {
   });
 });
 
-// Mounted API routes (Student Portal & Public Leaderboard only)
+// Mounted API routes
 router.use('/student', studentRoutes);
 router.use('/leaderboard', leaderboardRoutes);
+router.use('/admin', adminRoutes);
 
 module.exports = router;

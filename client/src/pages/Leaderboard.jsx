@@ -5,6 +5,7 @@ import LoadingState from '../components/common/LoadingState';
 import ErrorState from '../components/common/ErrorState';
 import EmptyState from '../components/common/EmptyState';
 import { Trophy, Search, Filter } from 'lucide-react';
+import { subscribeToRankboardUpdates } from '../services/supabase';
 
 const DEPARTMENTS = [
   'ALL',
@@ -25,12 +26,24 @@ const Leaderboard = () => {
   const [year, setYear] = useState('ALL');
   const [totalCount, setTotalCount] = useState(0);
 
-  const fetchRankings = async () => {
-    setLoading(true);
-    setError(null);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // Debounce search query by 350ms to prevent spamming backend requests
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 350);
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  const fetchRankings = async (isBackground = false) => {
+    if (!isBackground) {
+      setLoading(true);
+      setError(null);
+    }
     try {
       const response = await leaderboardService.getLeaderboard({
-        search: search.trim() || undefined,
+        search: debouncedSearch.trim() || undefined,
         department: department !== 'ALL' ? department : undefined,
         year: year !== 'ALL' ? year : undefined,
       });
@@ -41,15 +54,34 @@ const Leaderboard = () => {
       }
     } catch (err) {
       console.error('Failed to load leaderboard:', err);
-      setError(err.response?.data?.message || 'Failed to load rankings.');
+      if (!isBackground) {
+        setError(err.response?.data?.message || 'Failed to load rankings.');
+      }
     } finally {
-      setLoading(false);
+      if (!isBackground) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     fetchRankings();
-  }, [department, year]);
+
+    // Subscribe to Supabase Realtime table changes
+    const unsubscribe = subscribeToRankboardUpdates(() => {
+      fetchRankings(true);
+    });
+
+    // Fallback auto-refresh periodically (every 60s)
+    const interval = setInterval(() => {
+      fetchRankings(true);
+    }, 60000);
+
+    return () => {
+      unsubscribe();
+      clearInterval(interval);
+    };
+  }, [department, year, debouncedSearch]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();

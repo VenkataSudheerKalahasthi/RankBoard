@@ -1,4 +1,5 @@
-const { getDb } = require('../../firebase/firebaseAdmin');
+const { getSupabase } = require('../../supabase/supabaseClient');
+const { getAllStudents, updateStudent } = require('../../supabase/supabaseRepository');
 const { config } = require('../../config/env');
 
 /**
@@ -8,14 +9,15 @@ const { config } = require('../../config/env');
  * @returns {Promise<Object>} Summary of recalculated rankings
  */
 const recalculateCollegeRankings = async (collegeId = config.COLLEGE_ID) => {
-  const db = getDb();
-  const studentsSnapshot = await db
-    .collection('students')
-    .where('collegeId', '==', collegeId)
-    .where('accountStatus', '==', 'ACTIVE')
-    .get();
+  const supabase = getSupabase();
+  if (!supabase) {
+    throw new Error('Supabase client not initialized');
+  }
 
-  if (studentsSnapshot.empty) {
+  // Fetch all active students for the college
+  const allStudents = await getAllStudents({ accountStatus: 'ACTIVE', collegeId });
+
+  if (!allStudents || allStudents.length === 0) {
     return {
       totalStudents: 0,
       updatedCount: 0,
@@ -23,18 +25,9 @@ const recalculateCollegeRankings = async (collegeId = config.COLLEGE_ID) => {
     };
   }
 
-  const studentsList = [];
-  studentsSnapshot.forEach((doc) => {
-    studentsList.push({
-      id: doc.id,
-      ref: doc.ref,
-      ...doc.data(),
-    });
-  });
-
   // Sort descending by finalScore
   // Deterministic tie-breaker: total problems solved combined, then alphabetical by name
-  studentsList.sort((a, b) => {
+  allStudents.sort((a, b) => {
     const scoreA = typeof a.finalScore === 'number' ? a.finalScore : 0;
     const scoreB = typeof b.finalScore === 'number' ? b.finalScore : 0;
 
@@ -43,15 +36,17 @@ const recalculateCollegeRankings = async (collegeId = config.COLLEGE_ID) => {
     }
 
     // Tie breaker 1: combined total problems solved
-    const solvedA = ((a.platformStats?.leetcode?.totalSolved || 0) +
-                     (a.platformStats?.gfg?.totalSolved || 0) +
-                     (a.platformStats?.codeforces?.totalSolved || 0) +
-                     (a.platformStats?.codechef?.totalSolved || 0));
+    const solvedA =
+      (a.platformStats?.leetcode?.totalSolved || 0) +
+      (a.platformStats?.gfg?.totalSolved || 0) +
+      (a.platformStats?.codeforces?.totalSolved || 0) +
+      (a.platformStats?.codechef?.totalSolved || 0);
 
-    const solvedB = ((b.platformStats?.leetcode?.totalSolved || 0) +
-                     (b.platformStats?.gfg?.totalSolved || 0) +
-                     (b.platformStats?.codeforces?.totalSolved || 0) +
-                     (b.platformStats?.codechef?.totalSolved || 0));
+    const solvedB =
+      (b.platformStats?.leetcode?.totalSolved || 0) +
+      (b.platformStats?.gfg?.totalSolved || 0) +
+      (b.platformStats?.codeforces?.totalSolved || 0) +
+      (b.platformStats?.codechef?.totalSolved || 0);
 
     if (solvedB !== solvedA) {
       return solvedB - solvedA;
@@ -63,13 +58,15 @@ const recalculateCollegeRankings = async (collegeId = config.COLLEGE_ID) => {
     return nameA.localeCompare(nameB);
   });
 
-  const totalStudents = studentsList.length;
-  const batch = db.batch();
+  const totalStudents = allStudents.length;
   let currentRank = 1;
 
-  const rankedStudents = studentsList.map((student, index) => {
+  const rankedStudents = [];
+
+  for (let index = 0; index < allStudents.length; index++) {
+    const student = allStudents[index];
     if (index > 0) {
-      const prev = studentsList[index - 1];
+      const prev = allStudents[index - 1];
       const prevScore = prev.finalScore || 0;
       const currScore = student.finalScore || 0;
 
@@ -80,13 +77,17 @@ const recalculateCollegeRankings = async (collegeId = config.COLLEGE_ID) => {
       currentRank = 1;
     }
 
-    // Update rank in student document
-    batch.update(student.ref, {
-      rank: currentRank,
-      updatedAt: new Date().toISOString(),
-    });
+    // Update rank in database
+    await supabase
+      .from('students')
+      .update({
+        rank: currentRank,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', student.id);
 
-    return {
+    rankedStudents.push({
+      id: student.id,
       clerkUserId: student.clerkUserId || student.id,
       name: student.name,
       rollNumber: student.rollNumber,
@@ -94,11 +95,8 @@ const recalculateCollegeRankings = async (collegeId = config.COLLEGE_ID) => {
       year: student.year,
       finalScore: student.finalScore || 0,
       rank: currentRank,
-    };
-  });
-
-  // Commit Firestore batch update
-  await batch.commit();
+    });
+  }
 
   return {
     collegeId,

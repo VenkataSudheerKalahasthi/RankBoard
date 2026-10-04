@@ -1,19 +1,18 @@
-const { getDb } = require('../firebase/firebaseAdmin');
 const { config } = require('../config/env');
+const { getAllStudentsCached } = require('../utils/studentCache');
 
 /**
  * Public leaderboard endpoint returning sanitized college rankings for registered students
  */
 const getLeaderboard = async (req, res, next) => {
   try {
-    const db = getDb();
     const collegeId = req.query.collegeId || config.COLLEGE_ID;
     const { department, year, search } = req.query;
 
-    // Retrieve students for this college
-    const snapshot = await db.collection('students').get();
+    // Retrieve students using smart caching and quota fallback
+    const rawStudents = await getAllStudentsCached();
 
-    if (snapshot.empty) {
+    if (!rawStudents || rawStudents.length === 0) {
       return res.json({
         success: true,
         stats: {
@@ -31,8 +30,7 @@ const getLeaderboard = async (req, res, next) => {
     let totalProblemsSolved = 0;
     let latestUpdate = null;
 
-    snapshot.forEach((doc) => {
-      const data = doc.data();
+    rawStudents.forEach((data) => {
 
       // Exclude disabled accounts
       if (data.accountStatus === 'DISABLED') {
@@ -79,7 +77,7 @@ const getLeaderboard = async (req, res, next) => {
       }
 
       allStudents.push({
-        id: doc.id,
+        id: data.id,
         name: data.name || 'Anonymous Student',
         rollNumber: data.rollNumber || '—',
         department: data.department || 'General',

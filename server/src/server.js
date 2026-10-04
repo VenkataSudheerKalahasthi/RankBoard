@@ -1,24 +1,25 @@
 const app = require('./app');
 const { config, validateEnv } = require('./config/env');
-const { getDb } = require('./firebase/firebaseAdmin');
+const { getSupabase } = require('./supabase/supabaseClient');
 
 const startServer = () => {
   // Validate configuration variables cleanly
   validateEnv();
 
-  // Test Firestore connection
+  // Test Supabase connection
   try {
-    const db = getDb();
-    if (db) {
-      console.log('✅ Firebase Firestore client active.');
+    const supabase = getSupabase();
+    if (supabase) {
+      console.log('✅ Supabase PostgreSQL client active.');
     }
   } catch (err) {
-    console.warn('⚠️  Firebase Firestore connection notice:', err.message);
+    console.warn('⚠️  Supabase connection notice:', err.message);
   }
 
   const server = app.listen(config.PORT, () => {
     console.log(`====================================================`);
     console.log(`🚀 COLLEGE DSA RANKBOARD API RUNNING ON PORT ${config.PORT}`);
+    console.log(`   Database: Supabase PostgreSQL`);
     console.log(`   Mode: ${config.NODE_ENV}`);
     console.log(`   Health Check: http://localhost:${config.PORT}/api/health`);
     console.log(`   Leaderboard:  http://localhost:${config.PORT}/api/leaderboard`);

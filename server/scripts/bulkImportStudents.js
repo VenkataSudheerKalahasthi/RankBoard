@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
-const { getDb } = require('../src/firebase/firebaseAdmin');
 const { config, validateEnv } = require('../src/config/env');
+const { getStudentById, upsertStudent } = require('../src/supabase/supabaseRepository');
 const { fetchPlatformProfile } = require('../src/services/platforms');
 const { evaluateStudentScores } = require('../src/services/scoring');
 const { recalculateCollegeRankings } = require('../src/services/ranking/rankingEngine');
@@ -51,23 +51,6 @@ function parseCSV(content) {
 }
 
 /**
- * Deep sanitize helper for Firestore
- */
-function deepSanitize(obj) {
-  if (obj === null || typeof obj !== 'object') {
-    return obj === undefined ? null : obj;
-  }
-  if (Array.isArray(obj)) {
-    return obj.map(deepSanitize);
-  }
-  const clean = {};
-  for (const [key, value] of Object.entries(obj)) {
-    clean[key] = value !== undefined ? deepSanitize(value) : null;
-  }
-  return clean;
-}
-
-/**
  * Sleep helper for platform API rate limiting
  */
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -77,7 +60,7 @@ async function runBulkImport() {
   const inputFilePath = args[0] || path.join(__dirname, '../data/students_sample.json');
 
   console.log(`\n======================================================`);
-  console.log(`🚀 COLLEGE DSA RANKBOARD — BULK STUDENT IMPORT`);
+  console.log(`🚀 COLLEGE DSA RANKBOARD — BULK STUDENT IMPORT (SUPABASE)`);
   console.log(`======================================================`);
   console.log(`Reading input file from: ${inputFilePath}\n`);
 
@@ -114,7 +97,6 @@ async function runBulkImport() {
   console.log(`Found ${rawStudents.length} student records to process.`);
   console.log(`Target College ID: ${config.COLLEGE_ID}\n`);
 
-  const db = getDb();
   let successCount = 0;
   let failCount = 0;
 
@@ -210,18 +192,19 @@ async function runBulkImport() {
     const scoreResults = evaluateStudentScores(platformStats);
     const finalScore = scoreResults.finalScore;
 
-    // Determine document ID (check if existing by email first)
+    // Check existing student
     let docId = `import_${Buffer.from(email).toString('hex').slice(0, 24)}`;
     try {
-      const existingSnap = await db.collection('students').where('email', '==', email).limit(1).get();
-      if (!existingSnap.empty) {
-        docId = existingSnap.docs[0].id;
+      const existing = await getStudentById(email);
+      if (existing) {
+        docId = existing.id;
       }
     } catch (queryErr) {
       // fallback to generated docId
     }
 
-    const studentRecord = deepSanitize({
+    const studentRecord = {
+      id: docId,
       clerkUserId: docId.startsWith('user_') ? docId : null,
       collegeId: config.COLLEGE_ID,
       name,
@@ -240,14 +223,14 @@ async function runBulkImport() {
       updatedAt: new Date().toISOString(),
       lastDataUpdatedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
-    });
+    };
 
     try {
-      await db.collection('students').doc(docId).set(studentRecord, { merge: true });
+      await upsertStudent(studentRecord);
       console.log(`   ✓ Saved: Overall Score = ${finalScore.toFixed(2)}`);
       successCount++;
     } catch (saveErr) {
-      console.error(`   ✗ Firestore Save Error for ${email}:`, saveErr.message);
+      console.error(`   ✗ Supabase Save Error for ${email}:`, saveErr.message);
       failCount++;
     }
   }

@@ -1,4 +1,4 @@
-const { getDb } = require('../firebase/firebaseAdmin');
+const { getStudentById, updateStudent } = require('../supabase/supabaseRepository');
 const { fetchPlatformProfile } = require('./platforms');
 const { evaluateStudentScores } = require('./scoring');
 const { recalculateCollegeRankings } = require('./ranking/rankingEngine');
@@ -10,23 +10,22 @@ const {
   formatCanonicalUrl,
 } = require('../utils/urlParsers');
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 /**
  * Synchronizes all coding platform statistics for a student, evaluates scores, and recalculates rank
  * 
- * @param {string} clerkUserId - Clerk User ID
+ * @param {string} studentIdOrClerkId - Clerk User ID or Document/Student ID
  * @param {Object|null} newPlatformUrls - Optional new URLs to save before syncing { leetcodeUrl, gfgUrl, codeforcesUrl, codechefUrl }
  * @returns {Promise<Object>} Updated student record
  */
-const syncStudentPlatforms = async (clerkUserId, newPlatformUrls = null) => {
-  const db = getDb();
-  const studentRef = db.collection('students').doc(clerkUserId);
-  const studentSnap = await studentRef.get();
+const syncStudentPlatforms = async (studentIdOrClerkId, newPlatformUrls = null) => {
+  const studentData = await getStudentById(studentIdOrClerkId);
 
-  if (!studentSnap.exists) {
-    throw new Error(`Student record not found for Clerk User ID: ${clerkUserId}`);
+  if (!studentData) {
+    throw new Error(`Student record not found for ID: ${studentIdOrClerkId}`);
   }
 
-  const studentData = studentSnap.data();
   const platforms = { ...(studentData.platforms || {}) };
   const platformStats = { ...(studentData.platformStats || {}) };
 
@@ -83,22 +82,40 @@ const syncStudentPlatforms = async (clerkUserId, newPlatformUrls = null) => {
   for (const key of platformKeys) {
     const pConfig = platforms[key];
     if (pConfig && pConfig.username) {
-      try {
-        const stats = await fetchPlatformProfile(key, pConfig.profileUrl || pConfig.username);
+      let stats = null;
+      let attempts = 0;
+      const maxAttempts = 2;
 
-        if (stats.status === 'SUCCESS') {
-          platformStats[key] = stats;
-          platforms[key].status = 'SUCCESS';
-          platforms[key].lastFetchedAt = new Date().toISOString();
-          platforms[key].errorMessage = null;
-        } else {
-          platforms[key].status = 'FAILED';
-          platforms[key].errorMessage = stats.errorMessage || 'Failed to fetch platform data';
+      while (attempts < maxAttempts) {
+        attempts++;
+        try {
+          stats = await fetchPlatformProfile(key, pConfig.profileUrl || pConfig.username);
+          if (stats.status === 'SUCCESS') break;
+          if (stats.errorMessage && stats.errorMessage.includes('429')) {
+            await sleep(1500);
+          } else {
+            break;
+          }
+        } catch (err) {
+          if (err.message && err.message.includes('429')) {
+            await sleep(1500);
+          } else {
+            break;
+          }
         }
-      } catch (err) {
-        platforms[key].status = 'FAILED';
-        platforms[key].errorMessage = err.message;
       }
+
+      if (stats && stats.status === 'SUCCESS') {
+        platformStats[key] = stats;
+        platforms[key].status = 'SUCCESS';
+        platforms[key].lastFetchedAt = new Date().toISOString();
+        platforms[key].errorMessage = null;
+      } else {
+        platforms[key].status = 'FAILED';
+        platforms[key].errorMessage = stats?.errorMessage || 'Failed to fetch platform data';
+      }
+
+      await sleep(250);
     } else {
       platforms[key] = {
         profileUrl: '',
@@ -113,50 +130,26 @@ const syncStudentPlatforms = async (clerkUserId, newPlatformUrls = null) => {
   // Calculate updated platform scores and final score
   const scoreResults = evaluateStudentScores(platformStats);
 
-  // Check if profile is complete (all 4 platforms connected)
+  // Check if profile is complete
   const connectedCount = platformKeys.filter((k) => platforms[k]?.username).length;
-  const profileCompleted = connectedCount === 4 && !!studentData.rollNumber && !!studentData.department;
+  const profileCompleted = connectedCount >= 3 && !!studentData.rollNumber && !!studentData.department;
 
-  // Deep sanitize to recursively convert undefined to null
-  const deepSanitize = (obj) => {
-    if (obj === null || typeof obj !== 'object') {
-      return obj === undefined ? null : obj;
-    }
-    if (Array.isArray(obj)) {
-      return obj.map(deepSanitize);
-    }
-    const clean = {};
-    for (const [key, value] of Object.entries(obj)) {
-      if (value !== undefined) {
-        clean[key] = deepSanitize(value);
-      } else {
-        clean[key] = null;
-      }
-    }
-    return clean;
-  };
-
-  const updatedData = deepSanitize({
+  const updatePayload = {
     platforms,
     platformStats,
     scores: scoreResults,
     finalScore: scoreResults.finalScore,
     profileCompleted,
-    updatedAt: new Date().toISOString(),
     lastDataUpdatedAt: new Date().toISOString(),
-  });
-
-  await studentRef.update(updatedData);
-
-  // Recalculate rankings for the whole college dynamically
-  await recalculateCollegeRankings(studentData.collegeId || 'default_college');
-
-  // Fetch fresh snapshot with rank
-  const freshSnap = await studentRef.get();
-  return {
-    id: freshSnap.id,
-    ...freshSnap.data(),
   };
+
+  await updateStudent(studentData.id, updatePayload);
+
+  // Recalculate rankings for the college
+  await recalculateCollegeRankings(studentData.collegeId || 'COLLEGE_MAIN');
+
+  // Fetch fresh record with rank
+  return await getStudentById(studentData.id);
 };
 
 module.exports = {

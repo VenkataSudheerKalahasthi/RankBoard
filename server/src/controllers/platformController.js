@@ -1,4 +1,4 @@
-const { getDb } = require('../firebase/firebaseAdmin');
+const { getStudentById } = require('../supabase/supabaseRepository');
 const { syncStudentPlatforms } = require('../services/syncService');
 const {
   parseLeetCodeUrl,
@@ -12,20 +12,15 @@ const {
  */
 const getPlatforms = async (req, res, next) => {
   try {
-    const db = getDb();
     const clerkUserId = req.auth.userId;
+    const student = await getStudentById(clerkUserId);
 
-    const studentRef = db.collection('students').doc(clerkUserId);
-    const docSnap = await studentRef.get();
-
-    if (!docSnap.exists) {
+    if (!student) {
       return res.status(404).json({
         success: false,
         message: 'Student profile not found.',
       });
     }
-
-    const student = docSnap.data();
 
     return res.json({
       success: true,

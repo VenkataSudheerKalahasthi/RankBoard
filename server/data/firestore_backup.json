@@ -1,0 +1,388 @@
+{
+  "metadata": {
+    "timestamp": "2026-10-04T03:32:05.783Z",
+    "collectionCounts": {
+      "students": 0,
+      "admins": 1,
+      "audit_logs": 22,
+      "admin_notifications": 0,
+      "import_history": 0,
+      "score_adjustments": 0,
+      "system_settings": 0
+    }
+  },
+  "collections": {
+    "students": [],
+    "admins": [
+      {
+        "_docId": "user_3K8PZqtbmG1XLF2eAlLqcrosHZU",
+        "userId": "user_3K8PZqtbmG1XLF2eAlLqcrosHZU",
+        "email": "venkatasudheerkalahasthi@gmail.com",
+        "name": "Venkatasudheer Kalahasthi",
+        "role": "SUPER_ADMIN",
+        "status": "ACTIVE",
+        "photo": "https://img.clerk.com/eyJ0eXBlIjoicHJveHkiLCJzcmMiOiJodHRwczovL2ltYWdlcy5jbGVyay5kZXYvb2F1dGhfZ29vZ2xlL2ltZ18zSzhQWnVNVkRvc1k1ejAySWFUZkZVSVp0VWsifQ",
+        "createdAt": "2026-10-03T07:19:04.642Z",
+        "lastLoginAt": "2026-10-03T07:59:21.134Z"
+      }
+    ],
+    "audit_logs": [
+      {
+        "_docId": "5hAzZt2z74ik8Ilrj8ek",
+        "adminId": "user_3K8PZqtbmG1XLF2eAlLqcrosHZU",
+        "adminEmail": "venkatasudheerkalahasthi@gmail.com",
+        "adminName": "Venkatasudheer Kalahasthi",
+        "action": "STATISTICS_REFRESHED",
+        "target": "RAVULA VENKATESH (24495A0531)",
+        "targetId": "import_76656e6b79726176756c6131",
+        "details": {
+          "finalScore": 41.52,
+          "rank": 29
+        },
+        "ip": "::1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+        "timestamp": "2026-10-03T08:08:19.452Z"
+      },
+      {
+        "_docId": "78ABXhkO0dOHSgTMfHLK",
+        "adminId": "user_3K8PZqtbmG1XLF2eAlLqcrosHZU",
+        "adminEmail": "venkatasudheerkalahasthi@gmail.com",
+        "adminName": "Venkatasudheer Kalahasthi",
+        "action": "STATISTICS_REFRESHED",
+        "target": "Chennareddy Bhavana (23491a0519)",
+        "targetId": "import_62686176616e616368656e6e",
+        "details": {
+          "finalScore": 16.72,
+          "rank": 71
+        },
+        "ip": "::1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+        "timestamp": "2026-10-03T08:07:13.883Z"
+      },
+      {
+        "_docId": "8G7AtfO0YzfObEJmn9Wf",
+        "adminId": "user_3K8PZqtbmG1XLF2eAlLqcrosHZU",
+        "adminEmail": "venkatasudheerkalahasthi@gmail.com",
+        "adminName": "Venkatasudheer Kalahasthi",
+        "action": "STATISTICS_REFRESHED",
+        "target": "Golla Deepika (23491A0534)",
+        "targetId": "import_64656570696b61676f6c6c61",
+        "details": {
+          "finalScore": 12.1,
+          "rank": 82
+        },
+        "ip": "::1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+        "timestamp": "2026-10-03T08:07:23.297Z"
+      },
+      {
+        "_docId": "AwDSGJ8RTA2YwJRgB3Ya",
+        "adminId": "user_3K8PZqtbmG1XLF2eAlLqcrosHZU",
+        "adminEmail": "venkatasudheerkalahasthi@gmail.com",
+        "adminName": "Venkatasudheer Kalahasthi",
+        "action": "STATISTICS_REFRESHED",
+        "target": "ALAPATI AKHILA (23491A4202)",
+        "targetId": "import_616c61706174692e616b6869",
+        "details": {
+          "finalScore": 29.78,
+          "rank": 41
+        },
+        "ip": "::1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+        "timestamp": "2026-10-03T08:06:49.261Z"
+      },
+      {
+        "_docId": "FhUgix5ieWwquRn56081",
+        "adminId": "user_3K8PZqtbmG1XLF2eAlLqcrosHZU",
+        "adminEmail": "venkatasudheerkalahasthi@gmail.com",
+        "adminName": "Venkatasudheer Kalahasthi",
+        "action": "STATISTICS_REFRESHED",
+        "target": "GADE GAYATHRI (23491A0530)",
+        "targetId": "import_676179617468726967616465",
+        "details": {
+          "finalScore": 1.44,
+          "rank": 93
+        },
+        "ip": "::1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+        "timestamp": "2026-10-03T08:07:24.018Z"
+      },
+      {
+        "_docId": "GVZZX1QIam156f9IZE44",
+        "adminId": "user_3K8PZqtbmG1XLF2eAlLqcrosHZU",
+        "adminEmail": "venkatasudheerkalahasthi@gmail.com",
+        "adminName": "Venkatasudheer Kalahasthi",
+        "action": "STATISTICS_REFRESHED",
+        "target": "Golla Deepika (23491A0534)",
+        "targetId": "import_64656570696b61676f6c6c61",
+        "details": {
+          "finalScore": 12.1,
+          "rank": 82
+        },
+        "ip": "::1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+        "timestamp": "2026-10-03T08:08:01.520Z"
+      },
+      {
+        "_docId": "HJ6cwRSO0guZhymt9RXl",
+        "adminId": "user_3K8PZqtbmG1XLF2eAlLqcrosHZU",
+        "adminEmail": "venkatasudheerkalahasthi@gmail.com",
+        "adminName": "Venkatasudheer Kalahasthi",
+        "action": "STATISTICS_REFRESHED",
+        "target": "NALLAPATI BHAGYALAKSHMI SAILAJA (23491A05N3)",
+        "targetId": "import_6e626c7361696c616a612e6e",
+        "details": {
+          "finalScore": 11.84,
+          "rank": 83
+        },
+        "ip": "::1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+        "timestamp": "2026-10-03T08:07:41.530Z"
+      },
+      {
+        "_docId": "HcpDtYsjhSAU2DlOrjKa",
+        "adminId": "user_3K8PZqtbmG1XLF2eAlLqcrosHZU",
+        "adminEmail": "venkatasudheerkalahasthi@gmail.com",
+        "adminName": "Venkatasudheer Kalahasthi",
+        "action": "STATISTICS_REFRESHED",
+        "target": "Susmitha Lagadapati (23491A053P)",
+        "targetId": "import_7375736d697468616c616761",
+        "details": {
+          "finalScore": 8.47,
+          "rank": 87
+        },
+        "ip": "::1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+        "timestamp": "2026-10-03T08:08:24.812Z"
+      },
+      {
+        "_docId": "Mwtmv1dUqqrF2aYZHC46",
+        "adminId": "user_3K8PZqtbmG1XLF2eAlLqcrosHZU",
+        "adminEmail": "venkatasudheerkalahasthi@gmail.com",
+        "adminName": "Venkatasudheer Kalahasthi",
+        "action": "STATISTICS_REFRESHED",
+        "target": "Dammu Vijayalakshmi (23491a05z2)",
+        "targetId": "import_64616d6d7576696a6179616c",
+        "details": {
+          "finalScore": 12.6,
+          "rank": 81
+        },
+        "ip": "::1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+        "timestamp": "2026-10-03T08:07:14.399Z"
+      },
+      {
+        "_docId": "QVqV3Ra1ybcZwz4UgWBA",
+        "adminId": "user_3K8PZqtbmG1XLF2eAlLqcrosHZU",
+        "adminEmail": "venkatasudheerkalahasthi@gmail.com",
+        "adminName": "Venkatasudheer Kalahasthi",
+        "action": "STATISTICS_REFRESHED",
+        "target": "Golla Deepika (23491A0534)",
+        "targetId": "import_64656570696b61676f6c6c61",
+        "details": {
+          "finalScore": 12.1,
+          "rank": 82
+        },
+        "ip": "::1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+        "timestamp": "2026-10-03T08:07:21.782Z"
+      },
+      {
+        "_docId": "Ruyz6kFikZkdQlOPARFR",
+        "adminId": "user_3K8PZqtbmG1XLF2eAlLqcrosHZU",
+        "adminEmail": "venkatasudheerkalahasthi@gmail.com",
+        "adminName": "Venkatasudheer Kalahasthi",
+        "action": "STATISTICS_REFRESHED",
+        "target": "ALAPATI AKHILA (23491A4202)",
+        "targetId": "import_323334393161343230324071",
+        "details": {
+          "finalScore": 29.78,
+          "rank": 41
+        },
+        "ip": "::1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+        "timestamp": "2026-10-03T08:06:48.885Z"
+      },
+      {
+        "_docId": "YBjcKvpCayZwf3avIRQV",
+        "adminId": "user_3K8PZqtbmG1XLF2eAlLqcrosHZU",
+        "adminEmail": "venkatasudheerkalahasthi@gmail.com",
+        "adminName": "Venkatasudheer Kalahasthi",
+        "action": "STATISTICS_REFRESHED",
+        "target": "Aluri Deepika (23491a0504)",
+        "targetId": "import_64656570696b61616c757269",
+        "details": {
+          "finalScore": 22.12,
+          "rank": 56
+        },
+        "ip": "::1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+        "timestamp": "2026-10-03T08:07:16.367Z"
+      },
+      {
+        "_docId": "ZIj4xV3E7Zo4rE8hhS1h",
+        "adminId": "user_3K8PZqtbmG1XLF2eAlLqcrosHZU",
+        "adminEmail": "venkatasudheerkalahasthi@gmail.com",
+        "adminName": "Venkatasudheer Kalahasthi",
+        "action": "STATISTICS_REFRESHED",
+        "target": "O.sravana Lakshmi (23491A0711)",
+        "targetId": "import_6f676972616c612e73726176",
+        "details": {
+          "finalScore": 4.24,
+          "rank": 92
+        },
+        "ip": "::1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+        "timestamp": "2026-10-03T08:08:06.079Z"
+      },
+      {
+        "_docId": "ZKErK90IIXLUbEJNd8lj",
+        "adminId": "user_3K8PZqtbmG1XLF2eAlLqcrosHZU",
+        "adminEmail": "venkatasudheerkalahasthi@gmail.com",
+        "adminName": "Venkatasudheer Kalahasthi",
+        "action": "STATISTICS_REFRESHED",
+        "target": "Malleboyina.vijaya lakshmi (23491a0572)",
+        "targetId": "import_76696a6179616c616b73686d",
+        "details": {
+          "finalScore": 21.68,
+          "rank": 57
+        },
+        "ip": "::1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+        "timestamp": "2026-10-03T08:08:07.934Z"
+      },
+      {
+        "_docId": "aJyo35N1LMEWxpKCGMsk",
+        "adminId": "user_3K8PZqtbmG1XLF2eAlLqcrosHZU",
+        "adminEmail": "venkatasudheerkalahasthi@gmail.com",
+        "adminName": "Venkatasudheer Kalahasthi",
+        "action": "STATISTICS_REFRESHED",
+        "target": "Nagamalleswari Dara (23491A050P)",
+        "targetId": "import_646172616e6167616d616c6c",
+        "details": {
+          "finalScore": 12.64,
+          "rank": 80
+        },
+        "ip": "::1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+        "timestamp": "2026-10-03T08:07:14.856Z"
+      },
+      {
+        "_docId": "dYiLsCh6pSJ1XoVU88YP",
+        "adminId": "user_3K8PZqtbmG1XLF2eAlLqcrosHZU",
+        "adminEmail": "venkatasudheerkalahasthi@gmail.com",
+        "adminName": "Venkatasudheer Kalahasthi",
+        "action": "STATISTICS_REFRESHED",
+        "target": "NALLAPATI BHAGYALAKSHMI SAILAJA (23491A05N3)",
+        "targetId": "import_6e626c7361696c616a612e6e",
+        "details": {
+          "finalScore": 11.84,
+          "rank": 83
+        },
+        "ip": "::1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+        "timestamp": "2026-10-03T08:08:02.048Z"
+      },
+      {
+        "_docId": "hh6y7LoCi94Nh8zhH5GR",
+        "adminId": "user_3K8PZqtbmG1XLF2eAlLqcrosHZU",
+        "adminEmail": "venkatasudheerkalahasthi@gmail.com",
+        "adminName": "Venkatasudheer Kalahasthi",
+        "action": "STATISTICS_REFRESHED",
+        "target": "JONNALAGADDA PRATHYUSHA (23491A0706)",
+        "targetId": "import_707261746879757368616a34",
+        "details": {
+          "finalScore": 20.21,
+          "rank": 61
+        },
+        "ip": "::1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+        "timestamp": "2026-10-03T08:08:12.950Z"
+      },
+      {
+        "_docId": "iTUZbQQ22R9OSFEaoIbI",
+        "adminId": "user_3K8PZqtbmG1XLF2eAlLqcrosHZU",
+        "adminEmail": "venkatasudheerkalahasthi@gmail.com",
+        "adminName": "Venkatasudheer Kalahasthi",
+        "action": "STATISTICS_REFRESHED",
+        "target": "P.vedasri Archana (23491a05o3)",
+        "targetId": "import_70616d696469766564617372",
+        "details": {
+          "finalScore": 6.68,
+          "rank": 90
+        },
+        "ip": "::1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+        "timestamp": "2026-10-03T08:08:11.540Z"
+      },
+      {
+        "_docId": "ik9dlj7SlgzcMnEh6p2O",
+        "adminId": "user_3K8PZqtbmG1XLF2eAlLqcrosHZU",
+        "adminEmail": "venkatasudheerkalahasthi@gmail.com",
+        "adminName": "Venkatasudheer Kalahasthi",
+        "action": "STATISTICS_REFRESHED",
+        "target": "Kalluri Narendra babu (23491A05K7)",
+        "targetId": "import_6e6172696b616c6c75726939",
+        "details": {
+          "finalScore": 16.28,
+          "rank": 72
+        },
+        "ip": "::1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+        "timestamp": "2026-10-03T08:07:25.319Z"
+      },
+      {
+        "_docId": "no5HyrlOjCxOto89vqEO",
+        "adminId": "user_3K8PZqtbmG1XLF2eAlLqcrosHZU",
+        "adminEmail": "venkatasudheerkalahasthi@gmail.com",
+        "adminName": "Venkatasudheer Kalahasthi",
+        "action": "STATISTICS_REFRESHED",
+        "target": "Bachina.Manogna (23491A4204)",
+        "targetId": "import_62616368696e616d616e6f67",
+        "details": {
+          "finalScore": 26.08,
+          "rank": 48
+        },
+        "ip": "::1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+        "timestamp": "2026-10-03T08:07:12.399Z"
+      },
+      {
+        "_docId": "oxYdUlenFthEhHViLKNn",
+        "adminId": "user_3K8PZqtbmG1XLF2eAlLqcrosHZU",
+        "adminEmail": "venkatasudheerkalahasthi@gmail.com",
+        "adminName": "Venkatasudheer Kalahasthi",
+        "action": "STATISTICS_REFRESHED",
+        "target": "B.Sai Satwika (23491a0517)",
+        "targetId": "import_73617477696b613738343240",
+        "details": {
+          "finalScore": 12.68,
+          "rank": 79
+        },
+        "ip": "::1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+        "timestamp": "2026-10-03T08:08:11.025Z"
+      },
+      {
+        "_docId": "qgQOaTtTPQtONoCrCvIj",
+        "adminId": "user_3K8PZqtbmG1XLF2eAlLqcrosHZU",
+        "adminEmail": "venkatasudheerkalahasthi@gmail.com",
+        "adminName": "Venkatasudheer Kalahasthi",
+        "action": "STATISTICS_REFRESHED",
+        "target": "KOTHA RUPASRI (23491A053O)",
+        "targetId": "import_3233343931613035336f4071",
+        "details": {
+          "finalScore": 18.16,
+          "rank": 68
+        },
+        "ip": "::1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+        "timestamp": "2026-10-03T08:06:54.505Z"
+      }
+    ],
+    "admin_notifications": [],
+    "import_history": [],
+    "score_adjustments": [],
+    "system_settings": []
+  }
+}

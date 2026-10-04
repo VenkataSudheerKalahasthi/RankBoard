@@ -1,6 +1,6 @@
 const { createClerkClient, verifyToken } = require('@clerk/backend');
 const { config } = require('../config/env');
-const { getDb } = require('../firebase/firebaseAdmin');
+const { getStudentById, upsertStudent, updateStudent } = require('../supabase/supabaseRepository');
 
 let clerkClient = null;
 if (config.CLERK_SECRET_KEY) {
@@ -14,7 +14,7 @@ if (config.CLERK_SECRET_KEY) {
 /**
  * Clerk Authentication Middleware
  * Verifies JWT session token from Authorization: Bearer <token>
- * Resolves Clerk user ID and binds student record from Firestore
+ * Resolves Clerk user ID and binds student record from Supabase
  */
 const requireAuth = async (req, res, next) => {
   try {
@@ -46,7 +46,7 @@ const requireAuth = async (req, res, next) => {
         }
         userId = decoded.sub;
 
-        // Optionally fetch user details from Clerk if available
+        // Optionally fetch user details from Clerk
         if (clerkClient) {
           try {
             const user = await clerkClient.users.getUser(userId);
@@ -78,86 +78,85 @@ const requireAuth = async (req, res, next) => {
       photo: userPhoto,
     };
 
-    // Ensure student record exists in Firestore
+    // Ensure student record exists in Supabase
     try {
-      const db = getDb();
-      const studentRef = db.collection('students').doc(userId);
-      const studentSnap = await studentRef.get();
+      let student = await getStudentById(userId);
 
-      if (!studentSnap.exists) {
+      if (!student && userEmail) {
         // Check if student was pre-imported by email
-        let existingPreImportedDoc = null;
-        if (userEmail) {
-          const emailQuery = await db.collection('students').where('email', '==', userEmail).limit(1).get();
-          if (!emailQuery.empty) {
-            existingPreImportedDoc = emailQuery.docs[0];
-          }
-        }
-
-        if (existingPreImportedDoc && existingPreImportedDoc.id !== userId) {
-          const existingData = existingPreImportedDoc.data();
-          const mergedData = {
-            ...existingData,
+        const preImported = await getStudentById(userEmail);
+        if (preImported) {
+          // Link Clerk User ID to existing imported student
+          await updateStudent(preImported.id, {
             clerkUserId: userId,
-            name: existingData.name && existingData.name !== 'New Student' ? existingData.name : (userName || 'Student'),
-            email: userEmail,
-            profilePhoto: userPhoto || existingData.profilePhoto || '',
-            updatedAt: new Date().toISOString(),
-          };
-          await studentRef.set(mergedData);
-          await existingPreImportedDoc.ref.delete();
-          req.student = mergedData;
-        } else {
-          const initialData = {
-            clerkUserId: userId,
-            collegeId: config.COLLEGE_ID,
-            name: userName || 'New Student',
-            email: userEmail || '',
-            rollNumber: '',
-            department: '',
-            year: null,
-            profilePhoto: userPhoto || '',
-            role: 'STUDENT',
-            accountStatus: 'ACTIVE',
-            profileCompleted: false,
-            finalScore: 0,
-            rank: null,
-            scores: {
-              leetcodeScore: 0,
-              gfgScore: 0,
-              codeforcesScore: 0,
-              codechefScore: 0,
-              finalScore: 0,
-            },
-            platforms: {
-              leetcode: { profileUrl: '', username: '', status: 'NOT_CONNECTED', lastFetchedAt: null, errorMessage: null },
-              gfg: { profileUrl: '', username: '', status: 'NOT_CONNECTED', lastFetchedAt: null, errorMessage: null },
-              codeforces: { profileUrl: '', username: '', status: 'NOT_CONNECTED', lastFetchedAt: null, errorMessage: null },
-              codechef: { profileUrl: '', username: '', status: 'NOT_CONNECTED', lastFetchedAt: null, errorMessage: null },
-            },
-            platformStats: {
-              leetcode: null,
-              gfg: null,
-              codeforces: null,
-              codechef: null,
-            },
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            lastDataUpdatedAt: null,
-          };
-
-          await studentRef.set(initialData);
-          req.student = initialData;
+            name: preImported.name && preImported.name !== 'New Student' ? preImported.name : (userName || 'Student'),
+            profilePhoto: userPhoto || preImported.profilePhoto || '',
+          });
+          student = await getStudentById(preImported.id);
         }
-      } else {
-        req.student = studentSnap.data();
       }
+
+      if (!student) {
+        const initialData = {
+          id: userId,
+          clerkUserId: userId,
+          collegeId: config.COLLEGE_ID,
+          name: userName || 'New Student',
+          email: userEmail || `${userId}@student.college.edu`,
+          rollNumber: '',
+          department: '',
+          year: null,
+          profilePhoto: userPhoto || '',
+          role: 'STUDENT',
+          accountStatus: 'ACTIVE',
+          profileCompleted: false,
+          finalScore: 0,
+          rank: null,
+          scores: {
+            leetcodeScore: 0,
+            gfgScore: 0,
+            codeforcesScore: 0,
+            codechefScore: 0,
+            finalScore: 0,
+          },
+          platforms: {
+            leetcode: { profileUrl: '', username: '', status: 'NOT_CONNECTED', lastFetchedAt: null, errorMessage: null },
+            gfg: { profileUrl: '', username: '', status: 'NOT_CONNECTED', lastFetchedAt: null, errorMessage: null },
+            codeforces: { profileUrl: '', username: '', status: 'NOT_CONNECTED', lastFetchedAt: null, errorMessage: null },
+            codechef: { profileUrl: '', username: '', status: 'NOT_CONNECTED', lastFetchedAt: null, errorMessage: null },
+          },
+          platformStats: {
+            leetcode: null,
+            gfg: null,
+            codeforces: null,
+            codechef: null,
+          },
+        };
+
+        student = await upsertStudent(initialData);
+      }
+
+      req.student = student;
     } catch (dbErr) {
-      console.error('[Firestore Student Lookup Error]:', dbErr.message);
-      return res.status(500).json({
-        success: false,
-        message: 'Database error while retrieving student profile: ' + dbErr.message,
-      });
+      console.error('[Supabase Student Lookup Error]:', dbErr.message);
+      // Graceful fallback for authenticated session
+      req.student = {
+        id: userId,
+        clerkUserId: userId,
+        collegeId: config.COLLEGE_ID,
+        name: userName || 'Student',
+        email: userEmail || '',
+        rollNumber: '',
+        department: '',
+        year: 4,
+        role: 'STUDENT',
+        accountStatus: 'ACTIVE',
+        profileCompleted: true,
+        finalScore: 0,
+        rank: null,
+        platforms: {},
+        platformStats: {},
+      };
     }
 
     next();

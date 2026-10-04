@@ -2,13 +2,16 @@
   "name": "college-dsa-rankboard",
   "version": "1.0.0",
   "private": true,
-  "description": "College DSA Rankboard - Student Portal with Clerk & Firebase Firestore",
+  "description": "College DSA Rankboard - Student Portal with Clerk & Supabase PostgreSQL",
   "scripts": {
     "server": "npm --prefix server run dev",
     "client": "npm --prefix client run dev",
-    "dev": "concurrently \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
-    "build": "npm --prefix client run build",
-    "install:all": "npm install && npm --prefix server install && npm --prefix client install"
+    "admin": "npm --prefix admin run dev",
+    "dev": "concurrently \"npm --prefix server run dev\" \"npm --prefix client run dev\" \"npm --prefix admin run dev\"",
+    "build:client": "npm --prefix client run build",
+    "build:admin": "npm --prefix admin run build",
+    "build": "npm --prefix client run build && npm --prefix admin run build",
+    "install:all": "npm install && npm --prefix server install && npm --prefix client install && npm --prefix admin install"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
