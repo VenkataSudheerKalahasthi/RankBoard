@@ -1,17 +1,17 @@
 const { config } = require('../config/env');
 const { getStudentByIdCached, getAllStudentsCached, invalidateStudentCache } = require('../utils/studentCache');
-const { getStudentById, updateStudent } = require('../supabase/supabaseRepository');
+const { getStudentById, getStudentByRollNumber, updateStudent } = require('../supabase/supabaseRepository');
 
 /**
  * Get current authenticated student profile with scores and platform stats
  */
 const getMe = async (req, res, next) => {
   try {
-    const clerkUserId = req.auth.userId;
-    let student = req.student || (await getStudentByIdCached(clerkUserId));
+    const studentId = req.student?.id || req.auth.userId;
+    let student = req.student || (await getStudentByIdCached(studentId));
 
     if (!student) {
-      student = await getStudentById(clerkUserId);
+      student = await getStudentById(studentId);
     }
 
     if (!student) {
@@ -46,10 +46,10 @@ const getMe = async (req, res, next) => {
  */
 const updateProfile = async (req, res, next) => {
   try {
-    const clerkUserId = req.auth.userId;
+    const studentId = req.student?.id || req.auth.userId;
     const { name, rollNumber, department, year, profilePhoto } = req.body;
 
-    const existingStudent = await getStudentById(clerkUserId);
+    const existingStudent = req.student || (await getStudentById(studentId));
     if (!existingStudent) {
       return res.status(404).json({
         success: false,
@@ -57,12 +57,35 @@ const updateProfile = async (req, res, next) => {
       });
     }
 
+    if (rollNumber && rollNumber.trim()) {
+      const trimmedRoll = rollNumber.trim();
+      const existingWithRoll = await getStudentByRollNumber(trimmedRoll);
+      if (
+        existingWithRoll &&
+        existingWithRoll.id !== existingStudent.id &&
+        existingWithRoll.clerkUserId &&
+        existingWithRoll.clerkUserId !== req.auth.userId
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: `Roll number "${trimmedRoll}" is already registered to another student.`,
+        });
+      }
+    }
+
+    const effectiveRoll = rollNumber !== undefined ? (rollNumber ? rollNumber.trim() : '') : (existingStudent.rollNumber || '');
+    const effectiveDept = department !== undefined ? (department ? department.trim() : '') : (existingStudent.department || '');
+    const effectiveName = name !== undefined ? (name ? name.trim() : '') : (existingStudent.name || '');
+    const connectedPlatforms = Object.values(existingStudent.platforms || {}).filter((p) => p && p.username).length;
+    const profileCompleted = !!(effectiveRoll && effectiveDept && effectiveName && connectedPlatforms >= 1);
+
     const updatePayload = {
       ...(name && { name: name.trim() }),
       ...(rollNumber && { rollNumber: rollNumber.trim() }),
       ...(department && { department: department.trim() }),
       ...(year && { year: parseInt(year, 10) }),
       ...(profilePhoto !== undefined && { profilePhoto }),
+      profileCompleted,
     };
 
     const updatedStudent = await updateStudent(existingStudent.id, updatePayload);
@@ -74,7 +97,7 @@ const updateProfile = async (req, res, next) => {
       success: true,
       message: 'Profile information updated successfully.',
       student: {
-        id: updatedStudent?.id || clerkUserId,
+        id: updatedStudent?.id || studentId,
         ...sanitizedData,
         overallScore: updatedStudent?.finalScore || 0,
       },
@@ -89,11 +112,11 @@ const updateProfile = async (req, res, next) => {
  */
 const getStudentScore = async (req, res, next) => {
   try {
-    const clerkUserId = req.auth.userId;
-    let student = req.student || (await getStudentByIdCached(clerkUserId));
+    const studentId = req.student?.id || req.auth.userId;
+    let student = req.student || (await getStudentByIdCached(studentId));
 
     if (!student) {
-      student = await getStudentById(clerkUserId);
+      student = await getStudentById(studentId);
     }
 
     if (!student) {
@@ -124,11 +147,11 @@ const getStudentScore = async (req, res, next) => {
  */
 const getStudentRank = async (req, res, next) => {
   try {
-    const clerkUserId = req.auth.userId;
-    let student = req.student || (await getStudentByIdCached(clerkUserId));
+    const studentId = req.student?.id || req.auth.userId;
+    let student = req.student || (await getStudentByIdCached(studentId));
 
     if (!student) {
-      student = await getStudentById(clerkUserId);
+      student = await getStudentById(studentId);
     }
 
     if (!student) {

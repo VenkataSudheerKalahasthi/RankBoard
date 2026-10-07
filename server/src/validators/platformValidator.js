@@ -5,6 +5,8 @@ const platformUrlsSchema = z.object({
   gfgUrl: z.string().nullable().optional(),
   codeforcesUrl: z.string().nullable().optional(),
   codechefUrl: z.string().nullable().optional(),
+  hackerrankUrl: z.string().nullable().optional(),
+  hackerRankUrl: z.string().nullable().optional(),
 });
 
 module.exports = {

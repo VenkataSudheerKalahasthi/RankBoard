@@ -14,11 +14,12 @@ const StudentScore = () => {
 
   const totalSolvedCombined = ((stats.leetcode?.totalSolved || 0) +
                                (stats.gfg?.totalSolved || 0) +
+                               (stats.hackerrank?.totalSolved || 0) +
                                (stats.codeforces?.totalSolved || 0) +
                                (stats.codechef?.totalSolved || 0));
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="space-y-8">
       {/* Header */}
       <div className="border-b border-slate-200 pb-5">
         <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-brand-600 mb-1">
@@ -29,7 +30,7 @@ const StudentScore = () => {
           Your Overall Score
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-          Your evaluated overall score determined from your connected coding platforms.
+          Performance evaluated across your connected coding platforms.
         </p>
       </div>
 
@@ -74,16 +75,16 @@ const StudentScore = () => {
         </Card>
 
         <Card
-          title="Improving Your Score"
-          subtitle="Key areas to focus on across platforms"
+          title="Scoring Platforms"
+          subtitle="How your coding profiles contribute to your rankboard standing"
         >
           <div className="space-y-3.5 text-xs text-slate-600">
             <div className="flex items-start gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
               <div>
-                <strong className="text-slate-900 block font-semibold">Solve Problems Regularly</strong>
+                <strong className="text-slate-900 block font-semibold">LeetCode</strong>
                 <p className="mt-0.5 text-slate-500">
-                  Continuous practice and solving challenging problems across your connected platforms elevates your overall performance.
+                  Evaluated across Easy, Medium, and Hard problem solves.
                 </p>
               </div>
             </div>
@@ -91,19 +92,29 @@ const StudentScore = () => {
             <div className="flex items-start gap-2.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
               <div>
-                <strong className="text-slate-900 block font-semibold">Participate in Contests</strong>
+                <strong className="text-slate-900 block font-semibold">GeeksforGeeks</strong>
                 <p className="mt-0.5 text-slate-500">
-                  Higher contest ratings and regular contest participation positively impact your overall competitive evaluation.
+                  Evaluated across Easy, Medium, and Hard problem solves. School and Basic problems are tracked as statistics.
                 </p>
               </div>
             </div>
 
             <div className="flex items-start gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
               <div>
-                <strong className="text-slate-900 block font-semibold">Connect All 4 Profiles</strong>
+                <strong className="text-slate-900 block font-semibold">HackerRank</strong>
                 <p className="mt-0.5 text-slate-500">
-                  Connecting LeetCode, GeeksforGeeks, Codeforces, and CodeChef ensures your complete problem solving footprint is counted.
+                  Calculated from problems solved, skill stars, and verified domain badges.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2.5 pt-1 border-t border-slate-100">
+              <CheckCircle2 className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+              <div>
+                <strong className="text-slate-700 block font-semibold">Codeforces & CodeChef (Statistics Only)</strong>
+                <p className="mt-0.5 text-slate-400">
+                  Contest ratings and problem solves are displayed for your portfolio.
                 </p>
               </div>
             </div>

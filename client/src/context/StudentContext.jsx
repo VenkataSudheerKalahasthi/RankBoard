@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { useAuth, useUser } from '@clerk/clerk-react';
 import { setAuthTokenGetter } from '../services/api';
 import { studentService } from '../services/studentService';
+import { subscribeToRankboardUpdates } from '../services/supabase';
 
 const StudentContext = createContext(null);
 
@@ -21,14 +22,14 @@ export const StudentProvider = ({ children }) => {
     }
   }, [getToken]);
 
-  const fetchStudentProfile = useCallback(async () => {
+  const fetchStudentProfile = useCallback(async (showLoading = true) => {
     if (!isSignedIn) {
       setStudent(null);
       setLoading(false);
       return;
     }
 
-    setLoading(true);
+    if (showLoading) setLoading(true);
     setError(null);
     try {
       const response = await studentService.getProfile();
@@ -37,22 +38,38 @@ export const StudentProvider = ({ children }) => {
       }
     } catch (err) {
       console.error('[Student Context Fetch Error]:', err);
-      setError(err.response?.data?.message || 'Failed to fetch student profile.');
+      if (showLoading) setError(err.response?.data?.message || 'Failed to fetch student profile.');
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }, [isSignedIn]);
 
   useEffect(() => {
     if (authLoaded) {
       if (isSignedIn) {
-        fetchStudentProfile();
+        fetchStudentProfile(true);
       } else {
         setStudent(null);
         setLoading(false);
       }
     }
   }, [authLoaded, isSignedIn, fetchStudentProfile]);
+
+  // Subscribe to Supabase Realtime for automatic background updates
+  useEffect(() => {
+    if (!isSignedIn || !student?.id) return;
+
+    const unsubscribe = subscribeToRankboardUpdates((table, payload) => {
+      const changedId = payload?.new?.id || payload?.new?.student_id;
+      if (!changedId || changedId === student.id || changedId === student.clerkUserId) {
+        fetchStudentProfile(false);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [isSignedIn, student?.id, student?.clerkUserId, fetchStudentProfile]);
 
   const updateProfile = async (formData) => {
     const res = await studentService.updateProfile(formData);

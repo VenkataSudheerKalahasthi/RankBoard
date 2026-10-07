@@ -5,6 +5,7 @@ const {
   parseGFGUrl,
   parseCodeforcesUrl,
   parseCodeChefUrl,
+  parseHackerRankUrl,
 } = require('../utils/urlParsers');
 
 /**
@@ -12,8 +13,12 @@ const {
  */
 const getPlatforms = async (req, res, next) => {
   try {
-    const clerkUserId = req.auth.userId;
-    const student = await getStudentById(clerkUserId);
+    const studentId = req.student?.id || req.auth.userId;
+    let student = req.student;
+
+    if (!student) {
+      student = await getStudentById(studentId);
+    }
 
     if (!student) {
       return res.status(404).json({
@@ -36,12 +41,13 @@ const getPlatforms = async (req, res, next) => {
 
 /**
  * Save platform URLs and immediately trigger live stats synchronization
- * Body: { leetcodeUrl, gfgUrl, codeforcesUrl, codechefUrl }
+ * Body: { leetcodeUrl, gfgUrl, codeforcesUrl, codechefUrl, hackerrankUrl }
  */
 const saveAndSyncPlatforms = async (req, res, next) => {
   try {
-    const clerkUserId = req.auth.userId;
-    const { leetcodeUrl, gfgUrl, codeforcesUrl, codechefUrl } = req.body;
+    const studentId = req.student?.id || req.auth.userId;
+    const { leetcodeUrl, gfgUrl, codeforcesUrl, codechefUrl, hackerrankUrl, hackerRankUrl } = req.body;
+    const effectiveHrUrl = hackerrankUrl !== undefined ? hackerrankUrl : hackerRankUrl;
 
     const validationErrors = [];
 
@@ -58,6 +64,9 @@ const saveAndSyncPlatforms = async (req, res, next) => {
     if (codechefUrl && !parseCodeChefUrl(codechefUrl)) {
       validationErrors.push('Invalid CodeChef URL or handle format.');
     }
+    if (effectiveHrUrl && !parseHackerRankUrl(effectiveHrUrl)) {
+      validationErrors.push('Invalid HackerRank URL or handle format.');
+    }
 
     if (validationErrors.length > 0) {
       return res.status(400).json({
@@ -68,17 +77,20 @@ const saveAndSyncPlatforms = async (req, res, next) => {
     }
 
     // Execute synchronization pipeline
-    const updatedStudent = await syncStudentPlatforms(clerkUserId, {
+    const syncResult = await syncStudentPlatforms(studentId, {
       leetcodeUrl,
       gfgUrl,
       codeforcesUrl,
       codechefUrl,
-    });
+      hackerrankUrl: effectiveHrUrl,
+    }, { forceSync: true });
 
     return res.json({
       success: true,
       message: 'Coding platform statistics synchronized successfully.',
-      student: updatedStudent,
+      student: syncResult.student || syncResult,
+      hasChanged: syncResult.hasChanged,
+      detectedChanges: syncResult.detectedChanges || [],
     });
   } catch (error) {
     next(error);

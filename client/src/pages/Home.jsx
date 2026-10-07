@@ -18,6 +18,7 @@ const DEPARTMENTS = [
   'Electronics & Communication',
   'Electrical & Electronics',
   'Mechanical Engineering',
+  'Prime',
 ];
 
 const Home = () => {
@@ -35,15 +36,24 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [department, setDepartment] = useState('ALL');
   const [year, setYear] = useState('ALL');
+
+  // Debounce search input for instant live search as user types
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 200);
+    return () => clearTimeout(handler);
+  }, [search]);
 
   const fetchLeaderboard = async () => {
     setLoading(true);
     setError(null);
     try {
       const response = await leaderboardService.getLeaderboard({
-        search: search.trim() || undefined,
+        search: debouncedSearch.trim() || undefined,
         department: department !== 'ALL' ? department : undefined,
         year: year !== 'ALL' ? year : undefined,
       });
@@ -61,7 +71,7 @@ const Home = () => {
 
   useEffect(() => {
     fetchLeaderboard();
-  }, [department, year]);
+  }, [department, year, debouncedSearch]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -85,7 +95,7 @@ const Home = () => {
           </p>
 
           <div className="mt-4 flex items-center justify-center gap-2 text-xs font-mono text-slate-400">
-            <span>LeetCode</span> • <span>GeeksforGeeks</span> • <span>Codeforces</span> • <span>CodeChef</span>
+            <span>LeetCode</span> • <span>GeeksforGeeks</span> • <span>HackerRank</span> • <span>Codeforces</span> • <span>CodeChef</span>
           </div>
 
           {/* Quick CTA */}
@@ -135,7 +145,7 @@ const Home = () => {
           <StatCard
             title="Coding Platforms"
             value={data.stats.codingPlatforms}
-            subtitle="LC • GFG • CF • CC"
+            subtitle="LC • GFG • HR • CF • CC"
             icon={Layers}
             badgeText="Integrated"
             badgeVariant="slate"

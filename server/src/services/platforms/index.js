@@ -2,6 +2,7 @@ const { fetchLeetCodeProfile } = require('./leetcodeService');
 const { fetchGFGProfile } = require('./gfgService');
 const { fetchCodeforcesProfile } = require('./codeforcesService');
 const { fetchCodeChefProfile } = require('./codechefService');
+const { fetchHackerRankProfile } = require('./hackerrankService');
 
 const fetchPlatformProfile = async (platform, urlOrHandle) => {
   const norm = (platform || '').toLowerCase();
@@ -16,6 +17,8 @@ const fetchPlatformProfile = async (platform, urlOrHandle) => {
       return await fetchCodeforcesProfile(urlOrHandle);
     case 'codechef':
       return await fetchCodeChefProfile(urlOrHandle);
+    case 'hackerrank':
+      return await fetchHackerRankProfile(urlOrHandle);
     default:
       throw new Error(`Unsupported coding platform: ${platform}`);
   }
@@ -27,4 +30,5 @@ module.exports = {
   fetchGFGProfile,
   fetchCodeforcesProfile,
   fetchCodeChefProfile,
+  fetchHackerRankProfile,
 };

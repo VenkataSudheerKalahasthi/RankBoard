@@ -24,6 +24,155 @@ import {
 } from 'lucide-react';
 import { subscribeToAdminUpdates } from '../services/supabase';
 
+const BRANCH_OPTIONS = [
+  { value: 'ALL', label: 'All Branches' },
+  { value: 'Computer Science and Engineering', label: 'Computer Science and Engineering (CSE)' },
+  { value: 'IT', label: 'Information Technology (IT)' },
+  { value: 'AIML', label: 'Artificial Intelligence & ML (AIML)' },
+  { value: 'IoT', label: 'Internet of Things (IoT)' },
+  { value: 'AI', label: 'Artificial Intelligence (AI)' },
+  { value: 'Artificial Intelligence and Data Science', label: 'Artificial Intelligence and Data Science' },
+  { value: 'Electronics & Communication', label: 'Electronics & Communication (ECE)' },
+  { value: 'Electrical & Electronics', label: 'Electrical & Electronics (EEE)' },
+  { value: 'Mechanical Engineering', label: 'Mechanical Engineering (ME)' },
+  { value: 'Civil', label: 'Civil Engineering' },
+  { value: 'CSDS', label: 'CSDS' },
+  { value: 'CSBS', label: 'CSBS' },
+  { value: 'CSIT', label: 'CSIT' },
+  { value: 'VLSI', label: 'VLSI' },
+  { value: 'PRIME', label: 'PRIME' },
+];
+
+const YEAR_OPTIONS = [
+  { value: 'ALL', label: 'All Years' },
+  { value: '1', label: 'Year 1' },
+  { value: '2', label: 'Year 2' },
+  { value: '3', label: 'Year 3' },
+  { value: '4', label: 'Year 4' },
+];
+
+const normalizeBranch = (dept) => {
+  if (!dept) return 'Other';
+  const d = dept.trim().toLowerCase();
+
+  // 1. CSDS (Computer Science & Data Science)
+  if (
+    d === 'csds' ||
+    d.includes('computer science and data science') ||
+    d.includes('computer science & data science') ||
+    d.includes('cs & ds') ||
+    d.includes('cs and ds') ||
+    d.includes('cs & data science') ||
+    d.includes('cs and data science')
+  ) {
+    return 'CSDS';
+  }
+
+  // 2. Artificial Intelligence and Data Science
+  if (
+    d === 'artificial intelligence and data science' ||
+    d === 'artificial intelligence & data science' ||
+    d === 'ai & ds' ||
+    d === 'ai and ds' ||
+    d === 'aids' ||
+    d.includes('artificial intelligence and data science') ||
+    d.includes('artificial intelligence & data science') ||
+    d.includes('ai & data science') ||
+    d.includes('ai and data science') ||
+    d.includes('ai & ds') ||
+    d.includes('ai and ds')
+  ) {
+    return 'Artificial Intelligence and Data Science';
+  }
+
+  // 3. AIML (Artificial Intelligence & Machine Learning)
+  if (
+    d === 'aiml' ||
+    d === 'ai & ml' ||
+    d === 'ai and ml' ||
+    d === 'ai/ml' ||
+    d.includes('machine learning') ||
+    d.includes('artificial intelligence & ml') ||
+    d.includes('artificial intelligence and ml') ||
+    d.includes('artificial intelligence & machine learning') ||
+    d.includes('artificial intelligence and machine learning')
+  ) {
+    return 'AIML';
+  }
+
+  // 4. IoT (Internet of Things)
+  if (d === 'iot' || d.includes('internet of things')) {
+    return 'IoT';
+  }
+
+  // 5. AI (Artificial Intelligence standalone)
+  if (d === 'ai' || d === 'artificial intelligence') {
+    return 'AI';
+  }
+
+  // 6. CSE (Computer Science and Engineering)
+  if (
+    d === 'cse' ||
+    d.includes('computer science and engineering') ||
+    d.includes('computer science & engineering') ||
+    d.includes('computer science') ||
+    d.includes('comp sci')
+  ) {
+    return 'Computer Science and Engineering';
+  }
+
+  // 7. IT (Information Technology)
+  if (d === 'it' || d === 'information technology' || d.includes('infotech')) {
+    return 'IT';
+  }
+
+  // 8. ECE (Electronics & Communication)
+  if (d === 'ece' || d.includes('electronics and communication') || d.includes('electronics & communication')) {
+    return 'Electronics & Communication';
+  }
+
+  // 9. EEE (Electrical & Electronics)
+  if (d === 'eee' || d.includes('electrical and electronics') || d.includes('electrical & electronics')) {
+    return 'Electrical & Electronics';
+  }
+
+  // 10. ME (Mechanical Engineering)
+  if (d === 'me' || d === 'mech' || d.includes('mechanical')) {
+    return 'Mechanical Engineering';
+  }
+
+  // 11. Civil (Civil Engineering)
+  if (d === 'civil' || d.includes('civil engineering')) {
+    return 'Civil';
+  }
+
+  if (d === 'prime') {
+    return 'PRIME';
+  }
+
+  return dept.trim();
+};
+
+const matchesBranch = (studentDept, selectedBranch) => {
+  if (!selectedBranch || selectedBranch === 'ALL') return true;
+  if (!studentDept) return false;
+
+  const normStudent = normalizeBranch(studentDept).toLowerCase();
+  const normSelected = normalizeBranch(selectedBranch).toLowerCase();
+
+  if (normStudent === normSelected) return true;
+
+  const rawStudent = studentDept.trim().toLowerCase();
+  const rawSelected = selectedBranch.trim().toLowerCase();
+  return rawStudent === rawSelected || rawStudent.includes(rawSelected) || rawSelected.includes(rawStudent);
+};
+
+const matchesYear = (studentYear, selectedYear) => {
+  if (!selectedYear || selectedYear === 'ALL') return true;
+  if (studentYear === undefined || studentYear === null) return false;
+  return String(studentYear).trim() === String(selectedYear).trim();
+};
+
 export const Dashboard = () => {
   const navigate = useNavigate();
   const { notifySuccess, notifyError } = useNotifications();
@@ -34,6 +183,10 @@ export const Dashboard = () => {
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
 
+  // Department distribution filter states
+  const [selectedBranch, setSelectedBranch] = useState('ALL');
+  const [selectedYear, setSelectedYear] = useState('ALL');
+
   const fetchDashboardData = useCallback(async (isBackground = false) => {
     if (!isBackground) setLoading(true);
     setError(null);
@@ -41,7 +194,7 @@ export const Dashboard = () => {
       const response = await adminService.getDashboardStats();
       if (response.success) {
         setStats(response.stats);
-        setRecentAudits(response.recentAudits || []);
+        setRecentAudits(response.stats?.recentActivity || response.recentAudits || []);
       }
     } catch (err) {
       console.error('Failed to load dashboard:', err);
@@ -188,35 +341,39 @@ export const Dashboard = () => {
         {/* Total Students */}
         <Card className="p-5 border-slate-800/80 hover:border-slate-700 transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400">Total Cohort</span>
+            <span className="text-xs font-semibold text-slate-400">Total Registered Cohort</span>
             <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
               <Users className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-2xl font-black text-slate-100">{stats?.totalStudents || 0}</div>
+            <div className="text-2xl font-black text-slate-100">{stats?.students?.total ?? stats?.totalStudents ?? 0}</div>
             <div className="flex items-center gap-2 mt-1.5 text-[11px] text-slate-400">
-              <span className="text-emerald-400 font-semibold">{stats?.activeStudents || 0} Active</span>
+              <span className="text-emerald-400 font-semibold">{stats?.students?.active ?? stats?.activeStudents ?? 0} Active</span>
               <span>•</span>
-              <span className="text-rose-400">{stats?.disabledStudents || 0} Disabled</span>
+              <span className="text-purple-400 font-medium">{stats?.students?.recentlyAdded ?? 0} New this week</span>
             </div>
           </div>
         </Card>
 
-        {/* Profile Completeness */}
+        {/* HackerRank Adoption Status */}
         <Card className="p-5 border-slate-800/80 hover:border-slate-700 transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400">Profiles Linked</span>
+            <span className="text-xs font-semibold text-slate-400">HackerRank Adoption (30%)</span>
             <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
               <CheckCircle2 className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-2xl font-black text-slate-100">{stats?.profilesComplete || 0}</div>
+            <div className="text-2xl font-black text-emerald-400">
+              {stats?.platformConnectedCounts?.hackerrank ?? stats?.platforms?.connectedCounts?.hackerrank ?? 0}
+            </div>
             <div className="flex items-center gap-2 mt-1.5 text-[11px] text-slate-400">
-              <span className="text-slate-300">All 4 platforms linked</span>
+              <span className="text-emerald-400">Linked</span>
               <span>•</span>
-              <span className="text-amber-400">{stats?.profilesIncomplete || 0} incomplete</span>
+              <span className="text-amber-400 font-semibold">
+                {Math.max(0, (stats?.students?.total ?? stats?.totalStudents ?? 0) - (stats?.platformConnectedCounts?.hackerrank ?? 0))} Missing
+              </span>
             </div>
           </div>
         </Card>
@@ -224,17 +381,17 @@ export const Dashboard = () => {
         {/* Scored Students */}
         <Card className="p-5 border-slate-800/80 hover:border-slate-700 transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400">Scored Students</span>
+            <span className="text-xs font-semibold text-slate-400">Ranked Students</span>
             <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
               <Award className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-2xl font-black text-slate-100">{stats?.studentsWithScores || 0}</div>
+            <div className="text-2xl font-black text-slate-100">{stats?.students?.withScores ?? stats?.studentsWithScores ?? 0}</div>
             <div className="flex items-center gap-2 mt-1.5 text-[11px] text-slate-400">
-              <span className="text-slate-300">Highest: {stats?.highestScore || 0}</span>
+              <span className="text-slate-300">Highest: {stats?.scores?.highestScore ?? stats?.highestScore ?? 0}</span>
               <span>•</span>
-              <span className="text-slate-400">Avg: {stats?.averageScore || 0}</span>
+              <span className="text-slate-400">Avg: {stats?.scores?.averageScore ?? stats?.averageScore ?? 0}</span>
             </div>
           </div>
         </Card>
@@ -242,19 +399,19 @@ export const Dashboard = () => {
         {/* Sync Success Rate */}
         <Card className="p-5 border-slate-800/80 hover:border-slate-700 transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400">Platform Syncs</span>
+            <span className="text-xs font-semibold text-slate-400">Platform Sync Health</span>
             <div className="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center">
               <RefreshCw className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-2xl font-black text-slate-100">{stats?.successfulSynchronizations || 0}</div>
+            <div className="text-2xl font-black text-slate-100">{stats?.syncHealth?.successfulSyncs ?? stats?.successfulSynchronizations ?? 0}</div>
             <div className="flex items-center gap-2 mt-1.5 text-[11px] text-slate-400">
-              <span className="text-emerald-400 font-semibold">{stats?.successfulSynchronizations || 0} OK</span>
+              <span className="text-emerald-400 font-semibold">{stats?.syncHealth?.successfulSyncs ?? 0} OK</span>
               <span>•</span>
-              <span className="text-rose-400 font-semibold">{stats?.failedSynchronizations || 0} Err</span>
+              <span className="text-rose-400 font-semibold">{stats?.syncHealth?.failedSyncs ?? 0} Err</span>
               <span>•</span>
-              <span className="text-amber-400">{stats?.pendingSynchronizations || 0} Pend</span>
+              <span className="text-amber-400">{stats?.syncHealth?.pendingSyncs ?? 0} Pend</span>
             </div>
           </div>
         </Card>
@@ -274,7 +431,7 @@ export const Dashboard = () => {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {/* LeetCode */}
           <Card className="p-4 border-slate-800/80">
             <div className="flex items-center justify-between">
@@ -284,10 +441,12 @@ export const Dashboard = () => {
                 </div>
                 <div>
                   <div className="text-xs font-bold text-slate-200">LeetCode</div>
-                  <div className="text-[10px] text-slate-400">Weight: 40%</div>
+                  <div className="text-[10px] text-amber-400 font-semibold">Weight: 40%</div>
                 </div>
               </div>
-              <Badge variant="warning">{stats?.platformConnectedCounts?.leetcode || 0} linked</Badge>
+              <Badge variant="warning">
+                {stats?.platformConnectedCounts?.leetcode ?? stats?.platforms?.connectedCounts?.leetcode ?? 0} linked
+              </Badge>
             </div>
           </Card>
 
@@ -300,10 +459,30 @@ export const Dashboard = () => {
                 </div>
                 <div>
                   <div className="text-xs font-bold text-slate-200">GeeksforGeeks</div>
-                  <div className="text-[10px] text-slate-400">Weight: 30%</div>
+                  <div className="text-[10px] text-emerald-400 font-semibold">Weight: 30%</div>
                 </div>
               </div>
-              <Badge variant="success">{stats?.platformConnectedCounts?.gfg || 0} linked</Badge>
+              <Badge variant="success">
+                {stats?.platformConnectedCounts?.gfg ?? stats?.platforms?.connectedCounts?.gfg ?? 0} linked
+              </Badge>
+            </div>
+          </Card>
+
+          {/* HackerRank */}
+          <Card className="p-4 border-slate-800/80">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-md bg-emerald-500/10 text-emerald-400 font-black text-xs flex items-center justify-center">
+                  HR
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-slate-200">HackerRank</div>
+                  <div className="text-[10px] text-emerald-400 font-semibold">Weight: 30%</div>
+                </div>
+              </div>
+              <Badge variant="success">
+                {stats?.platformConnectedCounts?.hackerrank ?? stats?.platforms?.connectedCounts?.hackerrank ?? 0} linked
+              </Badge>
             </div>
           </Card>
 
@@ -316,10 +495,12 @@ export const Dashboard = () => {
                 </div>
                 <div>
                   <div className="text-xs font-bold text-slate-200">Codeforces</div>
-                  <div className="text-[10px] text-slate-400">Weight: 20%</div>
+                  <div className="text-[10px] text-slate-400">Statistics only</div>
                 </div>
               </div>
-              <Badge variant="info">{stats?.platformConnectedCounts?.codeforces || 0} linked</Badge>
+              <Badge variant="secondary">
+                {stats?.platformConnectedCounts?.codeforces ?? stats?.platforms?.connectedCounts?.codeforces ?? 0} linked
+              </Badge>
             </div>
           </Card>
 
@@ -332,10 +513,12 @@ export const Dashboard = () => {
                 </div>
                 <div>
                   <div className="text-xs font-bold text-slate-200">CodeChef</div>
-                  <div className="text-[10px] text-slate-400">Weight: 10%</div>
+                  <div className="text-[10px] text-slate-400">Statistics only</div>
                 </div>
               </div>
-              <Badge variant="danger">{stats?.platformConnectedCounts?.codechef || 0} linked</Badge>
+              <Badge variant="secondary">
+                {stats?.platformConnectedCounts?.codechef ?? stats?.platforms?.connectedCounts?.codechef ?? 0} linked
+              </Badge>
             </div>
           </Card>
         </div>
@@ -344,38 +527,139 @@ export const Dashboard = () => {
       {/* Two Column Section: Department Breakdown + Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Department Distribution */}
-        <Card className="lg:col-span-1">
+        <Card className="lg:col-span-2">
           <CardHeader
             title="Department Distribution"
-            subtitle="Student enrollment across branches"
+            subtitle="Ranked student distribution across branches & academic years"
+            action={
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Branch Dropdown */}
+                <select
+                  value={selectedBranch}
+                  onChange={(e) => setSelectedBranch(e.target.value)}
+                  className="text-xs bg-slate-950 border border-slate-800 text-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-brand-500 cursor-pointer"
+                >
+                  {BRANCH_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value} className="bg-slate-900 text-slate-300">
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+
+                {/* Year Dropdown */}
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(e.target.value)}
+                  className="text-xs bg-slate-950 border border-slate-800 text-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-brand-500 cursor-pointer"
+                >
+                  {YEAR_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value} className="bg-slate-900 text-slate-300">
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            }
           />
-          <CardContent className="p-4 space-y-3">
-            {Object.keys(stats?.departmentDistribution || {}).length === 0 ? (
-              <p className="text-xs text-slate-500 text-center py-6">No department data recorded.</p>
-            ) : (
-              Object.entries(stats.departmentDistribution).map(([dept, count]) => {
-                const percent = stats.totalStudents > 0 ? Math.round((count / stats.totalStudents) * 100) : 0;
-                return (
-                  <div key={dept} className="space-y-1">
-                    <div className="flex justify-between text-xs">
-                      <span className="font-medium text-slate-300 truncate max-w-[180px]">{dept}</span>
-                      <span className="font-semibold text-slate-400">{count} ({percent}%)</span>
-                    </div>
-                    <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-brand-500 rounded-full transition-all"
-                        style={{ width: `${percent}%` }}
-                      />
-                    </div>
+          <CardContent className="p-0">
+            {(() => {
+              const allStudentsList = stats?.allStudents || [];
+              const filtered = allStudentsList.filter((student) => {
+                if (!matchesBranch(student.department, selectedBranch)) return false;
+                if (!matchesYear(student.year, selectedYear)) return false;
+                return true;
+              });
+
+              return (
+                <div>
+                  <div className="px-4 py-2 bg-slate-950/40 border-b border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+                    <span>
+                      Showing <strong className="text-slate-200">{filtered.length}</strong>{' '}
+                      {selectedBranch !== 'ALL' ? selectedBranch : 'all branch'} student{filtered.length === 1 ? '' : 's'}
+                      {selectedYear !== 'ALL' ? ` (Year ${selectedYear})` : ''}
+                    </span>
+                    <span className="text-[11px] text-slate-500">Ordered by Overall Rank</span>
                   </div>
-                );
-              })
-            )}
+
+                  {filtered.length === 0 ? (
+                    <div className="p-8 text-center text-xs text-slate-500">
+                      No students found matching the selected branch and year filters.
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-slate-800/60 max-h-[420px] overflow-y-auto">
+                      {filtered.map((student, idx) => {
+                        const branchPos = idx + 1;
+                        const isTop3 = branchPos <= 3;
+                        return (
+                          <div
+                            key={student.id}
+                            onClick={() => {
+                              const targetId = student.id || student.studentId;
+                              if (targetId) navigate(`/students/${targetId}`);
+                            }}
+                            className="p-3.5 px-4 flex items-center justify-between gap-3 hover:bg-slate-800/30 transition-colors cursor-pointer group"
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              {/* Position within selection */}
+                              <div
+                                className={`w-7 h-7 rounded-lg text-xs font-black flex items-center justify-center flex-shrink-0 border ${
+                                  isTop3
+                                    ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+                                    : 'bg-slate-900 border-slate-800 text-slate-400'
+                                }`}
+                              >
+                                {branchPos}
+                              </div>
+
+                              {/* Student Info */}
+                              <div className="min-w-0">
+                                <div className="text-xs font-bold text-slate-200 group-hover:text-brand-300 transition-colors truncate">
+                                  {student.name}
+                                </div>
+                                <div className="text-[11px] text-slate-400 flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-mono">{student.rollNumber || 'No Roll #'}</span>
+                                  <span>•</span>
+                                  <span className="text-slate-300 font-medium truncate max-w-[150px]">
+                                    {normalizeBranch(student.department)}
+                                  </span>
+                                  <span>•</span>
+                                  <span>Year {student.year || 4}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Rank and Score */}
+                            <div className="text-right flex-shrink-0 flex items-center gap-3">
+                              <div className="hidden sm:block text-right">
+                                <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
+                                  Global
+                                </div>
+                                <div className="text-xs font-mono font-bold text-slate-300">
+                                  #{student.rank ?? '—'}
+                                </div>
+                              </div>
+                              <div className="text-right min-w-[65px]">
+                                <div className="text-xs font-black font-mono text-brand-300">
+                                  {typeof student.finalScore === 'number'
+                                    ? student.finalScore.toFixed(2)
+                                    : '0.00'}
+                                </div>
+                                <div className="text-[10px] text-slate-500">pts</div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
 
         {/* Recent Audit Trail */}
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-1">
           <CardHeader
             title="Recent Administrative Actions"
             subtitle="Live audit trail of platform modifications"

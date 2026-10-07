@@ -17,7 +17,7 @@ const StudentPlatforms = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="space-y-8">
       {/* Header */}
       <div className="border-b border-slate-200 pb-5">
         <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-brand-600 mb-1">
@@ -52,7 +52,7 @@ const StudentPlatforms = () => {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <PlatformCard
             platformKey="leetcode"
             platformConfig={platforms.leetcode}
@@ -65,6 +65,14 @@ const StudentPlatforms = () => {
             platformKey="gfg"
             platformConfig={platforms.gfg}
             stats={platformStats.gfg}
+            onRefreshSingle={handleGlobalRefresh}
+            refreshing={syncing}
+          />
+
+          <PlatformCard
+            platformKey="hackerrank"
+            platformConfig={platforms.hackerrank}
+            stats={platformStats.hackerrank}
             onRefreshSingle={handleGlobalRefresh}
             refreshing={syncing}
           />

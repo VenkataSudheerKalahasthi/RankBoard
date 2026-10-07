@@ -1,5 +1,6 @@
 const { getSupabase } = require('../../supabase/supabaseClient');
 const { getAllStudents, updateStudent } = require('../../supabase/supabaseRepository');
+const { invalidateStudentCache } = require('../../utils/studentCache');
 const { config } = require('../../config/env');
 
 /**
@@ -35,16 +36,18 @@ const recalculateCollegeRankings = async (collegeId = config.COLLEGE_ID) => {
       return scoreB - scoreA;
     }
 
-    // Tie breaker 1: combined total problems solved
+    // Tie breaker 1: combined total problems solved across platforms
     const solvedA =
       (a.platformStats?.leetcode?.totalSolved || 0) +
       (a.platformStats?.gfg?.totalSolved || 0) +
+      (a.platformStats?.hackerrank?.totalSolved || 0) +
       (a.platformStats?.codeforces?.totalSolved || 0) +
       (a.platformStats?.codechef?.totalSolved || 0);
 
     const solvedB =
       (b.platformStats?.leetcode?.totalSolved || 0) +
       (b.platformStats?.gfg?.totalSolved || 0) +
+      (b.platformStats?.hackerrank?.totalSolved || 0) +
       (b.platformStats?.codeforces?.totalSolved || 0) +
       (b.platformStats?.codechef?.totalSolved || 0);
 
@@ -65,26 +68,18 @@ const recalculateCollegeRankings = async (collegeId = config.COLLEGE_ID) => {
 
   for (let index = 0; index < allStudents.length; index++) {
     const student = allStudents[index];
-    if (index > 0) {
-      const prev = allStudents[index - 1];
-      const prevScore = prev.finalScore || 0;
-      const currScore = student.finalScore || 0;
+    const currentRank = index + 1;
 
-      if (currScore < prevScore) {
-        currentRank = index + 1;
-      }
-    } else {
-      currentRank = 1;
+    // Only update rank in database if rank actually changed
+    if (student.rank !== currentRank) {
+      await supabase
+        .from('students')
+        .update({
+          rank: currentRank,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', student.id);
     }
-
-    // Update rank in database
-    await supabase
-      .from('students')
-      .update({
-        rank: currentRank,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', student.id);
 
     rankedStudents.push({
       id: student.id,
@@ -97,6 +92,8 @@ const recalculateCollegeRankings = async (collegeId = config.COLLEGE_ID) => {
       rank: currentRank,
     });
   }
+
+  invalidateStudentCache();
 
   return {
     collegeId,

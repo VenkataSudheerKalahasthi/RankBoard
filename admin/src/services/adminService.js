@@ -47,7 +47,8 @@ export const adminService = {
   resolveAnomaly: (data) => api.post('/admin/anomalies/resolve', data),
 
   // 10. AI Insights
-  getAiInsights: () => api.get('/admin/insights'),
+  getAiInsights: (params = {}) => api.get('/admin/insights', { params }),
+  refreshAiInsights: () => api.post('/admin/insights/refresh'),
 
   // 11. Audit Logs
   getAuditLogs: (params = {}) => api.get('/admin/audit-logs', { params }),

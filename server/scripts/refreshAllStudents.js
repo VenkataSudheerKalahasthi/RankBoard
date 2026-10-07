@@ -29,7 +29,7 @@ async function refreshAllProfiles() {
 
     const platforms = { ...(student.platforms || {}) };
     const platformStats = { ...(student.platformStats || {}) };
-    const platformKeys = ['leetcode', 'gfg', 'codeforces', 'codechef'];
+    const platformKeys = ['leetcode', 'gfg', 'codeforces', 'codechef', 'hackerrank'];
 
     for (const key of platformKeys) {
       const p = platforms[key];

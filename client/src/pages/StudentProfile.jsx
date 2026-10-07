@@ -1,9 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Card from '../components/common/Card';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
+import ShareAchievementModal from '../components/showcase/ShareAchievementModal';
 import { useStudent } from '../context/StudentContext';
-import { Save, CheckCircle2, AlertCircle, User, Award, Shield } from 'lucide-react';
+import { showcaseService } from '../services/showcaseService';
+import {
+  Save,
+  CheckCircle2,
+  AlertCircle,
+  Upload,
+  Sparkles,
+  Share2,
+  Camera,
+  Layers,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const DEPARTMENTS = [
@@ -13,10 +24,12 @@ const DEPARTMENTS = [
   'Electronics & Communication',
   'Electrical & Electronics',
   'Mechanical Engineering',
+  'Prime',
 ];
 
 const StudentProfile = () => {
   const { student, updateProfile } = useStudent();
+  const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -26,8 +39,10 @@ const StudentProfile = () => {
   });
 
   const [loading, setLoading] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [showcaseOpen, setShowcaseOpen] = useState(false);
 
   useEffect(() => {
     if (student) {
@@ -45,6 +60,35 @@ const StudentProfile = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
     setErrorMsg('');
     setSuccessMsg('');
+  };
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setErrorMsg('Please select a valid image file (JPEG, PNG, WEBP).');
+      return;
+    }
+
+    setUploadingPhoto(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    try {
+      const response = await showcaseService.uploadProfilePhoto(file);
+      if (response.success && response.profilePhoto) {
+        if (updateProfile) {
+          updateProfile({ profilePhoto: response.profilePhoto });
+        }
+        setSuccessMsg('Profile photo updated successfully on Cloudinary CDN!');
+      }
+    } catch (err) {
+      setErrorMsg(err.response?.data?.message || 'Failed to upload photo.');
+    } finally {
+      setUploadingPhoto(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -73,14 +117,91 @@ const StudentProfile = () => {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <div className="border-b border-slate-200 pb-5">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-          Academic Profile Settings
-        </h1>
-        <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-          Manage your student identity and institutional department registration.
-        </p>
+      <ShareAchievementModal
+        isOpen={showcaseOpen}
+        onClose={() => setShowcaseOpen(false)}
+      />
+
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+            Academic Profile Settings
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+            Manage your student identity, Cloudinary profile photo, and institutional registration.
+          </p>
+        </div>
+
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() => setShowcaseOpen(true)}
+          icon={Share2}
+          className="bg-brand-600 hover:bg-brand-700 shadow-sm text-xs"
+        >
+          Share Achievement
+        </Button>
       </div>
+
+      {/* Profile Photo Section (Cloudinary) */}
+      <Card
+        title="Profile Photo (Cloudinary CDN)"
+        subtitle="Upload a photo to appear on your official DSA Rankboard achievement card."
+      >
+        <div className="flex flex-col sm:flex-row items-center gap-5">
+          <div className="relative group">
+            {student?.profilePhoto ? (
+              <img
+                src={student.profilePhoto}
+                alt={student.name || 'Student'}
+                className="w-24 h-24 rounded-2xl object-cover border-2 border-slate-200 shadow-md bg-slate-100"
+              />
+            ) : (
+              <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-brand-500 to-slate-800 border-2 border-slate-200 flex items-center justify-center text-2xl font-bold text-white shadow-md">
+                {(student?.name || 'ST').slice(0, 2).toUpperCase()}
+              </div>
+            )}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingPhoto}
+              className="absolute inset-0 bg-slate-900/60 rounded-2xl flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition duration-200"
+            >
+              <Camera className="w-5 h-5 mb-1" />
+              <span className="text-[10px] font-bold">Change</span>
+            </button>
+          </div>
+
+          <div className="flex-1 text-center sm:text-left space-y-2">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">
+                Official Photo Identification
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Supported formats: JPEG, PNG, WEBP (Max 5 MB). Secured and optimized by Cloudinary.
+              </p>
+            </div>
+
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handlePhotoUpload}
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+            />
+
+            <Button
+              variant="secondary"
+              size="sm"
+              loading={uploadingPhoto}
+              onClick={() => fileInputRef.current?.click()}
+              icon={Upload}
+              className="text-xs"
+            >
+              {student?.profilePhoto ? 'Upload New Photo' : 'Upload Profile Photo'}
+            </Button>
+          </div>
+        </div>
+      </Card>
 
       <Card
         title="College Student Identity"

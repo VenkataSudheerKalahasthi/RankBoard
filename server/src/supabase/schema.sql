@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS public.students (
 CREATE TABLE IF NOT EXISTS public.student_platform_profiles (
     id BIGSERIAL PRIMARY KEY,
     student_id TEXT NOT NULL REFERENCES public.students(id) ON DELETE CASCADE,
-    platform TEXT NOT NULL CHECK (platform IN ('leetcode', 'gfg', 'codeforces', 'codechef')),
+    platform TEXT NOT NULL CHECK (platform IN ('leetcode', 'gfg', 'codeforces', 'codechef', 'hackerrank')),
     profile_url TEXT,
     username TEXT,
     status TEXT DEFAULT 'NOT_CONNECTED' CHECK (status IN ('CONNECTED', 'PENDING', 'SUCCESS', 'FAILED', 'NOT_CONNECTED')),
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS public.student_platform_profiles (
 CREATE TABLE IF NOT EXISTS public.platform_statistics (
     id BIGSERIAL PRIMARY KEY,
     student_id TEXT NOT NULL REFERENCES public.students(id) ON DELETE CASCADE,
-    platform TEXT NOT NULL CHECK (platform IN ('leetcode', 'gfg', 'codeforces', 'codechef')),
+    platform TEXT NOT NULL CHECK (platform IN ('leetcode', 'gfg', 'codeforces', 'codechef', 'hackerrank')),
     total_solved INTEGER DEFAULT 0,
     easy_solved INTEGER DEFAULT 0,
     medium_solved INTEGER DEFAULT 0,
@@ -68,6 +68,7 @@ CREATE TABLE IF NOT EXISTS public.scores (
     gfg_score NUMERIC(10, 2) DEFAULT 0.00,
     codeforces_score NUMERIC(10, 2) DEFAULT 0.00,
     codechef_score NUMERIC(10, 2) DEFAULT 0.00,
+    hackerrank_score NUMERIC(10, 2) DEFAULT 0.00,
     final_score NUMERIC(10, 2) DEFAULT 0.00,
     breakdown JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -153,7 +154,8 @@ CREATE TABLE IF NOT EXISTS public.system_settings (
       "LEETCODE": { "OVERALL": 0.40, "EASY": 0.30, "MEDIUM": 0.40, "HARD": 0.30 },
       "GFG": { "OVERALL": 0.30 },
       "CODEFORCES": { "OVERALL": 0.20 },
-      "CODECHEF": { "OVERALL": 0.10 }
+      "CODECHEF": { "OVERALL": 0.10 },
+      "HACKERRANK": { "OVERALL": 0.00 }
     }'::jsonb,
     updated_by TEXT,
     updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -178,7 +180,7 @@ CREATE INDEX IF NOT EXISTS idx_admin_notifications_created ON public.admin_notif
 CREATE INDEX IF NOT EXISTS idx_admin_notifications_unread ON public.admin_notifications(read) WHERE read = FALSE;
 
 -- ==============================================================================
--- ROW LEVEL SECURITY (RLS) POLICIES
+-- ROW LEVEL SECURITY (RLS) POLICIES (IDEMPOTENT)
 -- ==============================================================================
 ALTER TABLE public.students ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.student_platform_profiles ENABLE ROW LEVEL SECURITY;
@@ -191,61 +193,87 @@ ALTER TABLE public.import_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.score_adjustments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.system_settings ENABLE ROW LEVEL SECURITY;
 
--- Allow public read access to active student leaderboards and stats
+-- 1. Public Read Policies
+DROP POLICY IF EXISTS "Allow public read active students" ON public.students;
 CREATE POLICY "Allow public read active students" ON public.students
     FOR SELECT USING (account_status = 'ACTIVE');
 
+DROP POLICY IF EXISTS "Allow public read platform profiles" ON public.student_platform_profiles;
 CREATE POLICY "Allow public read platform profiles" ON public.student_platform_profiles
     FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Allow public read platform statistics" ON public.platform_statistics;
 CREATE POLICY "Allow public read platform statistics" ON public.platform_statistics
     FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Allow public read scores" ON public.scores;
 CREATE POLICY "Allow public read scores" ON public.scores
     FOR SELECT USING (true);
 
--- Allow service role full access to all tables (used by Node.js backend)
+-- 2. Service Role Full Access Policies (used by backend)
+DROP POLICY IF EXISTS "Service role full access students" ON public.students;
 CREATE POLICY "Service role full access students" ON public.students
     FOR ALL TO service_role USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Service role full access profiles" ON public.student_platform_profiles;
 CREATE POLICY "Service role full access profiles" ON public.student_platform_profiles
     FOR ALL TO service_role USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Service role full access stats" ON public.platform_statistics;
 CREATE POLICY "Service role full access stats" ON public.platform_statistics
     FOR ALL TO service_role USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Service role full access scores" ON public.scores;
 CREATE POLICY "Service role full access scores" ON public.scores
     FOR ALL TO service_role USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Service role full access admins" ON public.admins;
 CREATE POLICY "Service role full access admins" ON public.admins
     FOR ALL TO service_role USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Service role full access audit_logs" ON public.audit_logs;
 CREATE POLICY "Service role full access audit_logs" ON public.audit_logs
     FOR ALL TO service_role USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Service role full access notifications" ON public.admin_notifications;
 CREATE POLICY "Service role full access notifications" ON public.admin_notifications
     FOR ALL TO service_role USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Service role full access import_history" ON public.import_history;
 CREATE POLICY "Service role full access import_history" ON public.import_history
     FOR ALL TO service_role USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Service role full access score_adjustments" ON public.score_adjustments;
 CREATE POLICY "Service role full access score_adjustments" ON public.score_adjustments
     FOR ALL TO service_role USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Service role full access system_settings" ON public.system_settings;
 CREATE POLICY "Service role full access system_settings" ON public.system_settings
     FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- ==============================================================================
--- ENABLE SUPABASE REALTIME REPLICATION
+-- ENABLE SUPABASE REALTIME REPLICATION (SAFE & IDEMPOTENT)
 -- ==============================================================================
 DO $$
+DECLARE
+  t TEXT;
+  target_tables TEXT[] := ARRAY[
+    'students',
+    'scores',
+    'platform_statistics',
+    'admin_notifications',
+    'audit_logs'
+  ];
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.students;
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.scores;
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.platform_statistics;
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.admin_notifications;
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.audit_logs;
+    FOREACH t IN ARRAY target_tables LOOP
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables 
+        WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = t
+      ) THEN
+        EXECUTE format('ALTER PUBLICATION supabase_realtime ADD TABLE public.%I;', t);
+      END IF;
+    END LOOP;
   END IF;
 EXCEPTION WHEN OTHERS THEN
   NULL;

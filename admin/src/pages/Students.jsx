@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { adminService } from '../services/adminService';
+import { subscribeToAdminUpdates } from '../services/supabase';
 import { useNotifications } from '../context/NotificationContext';
 import { useDebounce } from '../hooks/useDebounce';
 import { Card, CardHeader, CardContent } from '../components/common/Card';
@@ -34,6 +35,14 @@ const DEPARTMENTS = [
   'Electronics & Communication',
   'Electrical & Electronics',
   'Mechanical Engineering',
+  'AI',
+  'AIML',
+  'CSBS',
+  'CSIT',
+  'CSDS',
+  'VLSI',
+  'CIVIL',
+  'Prime',
 ];
 
 export const Students = () => {
@@ -51,6 +60,8 @@ export const Students = () => {
   const debouncedSearch = useDebounce(search, 350);
   const [status, setStatus] = useState('ALL');
   const [profileStatus, setProfileStatus] = useState('ALL');
+  const [platformMissing, setPlatformMissing] = useState('ALL');
+  const [platformLinked, setPlatformLinked] = useState('ALL');
   const [scoreStatus, setScoreStatus] = useState('ALL');
   const [syncStatus, setSyncStatus] = useState('ALL');
   const [department, setDepartment] = useState('ALL');
@@ -60,6 +71,23 @@ export const Students = () => {
 
   // Modal state for Add/Edit
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingStudent, setEditingStudent] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    email: '',
+    rollNumber: '',
+    department: 'Computer Science and Engineering',
+    year: 3,
+    accountStatus: 'ACTIVE',
+    leetcodeUrl: '',
+    gfgUrl: '',
+    codeforcesUrl: '',
+    codechefUrl: '',
+    hackerrankUrl: '',
+    triggerSync: true,
+  });
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -70,9 +98,11 @@ export const Students = () => {
     gfgUrl: '',
     codeforcesUrl: '',
     codechefUrl: '',
+    hackerrankUrl: '',
     triggerSync: true,
   });
   const [formSubmitting, setFormSubmitting] = useState(false);
+  const [editSubmitting, setEditSubmitting] = useState(false);
   const [syncingStudentId, setSyncingStudentId] = useState(null);
 
   const fetchStudents = useCallback(async (isBackground = false) => {
@@ -85,6 +115,8 @@ export const Students = () => {
         search: debouncedSearch.trim() || undefined,
         status: status !== 'ALL' ? status : undefined,
         profileStatus: profileStatus !== 'ALL' ? profileStatus : undefined,
+        platformMissing: platformMissing !== 'ALL' ? platformMissing : undefined,
+        platformLinked: platformLinked !== 'ALL' ? platformLinked : undefined,
         scoreStatus: scoreStatus !== 'ALL' ? scoreStatus : undefined,
         syncStatus: syncStatus !== 'ALL' ? syncStatus : undefined,
         department: department !== 'ALL' ? department : undefined,
@@ -96,7 +128,13 @@ export const Students = () => {
       if (response.success) {
         setStudents(response.students || []);
         if (response.pagination) {
-          setPagination(response.pagination);
+          setPagination((prev) => ({
+            ...prev,
+            page: response.pagination.page ?? response.pagination.currentPage ?? prev.page,
+            limit: response.pagination.limit ?? prev.limit,
+            totalCount: response.pagination.totalCount ?? response.pagination.totalRecords ?? 0,
+            totalPages: response.pagination.totalPages ?? 1,
+          }));
         }
       }
     } catch (err) {
@@ -113,6 +151,8 @@ export const Students = () => {
     debouncedSearch,
     status,
     profileStatus,
+    platformMissing,
+    platformLinked,
     scoreStatus,
     syncStatus,
     department,
@@ -121,11 +161,22 @@ export const Students = () => {
     sortOrder,
   ]);
 
+  // Fetch students on mount and whenever dependencies change (page, filters, sorting)
   useEffect(() => {
     fetchStudents();
   }, [fetchStudents]);
 
-  // Periodic polling for real-time consistency
+  // Supabase Realtime subscription for instant live student data updates
+  useEffect(() => {
+    const unsubscribe = subscribeToAdminUpdates(() => {
+      fetchStudents(true);
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, [fetchStudents]);
+
+  // Periodic polling fallback
   useEffect(() => {
     const timer = setInterval(() => {
       fetchStudents(true);
@@ -151,6 +202,7 @@ export const Students = () => {
           gfgUrl: '',
           codeforcesUrl: '',
           codechefUrl: '',
+          hackerrankUrl: '',
           triggerSync: true,
         });
         fetchStudents();
@@ -159,6 +211,45 @@ export const Students = () => {
       notifyError(err.message || 'Failed to create student.');
     } finally {
       setFormSubmitting(false);
+    }
+  };
+
+  const openEditModal = (student, e) => {
+    if (e) e.stopPropagation();
+    setEditingStudent(student);
+    const p = student.platforms || {};
+    setEditFormData({
+      name: student.name || '',
+      email: student.email || '',
+      rollNumber: student.rollNumber || '',
+      department: student.department || 'Computer Science and Engineering',
+      year: student.year || 3,
+      accountStatus: student.accountStatus || 'ACTIVE',
+      leetcodeUrl: p.leetcode?.profileUrl || (p.leetcode?.username ? `https://leetcode.com/u/${p.leetcode.username}` : ''),
+      gfgUrl: p.gfg?.profileUrl || (p.gfg?.username ? `https://www.geeksforgeeks.org/user/${p.gfg.username}/` : ''),
+      codeforcesUrl: p.codeforces?.profileUrl || (p.codeforces?.username ? `https://codeforces.com/profile/${p.codeforces.username}` : ''),
+      codechefUrl: p.codechef?.profileUrl || (p.codechef?.username ? `https://www.codechef.com/users/${p.codechef.username}` : ''),
+      hackerrankUrl: p.hackerrank?.profileUrl || (p.hackerrank?.username ? `https://www.hackerrank.com/profile/${p.hackerrank.username}` : ''),
+      triggerSync: true,
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    if (!editingStudent) return;
+    setEditSubmitting(true);
+    try {
+      const res = await adminService.updateStudent(editingStudent.id, editFormData);
+      if (res.success) {
+        notifySuccess(res.message || 'Student profile updated successfully.');
+        setIsEditModalOpen(false);
+        fetchStudents(true);
+      }
+    } catch (err) {
+      notifyError(err.message || 'Failed to update student profile.');
+    } finally {
+      setEditSubmitting(false);
     }
   };
 
@@ -202,7 +293,7 @@ export const Students = () => {
             </span>
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            View, search, filter, link platforms, and manage student performance.
+            View, search, filter, link platforms, and manage student performance across coding platforms.
           </p>
         </div>
 
@@ -225,6 +316,115 @@ export const Students = () => {
             Add Student
           </Button>
         </div>
+      </div>
+
+      {/* Quick Filter Chips */}
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          onClick={() => {
+            setProfileStatus('ALL');
+            setPlatformMissing('ALL');
+            setPlatformLinked('ALL');
+            setPagination((prev) => ({ ...prev, page: 1 }));
+          }}
+          className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors ${
+            profileStatus === 'ALL' && platformMissing === 'ALL' && platformLinked === 'ALL'
+              ? 'bg-brand-500/20 border-brand-500 text-brand-300'
+              : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          All Students
+        </button>
+
+        {/* Platform Missing Dropdown */}
+        <div className="relative inline-flex items-center">
+          <select
+            value={platformMissing}
+            onChange={(e) => {
+              const val = e.target.value;
+              setPlatformMissing(val);
+              if (val !== 'ALL') {
+                setPlatformLinked('ALL');
+                setProfileStatus('ALL');
+              }
+              setPagination((prev) => ({ ...prev, page: 1 }));
+            }}
+            className={`text-xs pl-3 pr-7 py-1.5 rounded-lg border font-medium transition-colors appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-brand-500 ${
+              platformMissing !== 'ALL'
+                ? 'bg-amber-500/20 border-amber-500 text-amber-300 font-semibold'
+                : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <option value="ALL" className="bg-slate-900 text-slate-300">Platform Missing</option>
+            <option value="leetcode" className="bg-slate-900 text-slate-300">LeetCode Missing</option>
+            <option value="gfg" className="bg-slate-900 text-slate-300">GeeksforGeeks Missing</option>
+            <option value="hackerrank" className="bg-slate-900 text-slate-300">HackerRank Missing</option>
+            <option value="codeforces" className="bg-slate-900 text-slate-300">Codeforces Missing</option>
+            <option value="codechef" className="bg-slate-900 text-slate-300">CodeChef Missing</option>
+          </select>
+          <ChevronDown className={`w-3.5 h-3.5 absolute right-2 pointer-events-none ${platformMissing !== 'ALL' ? 'text-amber-300' : 'text-slate-400'}`} />
+        </div>
+
+        {/* Platform Linked Dropdown */}
+        <div className="relative inline-flex items-center">
+          <select
+            value={platformLinked}
+            onChange={(e) => {
+              const val = e.target.value;
+              setPlatformLinked(val);
+              if (val !== 'ALL') {
+                setPlatformMissing('ALL');
+                setProfileStatus('ALL');
+              }
+              setPagination((prev) => ({ ...prev, page: 1 }));
+            }}
+            className={`text-xs pl-3 pr-7 py-1.5 rounded-lg border font-medium transition-colors appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-brand-500 ${
+              platformLinked !== 'ALL'
+                ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300 font-semibold'
+                : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <option value="ALL" className="bg-slate-900 text-slate-300">All Platforms Linked</option>
+            <option value="ALL_LINKED" className="bg-slate-900 text-slate-300">All Platforms Linked</option>
+            <option value="leetcode" className="bg-slate-900 text-slate-300">LeetCode Linked</option>
+            <option value="gfg" className="bg-slate-900 text-slate-300">GeeksforGeeks Linked</option>
+            <option value="hackerrank" className="bg-slate-900 text-slate-300">HackerRank Linked</option>
+            <option value="codeforces" className="bg-slate-900 text-slate-300">Codeforces Linked</option>
+            <option value="codechef" className="bg-slate-900 text-slate-300">CodeChef Linked</option>
+          </select>
+          <ChevronDown className={`w-3.5 h-3.5 absolute right-2 pointer-events-none ${platformLinked !== 'ALL' ? 'text-emerald-300' : 'text-slate-400'}`} />
+        </div>
+
+        <button
+          onClick={() => {
+            setProfileStatus('INCOMPLETE');
+            setPlatformMissing('ALL');
+            setPlatformLinked('ALL');
+            setPagination((prev) => ({ ...prev, page: 1 }));
+          }}
+          className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors ${
+            profileStatus === 'INCOMPLETE'
+              ? 'bg-rose-500/20 border-rose-500 text-rose-300'
+              : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          Incomplete Profiles
+        </button>
+        <button
+          onClick={() => {
+            setProfileStatus('RECENT');
+            setPlatformMissing('ALL');
+            setPlatformLinked('ALL');
+            setPagination((prev) => ({ ...prev, page: 1 }));
+          }}
+          className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors ${
+            profileStatus === 'RECENT'
+              ? 'bg-purple-500/20 border-purple-500 text-purple-300'
+              : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          Recently Added
+        </button>
       </div>
 
       {/* Filter and Search Bar */}
@@ -292,7 +492,7 @@ export const Students = () => {
               <option value="4">Year 4</option>
             </select>
 
-            {/* Profile Completion */}
+            {/* Profile Status Detailed */}
             <select
               value={profileStatus}
               onChange={(e) => {
@@ -302,8 +502,10 @@ export const Students = () => {
               className="text-xs bg-slate-950 border border-slate-800 text-slate-300 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-brand-500"
             >
               <option value="ALL">All Profiles</option>
-              <option value="COMPLETE">Complete (4/4 Linked)</option>
-              <option value="INCOMPLETE">Incomplete</option>
+              <option value="COMPLETE">Complete Profiles</option>
+              <option value="INCOMPLETE">Incomplete Profiles</option>
+              <option value="FETCH_FAILED">Data Fetch Failed</option>
+              <option value="RECENT">Recently Added</option>
             </select>
 
             {/* Sort */}
@@ -320,7 +522,8 @@ export const Students = () => {
               <option value="finalScore:desc">Score (Highest First)</option>
               <option value="name:asc">Name (A-Z)</option>
               <option value="rollNumber:asc">Roll Number (Asc)</option>
-              <option value="updatedAt:desc">Recently Updated</option>
+              <option value="createdAt:desc">Newest Registered</option>
+              <option value="lastDataUpdatedAt:desc">Recently Synced</option>
             </select>
           </div>
         </div>
@@ -345,13 +548,13 @@ export const Students = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr>
-                  <th className="table-th w-16">Rank</th>
+                  <th className="table-th w-14">Rank</th>
                   <th className="table-th">Student Name & Roll</th>
                   <th className="table-th">Email</th>
                   <th className="table-th">Department / Year</th>
                   <th className="table-th">Status</th>
                   <th className="table-th">Overall Score</th>
-                  <th className="table-th">Platforms Linked</th>
+                  <th className="table-th">Platforms (5 Total)</th>
                   <th className="table-th">Last Sync</th>
                   <th className="table-th text-right">Actions</th>
                 </tr>
@@ -359,16 +562,16 @@ export const Students = () => {
               <tbody className="divide-y divide-slate-800/60">
                 {students.map((student) => {
                   const platforms = student.platforms || {};
-                  const connectedCount = ['leetcode', 'gfg', 'codeforces', 'codechef'].filter(
-                    (k) => platforms[k]?.username
-                  ).length;
                   const isSyncing = syncingStudentId === student.id;
 
                   return (
                     <tr
                       key={student.id}
                       className="hover:bg-slate-800/30 transition-colors group cursor-pointer"
-                      onClick={() => navigate(`/students/${student.id}`)}
+                      onClick={() => {
+                        const targetId = student.id || student.studentId;
+                        if (targetId) navigate(`/students/${targetId}`);
+                      }}
                     >
                       {/* Rank */}
                       <td className="table-td font-black text-slate-100">
@@ -414,24 +617,30 @@ export const Students = () => {
 
                       {/* Overall Score */}
                       <td className="table-td">
-                        <span className="font-extrabold text-sm text-brand-300">
+                        <span className="font-extrabold text-sm text-brand-300 font-mono">
                           {typeof student.finalScore === 'number' ? student.finalScore.toFixed(2) : '0.00'}
                         </span>
                       </td>
 
-                      {/* Platforms Linked */}
-                      <td className="table-td">
+                      {/* Platforms Linked (All 5 platforms) */}
+                      <td className="table-td" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center gap-1.5">
-                          {['leetcode', 'gfg', 'codeforces', 'codechef'].map((plat) => {
+                          {[
+                            { key: 'leetcode', label: 'LC', name: 'LeetCode (40%)' },
+                            { key: 'gfg', label: 'GF', name: 'GeeksforGeeks (30%)' },
+                            { key: 'hackerrank', label: 'HR', name: 'HackerRank (30%)' },
+                            { key: 'codeforces', label: 'CF', name: 'Codeforces (Stats)' },
+                            { key: 'codechef', label: 'CC', name: 'CodeChef (Stats)' },
+                          ].map(({ key: plat, label, name }) => {
                             const p = platforms[plat];
-                            const isLinked = !!p?.username;
+                            const isLinked = !!p?.username || !!p?.profileUrl;
                             const isSuccess = p?.status === 'SUCCESS';
                             const isFailed = p?.status === 'FAILED';
 
                             return (
                               <span
                                 key={plat}
-                                title={`${plat.toUpperCase()}: ${isLinked ? p.username : 'Not Linked'} (${p?.status || 'NOT_CONNECTED'})`}
+                                title={`${name}: ${isLinked ? (p.username || 'Linked') : 'Not Added'} (${p?.status || 'NOT_CONNECTED'})`}
                                 className={`w-5 h-5 rounded text-[9px] font-extrabold flex items-center justify-center border ${
                                   !isLinked
                                     ? 'bg-slate-900 border-slate-800 text-slate-600'
@@ -442,7 +651,7 @@ export const Students = () => {
                                     : 'bg-amber-950/80 border-amber-700 text-amber-300'
                                 }`}
                               >
-                                {plat === 'leetcode' ? 'LC' : plat === 'gfg' ? 'GF' : plat === 'codeforces' ? 'CF' : 'CC'}
+                                {label}
                               </span>
                             );
                           })}
@@ -458,7 +667,16 @@ export const Students = () => {
 
                       {/* Actions */}
                       <td className="table-td text-right" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-end gap-1.5">
+                        <div className="flex items-center justify-end gap-1">
+                          {/* Quick Edit / Add HackerRank */}
+                          <button
+                            onClick={(e) => openEditModal(student, e)}
+                            title="Edit Platform URLs / Details"
+                            className="p-1.5 text-slate-400 hover:text-amber-300 hover:bg-slate-800 rounded-lg transition-colors"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+
                           {/* Sync */}
                           <button
                             onClick={() => handleSyncStudent(student.id)}
@@ -488,8 +706,11 @@ export const Students = () => {
 
                           {/* View Details */}
                           <button
-                            onClick={() => navigate(`/students/${student.id}`)}
-                            title="View student profile"
+                            onClick={() => {
+                              const targetId = student.id || student.studentId;
+                              if (targetId) navigate(`/students/${targetId}`);
+                            }}
+                            title="View student profile & audit"
                             className="p-1.5 text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded-lg transition-colors"
                           >
                             <Eye className="w-3.5 h-3.5" />
@@ -644,6 +865,17 @@ export const Students = () => {
                   className="w-full text-xs px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500"
                 />
               </div>
+
+              <div>
+                <label className="block text-[11px] font-medium text-slate-400 mb-1">HackerRank Profile / Handle</label>
+                <input
+                  type="text"
+                  placeholder="https://www.hackerrank.com/profile/username"
+                  value={formData.hackerrankUrl}
+                  onChange={(e) => setFormData({ ...formData, hackerrankUrl: e.target.value })}
+                  className="w-full text-xs px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                />
+              </div>
             </div>
           </div>
 
@@ -675,6 +907,229 @@ export const Students = () => {
               loading={formSubmitting}
             >
               Create Student
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Edit Student Modal */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        title="Edit Student Profile & Platform URLs"
+        subtitle={`Update credentials, link HackerRank, or edit coding profiles for ${editingStudent?.name || 'Student'}`}
+        maxWidth="max-w-2xl"
+      >
+        <form onSubmit={handleEditSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
+                Full Name <span className="text-rose-400">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. John Doe"
+                value={editFormData.name}
+                onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                className="w-full text-xs px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
+                Email Address <span className="text-rose-400">*</span>
+              </label>
+              <input
+                type="email"
+                required
+                placeholder="e.g. john@college.edu"
+                value={editFormData.email}
+                onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                className="w-full text-xs px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
+                Roll Number
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. 21CS045"
+                value={editFormData.rollNumber}
+                onChange={(e) => setEditFormData({ ...editFormData, rollNumber: e.target.value })}
+                className="w-full text-xs px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500 font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
+                Academic Year
+              </label>
+              <select
+                value={editFormData.year}
+                onChange={(e) => setEditFormData({ ...editFormData, year: parseInt(e.target.value, 10) })}
+                className="w-full text-xs px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              >
+                <option value={1}>1st Year</option>
+                <option value={2}>2nd Year</option>
+                <option value={3}>3rd Year</option>
+                <option value={4}>4th Year</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
+                Department
+              </label>
+              <select
+                value={editFormData.department}
+                onChange={(e) => setEditFormData({ ...editFormData, department: e.target.value })}
+                className="w-full text-xs px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              >
+                {DEPARTMENTS.filter((d) => d !== 'ALL').map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
+                Account Status
+              </label>
+              <select
+                value={editFormData.accountStatus}
+                onChange={(e) => setEditFormData({ ...editFormData, accountStatus: e.target.value })}
+                className="w-full text-xs px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              >
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="DISABLED">DISABLED</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Platform URLs */}
+          <div className="pt-2 border-t border-slate-800 space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold text-slate-200">Coding Platform Handles / URLs</h4>
+              <span className="text-[10px] text-amber-400 font-semibold bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800/60">
+                Formula: LeetCode (40%) + GFG (30%) + HackerRank (30%)
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* LeetCode */}
+              <div>
+                <label className="block text-[11px] font-medium text-amber-300 mb-1 flex items-center justify-between">
+                  <span>LeetCode URL</span>
+                  {editFormData.leetcodeUrl ? <span className="text-emerald-400 text-[10px]">✓ Available</span> : <span className="text-slate-500 text-[10px]">Not Added</span>}
+                </label>
+                <input
+                  type="text"
+                  placeholder="https://leetcode.com/u/username"
+                  value={editFormData.leetcodeUrl}
+                  onChange={(e) => setEditFormData({ ...editFormData, leetcodeUrl: e.target.value })}
+                  className="w-full text-xs px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                />
+              </div>
+
+              {/* GFG */}
+              <div>
+                <label className="block text-[11px] font-medium text-emerald-300 mb-1 flex items-center justify-between">
+                  <span>GeeksforGeeks URL</span>
+                  {editFormData.gfgUrl ? <span className="text-emerald-400 text-[10px]">✓ Available</span> : <span className="text-slate-500 text-[10px]">Not Added</span>}
+                </label>
+                <input
+                  type="text"
+                  placeholder="https://www.geeksforgeeks.org/user/username/"
+                  value={editFormData.gfgUrl}
+                  onChange={(e) => setEditFormData({ ...editFormData, gfgUrl: e.target.value })}
+                  className="w-full text-xs px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                />
+              </div>
+
+              {/* HackerRank - Highlighted */}
+              <div className="sm:col-span-2 p-2.5 rounded-lg bg-emerald-950/20 border border-emerald-800/40">
+                <label className="block text-[11px] font-bold text-emerald-300 mb-1 flex items-center justify-between">
+                  <span>HackerRank Profile URL</span>
+                  {editFormData.hackerrankUrl ? (
+                    <span className="text-emerald-400 text-[10px] font-bold">✓ Available</span>
+                  ) : (
+                    <span className="text-amber-400 text-[10px] font-bold">⚠️ Missing / Not Added</span>
+                  )}
+                </label>
+                <input
+                  type="text"
+                  placeholder="https://www.hackerrank.com/profile/username"
+                  value={editFormData.hackerrankUrl}
+                  onChange={(e) => setEditFormData({ ...editFormData, hackerrankUrl: e.target.value })}
+                  className="w-full text-xs px-3 py-2 bg-slate-950 border border-emerald-700/60 rounded-lg text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
+                />
+              </div>
+
+              {/* Codeforces */}
+              <div>
+                <label className="block text-[11px] font-medium text-slate-400 mb-1 flex items-center justify-between">
+                  <span>Codeforces URL</span>
+                  {editFormData.codeforcesUrl ? <span className="text-emerald-400 text-[10px]">✓ Available</span> : <span className="text-slate-500 text-[10px]">Not Added</span>}
+                </label>
+                <input
+                  type="text"
+                  placeholder="https://codeforces.com/profile/handle"
+                  value={editFormData.codeforcesUrl}
+                  onChange={(e) => setEditFormData({ ...editFormData, codeforcesUrl: e.target.value })}
+                  className="w-full text-xs px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                />
+              </div>
+
+              {/* CodeChef */}
+              <div>
+                <label className="block text-[11px] font-medium text-slate-400 mb-1 flex items-center justify-between">
+                  <span>CodeChef URL</span>
+                  {editFormData.codechefUrl ? <span className="text-emerald-400 text-[10px]">✓ Available</span> : <span className="text-slate-500 text-[10px]">Not Added</span>}
+                </label>
+                <input
+                  type="text"
+                  placeholder="https://www.codechef.com/users/handle"
+                  value={editFormData.codechefUrl}
+                  onChange={(e) => setEditFormData({ ...editFormData, codechefUrl: e.target.value })}
+                  className="w-full text-xs px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 pt-2">
+            <input
+              type="checkbox"
+              id="editTriggerSyncCheck"
+              checked={editFormData.triggerSync}
+              onChange={(e) => setEditFormData({ ...editFormData, triggerSync: e.target.checked })}
+              className="rounded bg-slate-950 border-slate-800 text-brand-500 focus:ring-brand-500"
+            />
+            <label htmlFor="editTriggerSyncCheck" className="text-xs text-slate-300">
+              Immediately fetch statistics and recalculate Overall Score (40% LC + 30% GFG + 30% HR) & Rank
+            </label>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              loading={editSubmitting}
+            >
+              Save Changes & Sync
             </Button>
           </div>
         </form>

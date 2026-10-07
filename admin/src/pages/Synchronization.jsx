@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { adminService } from '../services/adminService';
+import { subscribeToAdminUpdates } from '../services/supabase';
 import { useNotifications } from '../context/NotificationContext';
-import { Card, CardHeader, CardContent } from '../components/common/Card';
+import { Card, CardHeader } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { Badge, StatusBadge } from '../components/common/Badge';
 import { LoadingState } from '../components/common/LoadingState';
-import { ErrorState } from '../components/common/ErrorState';
 import { EmptyState } from '../components/common/EmptyState';
 import {
   RefreshCw,
@@ -16,7 +16,23 @@ import {
   Search,
   Filter,
   Zap,
+  ExternalLink,
+  Users,
+  ShieldAlert,
 } from 'lucide-react';
+
+const formatTimestamp = (dateStr) => {
+  if (!dateStr) return 'Never';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return 'Never';
+  return date.toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+};
 
 export const Synchronization = () => {
   const { notifySuccess, notifyError } = useNotifications();
@@ -24,6 +40,7 @@ export const Synchronization = () => {
   const [syncJob, setSyncJob] = useState(null);
   const [syncLogs, setSyncLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [triggering, setTriggering] = useState(false);
   const [retryingId, setRetryingId] = useState(null);
 
@@ -32,32 +49,56 @@ export const Synchronization = () => {
   const [statusFilter, setStatusFilter] = useState('ALL');
 
   const fetchSyncData = useCallback(async (isBackground = false) => {
-    if (!isBackground) setLoading(true);
+    if (!isBackground) {
+      if (syncLogs.length > 0) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+    }
     try {
       const [statusRes, logsRes] = await Promise.all([
         adminService.getSyncStatus(),
         adminService.getSyncLogs(),
       ]);
 
-      if (statusRes.success) setSyncJob(statusRes.job);
-      if (logsRes.success) setSyncLogs(logsRes.logs || []);
+      if (statusRes && statusRes.success) {
+        setSyncJob(statusRes.job);
+      }
+      if (logsRes && logsRes.success) {
+        setSyncLogs(logsRes.logs || []);
+      }
     } catch (err) {
       console.error('Failed to fetch sync telemetry:', err);
+      if (!isBackground) {
+        notifyError(err.message || 'Failed to retrieve sync telemetry.');
+      }
     } finally {
-      if (!isBackground) setLoading(false);
+      setLoading(false);
+      setRefreshing(false);
     }
-  }, []);
+  }, [syncLogs.length, notifyError]);
 
   useEffect(() => {
     fetchSyncData();
+  }, []);
+
+  // Supabase Realtime updates subscription
+  useEffect(() => {
+    const unsubscribe = subscribeToAdminUpdates(() => {
+      fetchSyncData(true);
+    });
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
   }, [fetchSyncData]);
 
-  // Polling interval (every 3 seconds if job running, else 60s)
+  // Polling interval (every 2.5s if job running, else 30s)
   useEffect(() => {
     const isRunning = syncJob?.status === 'RUNNING';
     const timer = setInterval(() => {
       fetchSyncData(true);
-    }, isRunning ? 3000 : 60000);
+    }, isRunning ? 2500 : 30000);
     return () => clearInterval(timer);
   }, [syncJob?.status, fetchSyncData]);
 
@@ -66,34 +107,51 @@ export const Synchronization = () => {
     try {
       const res = await adminService.syncAllStudents();
       if (res.success) {
-        notifySuccess(res.message || 'Bulk synchronization queued.');
+        notifySuccess(res.message || 'Bulk synchronization started in background.');
+        if (res.job) setSyncJob(res.job);
         fetchSyncData(true);
       }
     } catch (err) {
-      notifyError(err.message || 'Failed to trigger bulk synchronization.');
+      notifyError(err.response?.data?.message || err.message || 'Failed to trigger bulk synchronization.');
     } finally {
       setTriggering(false);
     }
   };
 
-  const handleRetryStudent = async (studentId) => {
+  const handleRetryStudent = async (studentId, studentName) => {
     setRetryingId(studentId);
     try {
       const res = await adminService.syncStudent(studentId);
       if (res.success) {
-        notifySuccess(`Synchronized ${res.student?.name}! Score: ${res.student?.finalScore}`);
+        notifySuccess(`Synchronized ${res.student?.name || studentName || 'student'}! Score: ${res.student?.finalScore}`);
         fetchSyncData(true);
       }
     } catch (err) {
-      notifyError(err.message || 'Failed to sync student.');
+      notifyError(err.response?.data?.message || err.message || 'Failed to sync student.');
     } finally {
       setRetryingId(null);
     }
   };
 
+  // Safe percentage calculation
+  const totalStudents = syncJob?.total ?? syncJob?.totalStudents ?? 0;
+  const processedStudents = syncJob?.processed ?? syncJob?.processedStudents ?? syncJob?.completed ?? 0;
+  const failedStudents = syncJob?.failed ?? syncJob?.failedStudents ?? 0;
+  const progressPercent = totalStudents > 0
+    ? Math.min(100, Math.max(0, Math.round((processedStudents / totalStudents) * 100)))
+    : syncJob?.status === 'COMPLETED' ? 100 : 0;
+
+  const isJobRunning = syncJob?.status === 'RUNNING';
+
   const filteredLogs = syncLogs.filter((log) => {
     if (platformFilter !== 'ALL' && log.platform !== platformFilter) return false;
-    if (statusFilter !== 'ALL' && log.status !== statusFilter) return false;
+    if (statusFilter !== 'ALL') {
+      if (statusFilter === 'FAILED') {
+        if (log.status !== 'FAILED' && log.status !== 'RATE_LIMITED') return false;
+      } else if (log.status !== statusFilter) {
+        return false;
+      }
+    }
     if (search && search.trim()) {
       const q = search.trim().toLowerCase();
       const matchName = (log.studentName || '').toLowerCase().includes(q);
@@ -122,62 +180,97 @@ export const Synchronization = () => {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => fetchSyncData()}
+            onClick={() => fetchSyncData(false)}
+            loading={refreshing}
             icon={RefreshCw}
           >
-            Refresh Logs
+            {refreshing ? 'Refreshing...' : 'Refresh Logs'}
           </Button>
 
           <Button
             variant="primary"
             size="sm"
             onClick={handleTriggerBulkSync}
-            loading={triggering || syncJob?.status === 'RUNNING'}
+            loading={triggering || isJobRunning}
+            disabled={triggering || isJobRunning}
             icon={Play}
           >
-            {syncJob?.status === 'RUNNING' ? 'Sync Running...' : 'Sync All Active Students'}
+            {isJobRunning ? 'Sync Running...' : 'Sync All Active Students'}
           </Button>
         </div>
       </div>
 
       {/* Live Synchronization Progress Widget */}
-      {syncJob && (
-        <Card className={`p-5 border ${syncJob.status === 'RUNNING' ? 'border-brand-800 bg-brand-950/20' : 'border-slate-800'}`}>
+      {syncJob && syncJob.status !== 'IDLE' ? (
+        <Card className={`p-5 border ${isJobRunning ? 'border-brand-800 bg-brand-950/20' : 'border-slate-800'}`}>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                syncJob.status === 'RUNNING' ? 'bg-brand-500/20 text-brand-400' : 'bg-emerald-500/20 text-emerald-400'
-              }`}>
-                <RefreshCw className={`w-5 h-5 ${syncJob.status === 'RUNNING' ? 'animate-spin' : ''}`} />
+              <div
+                className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                  isJobRunning
+                    ? 'bg-brand-500/20 text-brand-400'
+                    : syncJob.status === 'COMPLETED_WITH_ERRORS'
+                    ? 'bg-amber-500/20 text-amber-400'
+                    : syncJob.status === 'FAILED'
+                    ? 'bg-rose-500/20 text-rose-400'
+                    : 'bg-emerald-500/20 text-emerald-400'
+                }`}
+              >
+                <RefreshCw className={`w-5 h-5 ${isJobRunning ? 'animate-spin' : ''}`} />
               </div>
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-bold text-slate-100">
-                    {syncJob.status === 'RUNNING' ? 'Bulk Synchronization in Progress' : 'Last Synchronization Completed'}
+                    {isJobRunning
+                      ? 'Bulk Synchronization in Progress'
+                      : syncJob.status === 'COMPLETED_WITH_ERRORS'
+                      ? 'Synchronization Completed with Warnings'
+                      : syncJob.status === 'FAILED'
+                      ? 'Synchronization Failed'
+                      : 'Last Synchronization Completed'}
                   </h3>
-                  <Badge variant={syncJob.status === 'RUNNING' ? 'primary' : 'success'}>
+                  <Badge
+                    variant={
+                      isJobRunning
+                        ? 'primary'
+                        : syncJob.status === 'COMPLETED'
+                        ? 'success'
+                        : syncJob.status === 'COMPLETED_WITH_ERRORS'
+                        ? 'warning'
+                        : 'danger'
+                    }
+                  >
                     {syncJob.status}
                   </Badge>
                 </div>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Started {new Date(syncJob.startedAt).toLocaleTimeString()} • Processed {syncJob.completed} of {syncJob.total} students ({syncJob.failed} errors)
+                <p className="text-xs text-slate-400 mt-0.5 font-mono">
+                  {syncJob.startedAt ? `Started ${new Date(syncJob.startedAt).toLocaleTimeString()} • ` : ''}
+                  Processed {processedStudents} of {totalStudents} students ({failedStudents} error{failedStudents === 1 ? '' : 's'})
+                  {syncJob.currentStudent ? ` • Currently syncing: ${syncJob.currentStudent}` : ''}
                 </p>
               </div>
             </div>
 
             <div className="text-right">
               <div className="text-sm font-black text-slate-200">
-                {syncJob.total > 0 ? Math.round(((syncJob.completed + syncJob.failed) / syncJob.total) * 100) : 100}%
+                {progressPercent}%
               </div>
               <div className="w-32 sm:w-48 h-2 bg-slate-800 rounded-full overflow-hidden mt-1.5">
                 <div
-                  className="h-full bg-brand-500 rounded-full transition-all duration-300"
-                  style={{
-                    width: `${syncJob.total > 0 ? ((syncJob.completed + syncJob.failed) / syncJob.total) * 100 : 100}%`,
-                  }}
+                  className={`h-full rounded-full transition-all duration-300 ${
+                    failedStudents > 0 ? 'bg-amber-500' : 'bg-brand-500'
+                  }`}
+                  style={{ width: `${progressPercent}%` }}
                 />
               </div>
             </div>
+          </div>
+        </Card>
+      ) : (
+        <Card className="p-4 border border-slate-800 flex items-center justify-between text-xs text-slate-400">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-slate-500" />
+            <span>No bulk synchronization is currently running. Ready to synchronize {totalStudents} linked students.</span>
           </div>
         </Card>
       )}
@@ -191,7 +284,7 @@ export const Synchronization = () => {
             placeholder="Search sync logs by student, roll, handle..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full text-xs pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="w-full text-xs pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-brand-500 font-mono"
           />
         </div>
 
@@ -204,6 +297,7 @@ export const Synchronization = () => {
             <option value="ALL">All Platforms</option>
             <option value="leetcode">LeetCode</option>
             <option value="gfg">GeeksforGeeks</option>
+            <option value="hackerrank">HackerRank</option>
             <option value="codeforces">Codeforces</option>
             <option value="codechef">CodeChef</option>
           </select>
@@ -215,8 +309,9 @@ export const Synchronization = () => {
           >
             <option value="ALL">All Statuses</option>
             <option value="SUCCESS">Success Only</option>
-            <option value="FAILED">Failed Only</option>
+            <option value="FAILED">Failed / Rate Limited</option>
             <option value="PENDING">Pending Only</option>
+            <option value="NOT_CONNECTED">Not Linked</option>
           </select>
         </div>
       </Card>
@@ -232,8 +327,12 @@ export const Synchronization = () => {
         ) : filteredLogs.length === 0 ? (
           <EmptyState
             icon={RefreshCw}
-            title="No synchronization logs found"
-            description="Trigger a synchronization or link student profiles to see live data fetching."
+            title={syncLogs.length === 0 ? 'No synchronization logs found' : 'No records match the selected filters'}
+            description={
+              syncLogs.length === 0
+                ? 'Trigger a synchronization or link student profiles to see live data fetching.'
+                : 'Try adjusting your search term, platform filter, or status filter.'
+            }
           />
         ) : (
           <div className="overflow-x-auto">
@@ -251,29 +350,63 @@ export const Synchronization = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
-                {filteredLogs.map((log, idx) => {
+                {filteredLogs.map((log) => {
                   const isRetrying = retryingId === log.studentId;
+                  const platformColor =
+                    log.platform === 'leetcode'
+                      ? 'text-amber-400'
+                      : log.platform === 'gfg'
+                      ? 'text-emerald-400'
+                      : log.platform === 'hackerrank'
+                      ? 'text-emerald-400'
+                      : log.platform === 'codeforces'
+                      ? 'text-sky-400'
+                      : 'text-rose-400';
+
                   return (
-                    <tr key={`${log.studentId}_${log.platform}_${idx}`} className="hover:bg-slate-800/30 transition-colors">
-                      <td className="table-td font-semibold text-slate-100">{log.studentName}</td>
+                    <tr key={log.id} className="hover:bg-slate-800/30 transition-colors">
+                      <td className="table-td font-semibold text-slate-100">
+                        <div>{log.studentName}</div>
+                        <div className="text-[10px] text-slate-500 font-normal">{log.department} • Y{log.year}</div>
+                      </td>
                       <td className="table-td font-mono text-[11px] text-slate-400">{log.rollNumber}</td>
                       <td className="table-td">
-                        <span className="font-bold capitalize text-slate-200">{log.platform}</span>
+                        <span className={`font-bold capitalize ${platformColor}`}>{log.platform}</span>
                       </td>
                       <td className="table-td font-mono text-[11px] text-slate-300">
-                        {log.username ? `@${log.username}` : '—'}
+                        {log.profileUrl ? (
+                          <a
+                            href={log.profileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 hover:text-brand-400 hover:underline"
+                          >
+                            <span>@{log.username}</span>
+                            <ExternalLink className="w-3 h-3 text-slate-500" />
+                          </a>
+                        ) : log.username && log.username !== '—' ? (
+                          <span>@{log.username}</span>
+                        ) : (
+                          <span className="text-slate-600">—</span>
+                        )}
                       </td>
                       <td className="table-td">
                         <StatusBadge status={log.status} />
                       </td>
                       <td className="table-td font-mono text-[11px] text-slate-400">
-                        {log.lastFetchedAt ? new Date(log.lastFetchedAt).toLocaleString() : 'Never'}
+                        {formatTimestamp(log.lastFetchedAt)}
                       </td>
                       <td className="table-td max-w-xs truncate">
                         {log.errorMessage ? (
-                          <span className="text-rose-400 text-[11px]">{log.errorMessage}</span>
+                          <span className="text-rose-400 text-[11px]" title={log.errorMessage}>
+                            {log.errorMessage}
+                          </span>
                         ) : log.status === 'SUCCESS' ? (
-                          <span className="text-emerald-400 text-[11px]">Synchronized</span>
+                          <span className="text-emerald-400 text-[11px]">
+                            Synchronized {log.totalSolved !== undefined ? `(${log.totalSolved} solved)` : ''}
+                          </span>
+                        ) : log.status === 'NOT_CONNECTED' ? (
+                          <span className="text-slate-500 text-[11px]">No profile URL linked</span>
                         ) : (
                           <span className="text-slate-500 text-[11px]">—</span>
                         )}
@@ -282,8 +415,9 @@ export const Synchronization = () => {
                         <Button
                           variant="ghost"
                           size="xs"
-                          onClick={() => handleRetryStudent(log.studentId)}
+                          onClick={() => handleRetryStudent(log.studentId, log.studentName)}
                           loading={isRetrying}
+                          disabled={isRetrying || isJobRunning}
                           icon={RefreshCw}
                           className="text-brand-400 hover:text-brand-300"
                         >

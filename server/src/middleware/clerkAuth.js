@@ -1,6 +1,7 @@
 const { createClerkClient, verifyToken } = require('@clerk/backend');
 const { config } = require('../config/env');
 const { getStudentById, upsertStudent, updateStudent } = require('../supabase/supabaseRepository');
+const { invalidateStudentCache } = require('../utils/studentCache');
 
 let clerkClient = null;
 if (config.CLERK_SECRET_KEY) {
@@ -50,7 +51,10 @@ const requireAuth = async (req, res, next) => {
         if (clerkClient) {
           try {
             const user = await clerkClient.users.getUser(userId);
-            userEmail = user.emailAddresses?.[0]?.emailAddress || null;
+            const primaryEmailObj =
+              user.emailAddresses?.find((e) => e.id === user.primaryEmailAddressId) ||
+              user.emailAddresses?.[0];
+            userEmail = primaryEmailObj?.emailAddress ? primaryEmailObj.emailAddress.toLowerCase().trim() : null;
             userName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || 'Student';
             userPhoto = user.imageUrl || null;
           } catch (userFetchErr) {
@@ -89,10 +93,11 @@ const requireAuth = async (req, res, next) => {
           // Link Clerk User ID to existing imported student
           await updateStudent(preImported.id, {
             clerkUserId: userId,
-            name: preImported.name && preImported.name !== 'New Student' ? preImported.name : (userName || 'Student'),
-            profilePhoto: userPhoto || preImported.profilePhoto || '',
+            ...(userName && (!preImported.name || preImported.name === 'New Student') && { name: userName }),
+            ...(userPhoto && !preImported.profilePhoto && { profilePhoto: userPhoto }),
           });
           student = await getStudentById(preImported.id);
+          invalidateStudentCache();
         }
       }
 
@@ -105,7 +110,7 @@ const requireAuth = async (req, res, next) => {
           email: userEmail || `${userId}@student.college.edu`,
           rollNumber: '',
           department: '',
-          year: null,
+          year: 4,
           profilePhoto: userPhoto || '',
           role: 'STUDENT',
           accountStatus: 'ACTIVE',
@@ -117,6 +122,7 @@ const requireAuth = async (req, res, next) => {
             gfgScore: 0,
             codeforcesScore: 0,
             codechefScore: 0,
+            hackerrankScore: 0,
             finalScore: 0,
           },
           platforms: {
@@ -124,16 +130,33 @@ const requireAuth = async (req, res, next) => {
             gfg: { profileUrl: '', username: '', status: 'NOT_CONNECTED', lastFetchedAt: null, errorMessage: null },
             codeforces: { profileUrl: '', username: '', status: 'NOT_CONNECTED', lastFetchedAt: null, errorMessage: null },
             codechef: { profileUrl: '', username: '', status: 'NOT_CONNECTED', lastFetchedAt: null, errorMessage: null },
+            hackerrank: { profileUrl: '', username: '', status: 'NOT_CONNECTED', lastFetchedAt: null, errorMessage: null },
           },
           platformStats: {
             leetcode: null,
             gfg: null,
             codeforces: null,
             codechef: null,
+            hackerrank: null,
           },
         };
 
         student = await upsertStudent(initialData);
+        invalidateStudentCache();
+
+        // Create admin notification for newly registered student
+        try {
+          const { createAdminNotification } = require('../utils/auditLogger');
+          createAdminNotification({
+            type: 'STUDENT_REGISTERED',
+            title: 'New Student Registered',
+            message: `${userName || 'Student'} (${userEmail || userId}) registered via Clerk.`,
+            severity: 'INFO',
+            studentId: userId,
+          }).catch(() => {});
+        } catch (notifErr) {
+          // non-fatal
+        }
       }
 
       req.student = student;

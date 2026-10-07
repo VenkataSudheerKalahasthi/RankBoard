@@ -2,6 +2,8 @@ const app = require('./app');
 const { config, validateEnv } = require('./config/env');
 const { getSupabase } = require('./supabase/supabaseClient');
 
+const { startBackgroundScheduler, stopBackgroundScheduler } = require('./services/schedulerService');
+
 const startServer = () => {
   // Validate configuration variables cleanly
   validateEnv();
@@ -24,10 +26,14 @@ const startServer = () => {
     console.log(`   Health Check: http://localhost:${config.PORT}/api/health`);
     console.log(`   Leaderboard:  http://localhost:${config.PORT}/api/leaderboard`);
     console.log(`====================================================`);
+
+    // Start background sync scheduler for automated periodic platform updates
+    startBackgroundScheduler();
   });
 
   const shutdown = () => {
     console.log('\nShutting down server gracefully...');
+    stopBackgroundScheduler();
     server.close(() => {
       console.log('Server process terminated.');
       process.exit(0);

@@ -15,6 +15,7 @@ const DEPARTMENTS = [
   'Electronics & Communication',
   'Electrical & Electronics',
   'Mechanical Engineering',
+  'Prime',
 ];
 
 const Leaderboard = () => {
@@ -28,11 +29,11 @@ const Leaderboard = () => {
 
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  // Debounce search query by 350ms to prevent spamming backend requests
+  // Debounce search query by 200ms for instant live search
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
-    }, 350);
+    }, 200);
     return () => clearTimeout(handler);
   }, [search]);
 

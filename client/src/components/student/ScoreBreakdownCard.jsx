@@ -14,6 +14,7 @@ const ScoreBreakdownCard = ({ student }) => {
       key: 'leetcode',
       name: 'LeetCode',
       dotColor: 'bg-amber-500',
+      isScoring: true,
       connected: !!platforms.leetcode?.username,
       username: platforms.leetcode?.username,
       problemsSolved: stats.leetcode?.totalSolved,
@@ -22,14 +23,25 @@ const ScoreBreakdownCard = ({ student }) => {
       key: 'gfg',
       name: 'GeeksforGeeks',
       dotColor: 'bg-emerald-500',
+      isScoring: true,
       connected: !!platforms.gfg?.username,
       username: platforms.gfg?.username,
       problemsSolved: stats.gfg?.totalSolved,
     },
     {
+      key: 'hackerrank',
+      name: 'HackerRank',
+      dotColor: 'bg-emerald-400',
+      isScoring: true,
+      connected: !!platforms.hackerrank?.username,
+      username: platforms.hackerrank?.username,
+      problemsSolved: stats.hackerrank?.totalSolved,
+    },
+    {
       key: 'codeforces',
       name: 'Codeforces',
       dotColor: 'bg-blue-500',
+      isScoring: false,
       connected: !!platforms.codeforces?.username,
       username: platforms.codeforces?.username,
       problemsSolved: stats.codeforces?.totalSolved,
@@ -38,6 +50,7 @@ const ScoreBreakdownCard = ({ student }) => {
       key: 'codechef',
       name: 'CodeChef',
       dotColor: 'bg-orange-500',
+      isScoring: false,
       connected: !!platforms.codechef?.username,
       username: platforms.codechef?.username,
       problemsSolved: stats.codechef?.totalSolved,
@@ -94,7 +107,7 @@ const ScoreBreakdownCard = ({ student }) => {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
           {platformList.map((p) => (
             <div
               key={p.key}
@@ -104,26 +117,18 @@ const ScoreBreakdownCard = ({ student }) => {
                   : 'bg-[#0b0f19]/70 border-slate-800/60 opacity-60'
               }`}
             >
-              <div className="flex items-center justify-between text-xs mb-2">
+              <div className="flex items-center justify-between text-xs mb-1">
                 <div className="flex items-center gap-1.5 font-bold text-slate-200">
                   <span className={`w-2 h-2 rounded-full ${p.dotColor}`}></span>
                   {p.name}
                 </div>
-                <span
-                  className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
-                    p.connected
-                      ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-800/60'
-                      : 'bg-slate-800 text-slate-400'
-                  }`}
-                >
-                  {p.connected ? 'Active' : 'Not Linked'}
-                </span>
               </div>
 
               {p.connected ? (
-                <div className="space-y-1">
-                  <div className="text-xs text-slate-400 font-mono truncate">
-                    @{p.username}
+                <div className="space-y-1 mt-2">
+                  <div className="text-xs text-slate-400 font-mono flex items-center justify-between gap-1.5">
+                    <span className="truncate min-w-0">@{p.username}</span>
+                    <span className="text-[10px] text-emerald-400 font-semibold shrink-0">Active</span>
                   </div>
                   {p.problemsSolved !== null && p.problemsSolved !== undefined && (
                     <div className="text-sm font-bold font-mono text-white pt-1 border-t border-slate-700/50">
@@ -132,8 +137,8 @@ const ScoreBreakdownCard = ({ student }) => {
                   )}
                 </div>
               ) : (
-                <div className="text-[11px] text-slate-500 py-1">
-                  Connect profile to include in rank
+                <div className="text-[11px] text-slate-500 py-1.5">
+                  {p.isScoring ? 'Connect to earn rank score' : 'Connect for profile stats'}
                 </div>
               )}
             </div>

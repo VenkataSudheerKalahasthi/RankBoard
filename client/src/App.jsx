@@ -11,6 +11,7 @@ import Home from './pages/Home';
 import Leaderboard from './pages/Leaderboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import PublicShowcase from './pages/PublicShowcase';
 
 // Protected Student Pages
 import StudentDashboard from './pages/StudentDashboard';
@@ -53,6 +54,9 @@ export default function App() {
           </PublicLayout>
         }
       />
+
+      {/* Public Shareable Achievement Showcase */}
+      <Route path="/showcase/:studentId" element={<PublicShowcase />} />
 
       {/* Auth Pages */}
       <Route path="/login" element={<Login />} />

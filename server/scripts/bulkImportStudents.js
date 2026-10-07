@@ -57,18 +57,21 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function runBulkImport() {
   const args = process.argv.slice(2);
-  const inputFilePath = args[0] || path.join(__dirname, '../data/students_sample.json');
+  const isSyncMode = args.includes('--sync') || args.includes('-s');
+  const fileArgs = args.filter((a) => !a.startsWith('-'));
+  const inputFilePath = fileArgs[0] || path.join(__dirname, '../data/students_sample.json');
 
   console.log(`\n======================================================`);
   console.log(`🚀 COLLEGE DSA RANKBOARD — BULK STUDENT IMPORT (SUPABASE)`);
   console.log(`======================================================`);
-  console.log(`Reading input file from: ${inputFilePath}\n`);
+  console.log(`Reading input file from: ${inputFilePath}`);
+  console.log(`Mode: ${isSyncMode ? 'Live Sync (fetch external platform statistics)' : 'Fast Import (import profiles & compute rankings)'}\n`);
 
   if (!fs.existsSync(inputFilePath)) {
     console.error(`❌ Error: File not found at ${inputFilePath}`);
     console.log(`\nUsage examples:`);
-    console.log(`  node scripts/bulkImportStudents.js data/students.json`);
-    console.log(`  node scripts/bulkImportStudents.js data/students.csv\n`);
+    console.log(`  node scripts/bulkImportStudents.js data/students_sample.json`);
+    console.log(`  node scripts/bulkImportStudents.js data/students_sample.json --sync\n`);
     process.exit(1);
   }
 
@@ -102,24 +105,25 @@ async function runBulkImport() {
 
   for (let i = 0; i < rawStudents.length; i++) {
     const item = rawStudents[i];
-    const name = item.name || `Student ${i + 1}`;
+    const name = (item.name || `Student ${i + 1}`).trim();
     const email = (item.email || '').trim().toLowerCase();
     const rollNumber = (item.rollNumber || item.roll_number || item.rollNo || '').trim();
     const department = item.department || 'Computer Science and Engineering';
-    const year = parseInt(item.year, 10) || 3;
+    const year = parseInt(item.year, 10) || 4;
 
     const leetcodeInput = item.leetcodeUrl || item.leetcode || '';
     const gfgInput = item.gfgUrl || item.gfg || '';
     const codeforcesInput = item.codeforcesUrl || item.codeforces || '';
     const codechefInput = item.codechefUrl || item.codechef || '';
 
-    if (!email) {
-      console.warn(`⚠️  [Record #${i + 1}] Skipping record without email: "${name}"`);
+    if (!email && !rollNumber) {
+      console.warn(`⚠️  [Record #${i + 1}] Skipping record without email and roll number: "${name}"`);
       failCount++;
       continue;
     }
 
-    console.log(`[${i + 1}/${rawStudents.length}] Processing: ${name} (${email})...`);
+    const effectiveEmail = email || `${rollNumber.toLowerCase()}@student.college.edu`;
+    console.log(`[${i + 1}/${rawStudents.length}] Processing: ${name} (${rollNumber || effectiveEmail})...`);
 
     // Parse handles
     const lcHandle = parseLeetCodeUrl(leetcodeInput);
@@ -127,64 +131,81 @@ async function runBulkImport() {
     const cfHandle = parseCodeforcesUrl(codeforcesInput);
     const ccHandle = parseCodeChefUrl(codechefInput);
 
+    // Check existing student in Supabase to preserve ID and existing stats
+    let existingStudent = null;
+    try {
+      if (email) existingStudent = await getStudentById(email);
+      if (!existingStudent && rollNumber) {
+        const { getStudentByRollNumber } = require('../src/supabase/supabaseRepository');
+        existingStudent = await getStudentByRollNumber(rollNumber);
+      }
+    } catch (queryErr) {
+      // ignore
+    }
+
+    const studentId = existingStudent?.id || `import_${Buffer.from(effectiveEmail).toString('hex').slice(0, 24)}`;
+    const clerkUserId = existingStudent?.clerkUserId || (studentId.startsWith('user_') ? studentId : null);
+
     const platforms = {
       leetcode: {
-        profileUrl: lcHandle ? formatCanonicalUrl('leetcode', lcHandle) : '',
-        username: lcHandle || '',
-        status: lcHandle ? 'PENDING' : 'NOT_CONNECTED',
-        lastFetchedAt: null,
+        profileUrl: lcHandle ? formatCanonicalUrl('leetcode', lcHandle) : (existingStudent?.platforms?.leetcode?.profileUrl || ''),
+        username: lcHandle || existingStudent?.platforms?.leetcode?.username || '',
+        status: lcHandle ? (existingStudent?.platforms?.leetcode?.status || 'CONNECTED') : 'NOT_CONNECTED',
+        lastFetchedAt: existingStudent?.platforms?.leetcode?.lastFetchedAt || null,
         errorMessage: null,
       },
       gfg: {
-        profileUrl: gfgHandle ? formatCanonicalUrl('gfg', gfgHandle) : '',
-        username: gfgHandle || '',
-        status: gfgHandle ? 'PENDING' : 'NOT_CONNECTED',
-        lastFetchedAt: null,
+        profileUrl: gfgHandle ? formatCanonicalUrl('gfg', gfgHandle) : (existingStudent?.platforms?.gfg?.profileUrl || ''),
+        username: gfgHandle || existingStudent?.platforms?.gfg?.username || '',
+        status: gfgHandle ? (existingStudent?.platforms?.gfg?.status || 'CONNECTED') : 'NOT_CONNECTED',
+        lastFetchedAt: existingStudent?.platforms?.gfg?.lastFetchedAt || null,
         errorMessage: null,
       },
       codeforces: {
-        profileUrl: cfHandle ? formatCanonicalUrl('codeforces', cfHandle) : '',
-        username: cfHandle || '',
-        status: cfHandle ? 'PENDING' : 'NOT_CONNECTED',
-        lastFetchedAt: null,
+        profileUrl: cfHandle ? formatCanonicalUrl('codeforces', cfHandle) : (existingStudent?.platforms?.codeforces?.profileUrl || ''),
+        username: cfHandle || existingStudent?.platforms?.codeforces?.username || '',
+        status: cfHandle ? (existingStudent?.platforms?.codeforces?.status || 'CONNECTED') : 'NOT_CONNECTED',
+        lastFetchedAt: existingStudent?.platforms?.codeforces?.lastFetchedAt || null,
         errorMessage: null,
       },
       codechef: {
-        profileUrl: ccHandle ? formatCanonicalUrl('codechef', ccHandle) : '',
-        username: ccHandle || '',
-        status: ccHandle ? 'PENDING' : 'NOT_CONNECTED',
-        lastFetchedAt: null,
+        profileUrl: ccHandle ? formatCanonicalUrl('codechef', ccHandle) : (existingStudent?.platforms?.codechef?.profileUrl || ''),
+        username: ccHandle || existingStudent?.platforms?.codechef?.username || '',
+        status: ccHandle ? (existingStudent?.platforms?.codechef?.status || 'CONNECTED') : 'NOT_CONNECTED',
+        lastFetchedAt: existingStudent?.platforms?.codechef?.lastFetchedAt || null,
         errorMessage: null,
       },
     };
 
     const platformStats = {
-      leetcode: null,
-      gfg: null,
-      codeforces: null,
-      codechef: null,
+      leetcode: existingStudent?.platformStats?.leetcode || null,
+      gfg: existingStudent?.platformStats?.gfg || null,
+      codeforces: existingStudent?.platformStats?.codeforces || null,
+      codechef: existingStudent?.platformStats?.codechef || null,
     };
 
-    // Fetch stats for configured platforms
-    const platformKeys = ['leetcode', 'gfg', 'codeforces', 'codechef'];
-    for (const key of platformKeys) {
-      const p = platforms[key];
-      if (p.username) {
-        try {
-          const stats = await fetchPlatformProfile(key, p.profileUrl || p.username);
-          if (stats.status === 'SUCCESS') {
-            platformStats[key] = stats;
-            platforms[key].status = 'SUCCESS';
-            platforms[key].lastFetchedAt = new Date().toISOString();
-          } else {
+    // If live sync is enabled, fetch stats
+    if (isSyncMode) {
+      const platformKeys = ['leetcode', 'gfg', 'codeforces', 'codechef'];
+      for (const key of platformKeys) {
+        const p = platforms[key];
+        if (p.username) {
+          try {
+            const stats = await fetchPlatformProfile(key, p.profileUrl || p.username);
+            if (stats.status === 'SUCCESS') {
+              platformStats[key] = stats;
+              platforms[key].status = 'SUCCESS';
+              platforms[key].lastFetchedAt = new Date().toISOString();
+            } else {
+              platforms[key].status = 'FAILED';
+              platforms[key].errorMessage = stats.errorMessage || 'Failed to fetch profile';
+            }
+          } catch (fetchErr) {
             platforms[key].status = 'FAILED';
-            platforms[key].errorMessage = stats.errorMessage || 'Failed to fetch profile';
+            platforms[key].errorMessage = fetchErr.message;
           }
-        } catch (fetchErr) {
-          platforms[key].status = 'FAILED';
-          platforms[key].errorMessage = fetchErr.message;
+          await sleep(250);
         }
-        await sleep(350); // slight throttle
       }
     }
 
@@ -192,52 +213,41 @@ async function runBulkImport() {
     const scoreResults = evaluateStudentScores(platformStats);
     const finalScore = scoreResults.finalScore;
 
-    // Check existing student
-    let docId = `import_${Buffer.from(email).toString('hex').slice(0, 24)}`;
-    try {
-      const existing = await getStudentById(email);
-      if (existing) {
-        docId = existing.id;
-      }
-    } catch (queryErr) {
-      // fallback to generated docId
-    }
-
     const studentRecord = {
-      id: docId,
-      clerkUserId: docId.startsWith('user_') ? docId : null,
+      id: studentId,
+      clerkUserId,
       collegeId: config.COLLEGE_ID,
-      name,
-      email,
-      rollNumber,
-      department,
-      year,
-      profilePhoto: '',
+      name: existingStudent?.name && existingStudent.name !== 'New Student' ? existingStudent.name : name,
+      email: effectiveEmail,
+      rollNumber: rollNumber || existingStudent?.rollNumber || '',
+      department: department || existingStudent?.department || 'Computer Science and Engineering',
+      year: year || existingStudent?.year || 4,
+      profilePhoto: existingStudent?.profilePhoto || '',
       role: 'STUDENT',
-      accountStatus: 'ACTIVE',
-      profileCompleted: !!(lcHandle && gfgHandle && cfHandle && ccHandle && rollNumber),
-      finalScore,
+      accountStatus: existingStudent?.accountStatus || 'ACTIVE',
+      profileCompleted: !!(rollNumber && department && (lcHandle || gfgHandle || cfHandle || ccHandle)),
+      finalScore: finalScore || existingStudent?.finalScore || 0,
       scores: scoreResults,
       platforms,
       platformStats,
       updatedAt: new Date().toISOString(),
       lastDataUpdatedAt: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
+      createdAt: existingStudent?.createdAt || new Date().toISOString(),
     };
 
     try {
       await upsertStudent(studentRecord);
-      console.log(`   ✓ Saved: Overall Score = ${finalScore.toFixed(2)}`);
+      console.log(`   ✓ Saved: ${name} (Score: ${(studentRecord.finalScore || 0).toFixed(2)})`);
       successCount++;
     } catch (saveErr) {
-      console.error(`   ✗ Supabase Save Error for ${email}:`, saveErr.message);
+      console.error(`   ✗ Supabase Save Error for ${effectiveEmail}:`, saveErr.message);
       failCount++;
     }
   }
 
   console.log(`\nRecalculating college rankings for "${config.COLLEGE_ID}"...`);
   const rankSummary = await recalculateCollegeRankings(config.COLLEGE_ID);
-  console.log(`✓ College rankings updated across ${rankSummary.totalStudents} students.\n`);
+  console.log(`✓ College rankings updated across ${rankSummary.totalStudents} total students in Supabase.\n`);
 
   console.log(`======================================================`);
   console.log(`📊 BULK IMPORT COMPLETED`);

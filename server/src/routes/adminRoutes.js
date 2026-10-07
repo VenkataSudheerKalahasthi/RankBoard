@@ -53,6 +53,7 @@ router.post('/anomalies/resolve', adminController.resolveAnomaly);
 
 // 10. AI Insights
 router.get('/insights', adminController.getAiInsights);
+router.post('/insights/refresh', adminController.refreshAiInsights);
 
 // 11. Audit Logs
 router.get('/audit-logs', adminController.getAuditLogs);

@@ -11,6 +11,7 @@ function formatStudentRow(studentRow, profiles = [], stats = [], score = null) {
     gfg: { profileUrl: '', username: '', status: 'NOT_CONNECTED', lastFetchedAt: null, errorMessage: null },
     codeforces: { profileUrl: '', username: '', status: 'NOT_CONNECTED', lastFetchedAt: null, errorMessage: null },
     codechef: { profileUrl: '', username: '', status: 'NOT_CONNECTED', lastFetchedAt: null, errorMessage: null },
+    hackerrank: { profileUrl: '', username: '', status: 'NOT_CONNECTED', lastFetchedAt: null, errorMessage: null },
   };
 
   profiles.forEach((p) => {
@@ -30,6 +31,7 @@ function formatStudentRow(studentRow, profiles = [], stats = [], score = null) {
     gfg: null,
     codeforces: null,
     codechef: null,
+    hackerrank: null,
   };
 
   stats.forEach((s) => {
@@ -39,9 +41,11 @@ function formatStudentRow(studentRow, profiles = [], stats = [], score = null) {
         username: platformsObj[s.platform]?.username || '',
         status: 'SUCCESS',
         totalSolved: s.total_solved || 0,
-        easySolved: s.easy_solved || 0,
-        mediumSolved: s.medium_solved || 0,
-        hardSolved: s.hard_solved || 0,
+        schoolSolved: s.school_solved !== undefined && s.school_solved !== null ? s.school_solved : (s.raw_stats?.schoolSolved ?? 0),
+        basicSolved: s.basic_solved !== undefined && s.basic_solved !== null ? s.basic_solved : (s.raw_stats?.basicSolved ?? 0),
+        easySolved: s.easy_solved !== undefined && s.easy_solved !== null ? s.easy_solved : (s.raw_stats?.easySolved ?? 0),
+        mediumSolved: s.medium_solved !== undefined && s.medium_solved !== null ? s.medium_solved : (s.raw_stats?.mediumSolved ?? 0),
+        hardSolved: s.hard_solved !== undefined && s.hard_solved !== null ? s.hard_solved : (s.raw_stats?.hardSolved ?? 0),
         rating: s.rating !== null ? Number(s.rating) : null,
         globalRank: s.global_rank !== null ? Number(s.global_rank) : null,
         ...(s.raw_stats && typeof s.raw_stats === 'object' ? s.raw_stats : {}),
@@ -55,6 +59,7 @@ function formatStudentRow(studentRow, profiles = [], stats = [], score = null) {
         gfgScore: Number(score.gfg_score || 0),
         codeforcesScore: Number(score.codeforces_score || 0),
         codechefScore: Number(score.codechef_score || 0),
+        hackerrankScore: Number(score.hackerrank_score || 0),
         finalScore: Number(score.final_score || studentRow.final_score || 0),
         breakdown: score.breakdown || {},
       }
@@ -63,6 +68,7 @@ function formatStudentRow(studentRow, profiles = [], stats = [], score = null) {
         gfgScore: 0,
         codeforcesScore: 0,
         codechefScore: 0,
+        hackerrankScore: 0,
         finalScore: Number(studentRow.final_score || 0),
         breakdown: {},
       };
@@ -82,6 +88,7 @@ function formatStudentRow(studentRow, profiles = [], stats = [], score = null) {
     profileCompleted: !!studentRow.profile_completed,
     finalScore: Number(studentRow.final_score || 0),
     rank: studentRow.rank !== null ? Number(studentRow.rank) : null,
+    showcaseSettings: studentRow.showcase_settings || { isPublic: true, bio: '' },
     lastDataUpdatedAt: studentRow.last_data_updated_at || null,
     createdAt: studentRow.created_at,
     updatedAt: studentRow.updated_at,
@@ -89,6 +96,34 @@ function formatStudentRow(studentRow, profiles = [], stats = [], score = null) {
     platformStats: platformStatsObj,
     scores: scoresObj,
   };
+}
+
+// Helper to retry Supabase queries on transient fetch/network errors
+async function withSupabaseRetry(fn, maxRetries = 3, delayMs = 300) {
+  let attempt = 0;
+  while (true) {
+    attempt++;
+    try {
+      const res = await fn();
+      if (res && res.error) {
+        const msg = res.error.message || '';
+        const isTransient = msg.includes('fetch failed') || msg.includes('socket hang up') || msg.includes('ECONNRESET') || msg.includes('ETIMEDOUT');
+        if (attempt < maxRetries && isTransient) {
+          await new Promise((r) => setTimeout(r, delayMs * Math.pow(2, attempt - 1)));
+          continue;
+        }
+      }
+      return res;
+    } catch (err) {
+      const msg = err.message || '';
+      const isTransient = msg.includes('fetch failed') || msg.includes('socket hang up') || msg.includes('ECONNRESET') || msg.includes('ETIMEDOUT');
+      if (attempt < maxRetries && isTransient) {
+        await new Promise((r) => setTimeout(r, delayMs * Math.pow(2, attempt - 1)));
+        continue;
+      }
+      throw err;
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -99,23 +134,25 @@ async function getAllStudents({ accountStatus = null, collegeId = null } = {}) {
   const supabase = getSupabase();
   if (!supabase) return [];
 
-  let query = supabase
-    .from('students')
-    .select(`
-      *,
-      student_platform_profiles (*),
-      platform_statistics (*),
-      scores (*)
-    `);
+  const { data, error } = await withSupabaseRetry(async () => {
+    let query = supabase
+      .from('students')
+      .select(`
+        *,
+        student_platform_profiles (*),
+        platform_statistics (*),
+        scores (*)
+      `);
 
-  if (accountStatus) {
-    query = query.eq('account_status', accountStatus);
-  }
-  if (collegeId) {
-    query = query.eq('college_id', collegeId);
-  }
+    if (accountStatus) {
+      query = query.eq('account_status', accountStatus);
+    }
+    if (collegeId) {
+      query = query.eq('college_id', collegeId);
+    }
+    return await query;
+  });
 
-  const { data, error } = await query;
   if (error) {
     console.error('[Supabase getAllStudents Error]:', error.message);
     throw error;
@@ -136,26 +173,60 @@ async function getStudentById(idOrClerkIdOrEmail) {
   const supabase = getSupabase();
   if (!supabase) return null;
 
-  let query = supabase
+  const { data, error } = await withSupabaseRetry(async () => {
+    let query = supabase
+      .from('students')
+      .select(`
+        *,
+        student_platform_profiles (*),
+        platform_statistics (*),
+        scores (*)
+      `);
+
+    if (idOrClerkIdOrEmail.includes('@')) {
+      query = query.eq('email', idOrClerkIdOrEmail.toLowerCase().trim());
+    } else if (idOrClerkIdOrEmail.startsWith('user_')) {
+      query = query.or(`id.eq.${idOrClerkIdOrEmail},clerk_user_id.eq.${idOrClerkIdOrEmail}`);
+    } else {
+      query = query.eq('id', idOrClerkIdOrEmail);
+    }
+
+    return await query.maybeSingle();
+  });
+
+  if (error) {
+    console.error('[Supabase getStudentById Error]:', error.message);
+    return null;
+  }
+
+  if (!data) return null;
+
+  return formatStudentRow(
+    data,
+    data.student_platform_profiles || [],
+    data.platform_statistics || [],
+    Array.isArray(data.scores) ? data.scores[0] : data.scores
+  );
+}
+
+async function getStudentByRollNumber(rollNumber) {
+  if (!rollNumber) return null;
+  const supabase = getSupabase();
+  if (!supabase) return null;
+
+  const { data, error } = await supabase
     .from('students')
     .select(`
       *,
       student_platform_profiles (*),
       platform_statistics (*),
       scores (*)
-    `);
+    `)
+    .ilike('roll_number', rollNumber.trim())
+    .maybeSingle();
 
-  if (idOrClerkIdOrEmail.includes('@')) {
-    query = query.eq('email', idOrClerkIdOrEmail.toLowerCase().trim());
-  } else if (idOrClerkIdOrEmail.startsWith('user_')) {
-    query = query.or(`id.eq.${idOrClerkIdOrEmail},clerk_user_id.eq.${idOrClerkIdOrEmail}`);
-  } else {
-    query = query.eq('id', idOrClerkIdOrEmail);
-  }
-
-  const { data, error } = await query.maybeSingle();
   if (error) {
-    console.error('[Supabase getStudentById Error]:', error.message);
+    console.error('[Supabase getStudentByRollNumber Error]:', error.message);
     return null;
   }
 
@@ -209,7 +280,7 @@ async function upsertStudent(studentData) {
   if (studentData.platforms) {
     const profileRows = [];
     for (const [platform, p] of Object.entries(studentData.platforms)) {
-      if (['leetcode', 'gfg', 'codeforces', 'codechef'].includes(platform)) {
+      if (['leetcode', 'gfg', 'codeforces', 'codechef', 'hackerrank'].includes(platform)) {
         profileRows.push({
           student_id: studentId,
           platform,
@@ -224,12 +295,16 @@ async function upsertStudent(studentData) {
     }
 
     if (profileRows.length > 0) {
-      const { error: profileErr } = await supabase
-        .from('student_platform_profiles')
-        .upsert(profileRows, { onConflict: 'student_id,platform' });
+      try {
+        const { error: profileErr } = await supabase
+          .from('student_platform_profiles')
+          .upsert(profileRows, { onConflict: 'student_id,platform' });
 
-      if (profileErr) {
-        console.error('[Supabase upsert Platform Profiles Error]:', profileErr.message);
+        if (profileErr) {
+          console.error('[Supabase upsert Platform Profiles Error]:', profileErr.message);
+        }
+      } catch (e) {
+        console.error('[Supabase upsert Platform Profiles Exception]:', e.message);
       }
     }
   }
@@ -238,7 +313,7 @@ async function upsertStudent(studentData) {
   if (studentData.platformStats) {
     const statsRows = [];
     for (const [platform, s] of Object.entries(studentData.platformStats)) {
-      if (['leetcode', 'gfg', 'codeforces', 'codechef'].includes(platform)) {
+      if (['leetcode', 'gfg', 'codeforces', 'codechef', 'hackerrank'].includes(platform)) {
         if (s) {
           statsRows.push({
             student_id: studentId,
@@ -258,12 +333,16 @@ async function upsertStudent(studentData) {
     }
 
     if (statsRows.length > 0) {
-      const { error: statsErr } = await supabase
-        .from('platform_statistics')
-        .upsert(statsRows, { onConflict: 'student_id,platform' });
+      try {
+        const { error: statsErr } = await supabase
+          .from('platform_statistics')
+          .upsert(statsRows, { onConflict: 'student_id,platform' });
 
-      if (statsErr) {
-        console.error('[Supabase upsert Platform Stats Error]:', statsErr.message);
+        if (statsErr) {
+          console.error('[Supabase upsert Platform Stats Error]:', statsErr.message);
+        }
+      } catch (e) {
+        console.error('[Supabase upsert Platform Stats Exception]:', e.message);
       }
     }
   }
@@ -277,17 +356,22 @@ async function upsertStudent(studentData) {
       gfg_score: Number(s.gfgScore || 0),
       codeforces_score: Number(s.codeforcesScore || 0),
       codechef_score: Number(s.codechefScore || 0),
+      hackerrank_score: Number(s.hackerrankScore || 0),
       final_score: Number(studentData.finalScore !== undefined ? studentData.finalScore : (s.finalScore || 0)),
       breakdown: s.breakdown || s,
       updated_at: new Date().toISOString(),
     };
 
-    const { error: scoreErr } = await supabase
-      .from('scores')
-      .upsert(scorePayload, { onConflict: 'student_id' });
+    try {
+      const { error: scoreErr } = await supabase
+        .from('scores')
+        .upsert(scorePayload, { onConflict: 'student_id' });
 
-    if (scoreErr) {
-      console.error('[Supabase upsert Scores Error]:', scoreErr.message);
+      if (scoreErr) {
+        console.error('[Supabase upsert Scores Error]:', scoreErr.message);
+      }
+    } catch (e) {
+      console.error('[Supabase upsert Scores Exception]:', e.message);
     }
   }
 
@@ -302,21 +386,37 @@ async function updateStudent(studentId, updates) {
     updated_at: new Date().toISOString(),
   };
 
+  if (updates.clerkUserId !== undefined) payload.clerk_user_id = updates.clerkUserId;
+  if (updates.email !== undefined) payload.email = updates.email.toLowerCase().trim();
   if (updates.name !== undefined) payload.name = updates.name.trim();
   if (updates.rollNumber !== undefined) payload.roll_number = updates.rollNumber ? updates.rollNumber.trim() : null;
   if (updates.department !== undefined) payload.department = updates.department ? updates.department.trim() : null;
   if (updates.year !== undefined) payload.year = updates.year ? parseInt(updates.year, 10) : null;
   if (updates.profilePhoto !== undefined) payload.profile_photo = updates.profilePhoto;
+  if (updates.role !== undefined) payload.role = updates.role;
+  if (updates.collegeId !== undefined) payload.college_id = updates.collegeId;
   if (updates.accountStatus !== undefined) payload.account_status = updates.accountStatus;
   if (updates.finalScore !== undefined) payload.final_score = Number(updates.finalScore);
   if (updates.rank !== undefined) payload.rank = updates.rank !== null ? parseInt(updates.rank, 10) : null;
   if (updates.profileCompleted !== undefined) payload.profile_completed = !!updates.profileCompleted;
   if (updates.lastDataUpdatedAt !== undefined) payload.last_data_updated_at = updates.lastDataUpdatedAt;
+  if (updates.showcaseSettings !== undefined) payload.showcase_settings = updates.showcaseSettings;
 
-  const { error } = await supabase
-    .from('students')
-    .update(payload)
-    .eq('id', studentId);
+  let { error } = await withSupabaseRetry(async () => {
+    return await supabase
+      .from('students')
+      .update(payload)
+      .eq('id', studentId);
+  });
+
+  if (error && error.message && error.message.includes('showcase_settings')) {
+    // If column doesn't exist yet in remote table, retry update without showcase_settings
+    delete payload.showcase_settings;
+    const retry = await withSupabaseRetry(async () => {
+      return await supabase.from('students').update(payload).eq('id', studentId);
+    });
+    error = retry.error;
+  }
 
   if (error) {
     console.error('[Supabase updateStudent Error]:', error.message);
@@ -326,19 +426,23 @@ async function updateStudent(studentId, updates) {
   // If platforms were updated
   if (updates.platforms) {
     for (const [platform, p] of Object.entries(updates.platforms)) {
-      if (['leetcode', 'gfg', 'codeforces', 'codechef'].includes(platform)) {
-        await supabase
-          .from('student_platform_profiles')
-          .upsert({
-            student_id: studentId,
-            platform,
-            profile_url: p?.profileUrl || null,
-            username: p?.username || null,
-            status: p?.status || 'NOT_CONNECTED',
-            error_message: p?.errorMessage || null,
-            last_fetched_at: p?.lastFetchedAt || null,
-            updated_at: new Date().toISOString(),
-          }, { onConflict: 'student_id,platform' });
+      if (['leetcode', 'gfg', 'codeforces', 'codechef', 'hackerrank'].includes(platform)) {
+        try {
+          await supabase
+            .from('student_platform_profiles')
+            .upsert({
+              student_id: studentId,
+              platform,
+              profile_url: p?.profileUrl || null,
+              username: p?.username || null,
+              status: p?.status || 'NOT_CONNECTED',
+              error_message: p?.errorMessage || null,
+              last_fetched_at: p?.lastFetchedAt || null,
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'student_id,platform' });
+        } catch (e) {
+          console.error(`[Supabase upsert ${platform} Profile Exception]:`, e.message);
+        }
       }
     }
   }
@@ -346,22 +450,26 @@ async function updateStudent(studentId, updates) {
   // If platformStats were updated
   if (updates.platformStats) {
     for (const [platform, s] of Object.entries(updates.platformStats)) {
-      if (['leetcode', 'gfg', 'codeforces', 'codechef'].includes(platform) && s) {
-        await supabase
-          .from('platform_statistics')
-          .upsert({
-            student_id: studentId,
-            platform,
-            total_solved: s.totalSolved || 0,
-            easy_solved: s.easySolved || 0,
-            medium_solved: s.mediumSolved || 0,
-            hard_solved: s.hardSolved || 0,
-            rating: s.rating !== undefined && s.rating !== null ? Number(s.rating) : null,
-            global_rank: s.globalRank !== undefined && s.globalRank !== null ? Number(s.globalRank) : null,
-            raw_stats: s,
-            last_synced_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }, { onConflict: 'student_id,platform' });
+      if (['leetcode', 'gfg', 'codeforces', 'codechef', 'hackerrank'].includes(platform) && s) {
+        try {
+          await supabase
+            .from('platform_statistics')
+            .upsert({
+              student_id: studentId,
+              platform,
+              total_solved: s.totalSolved || 0,
+              easy_solved: s.easySolved || 0,
+              medium_solved: s.mediumSolved || 0,
+              hard_solved: s.hardSolved || 0,
+              rating: s.rating !== undefined && s.rating !== null ? Number(s.rating) : null,
+              global_rank: s.globalRank !== undefined && s.globalRank !== null ? Number(s.globalRank) : null,
+              raw_stats: s,
+              last_synced_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'student_id,platform' });
+        } catch (e) {
+          console.error(`[Supabase upsert ${platform} Stats Exception]:`, e.message);
+        }
       }
     }
   }
@@ -369,18 +477,23 @@ async function updateStudent(studentId, updates) {
   // If scores were updated
   if (updates.scores) {
     const s = updates.scores;
-    await supabase
-      .from('scores')
-      .upsert({
-        student_id: studentId,
-        leetcode_score: Number(s.leetcodeScore || 0),
-        gfg_score: Number(s.gfgScore || 0),
-        codeforces_score: Number(s.codeforcesScore || 0),
-        codechef_score: Number(s.codechefScore || 0),
-        final_score: Number(updates.finalScore !== undefined ? updates.finalScore : (s.finalScore || 0)),
-        breakdown: s.breakdown || s,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'student_id' });
+    try {
+      await supabase
+        .from('scores')
+        .upsert({
+          student_id: studentId,
+          leetcode_score: Number(s.leetcodeScore || 0),
+          gfg_score: Number(s.gfgScore || 0),
+          codeforces_score: Number(s.codeforcesScore || 0),
+          codechef_score: Number(s.codechefScore || 0),
+          hackerrank_score: Number(s.hackerrankScore || 0),
+          final_score: Number(updates.finalScore !== undefined ? updates.finalScore : (s.finalScore || 0)),
+          breakdown: s.breakdown || s,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'student_id' });
+    } catch (e) {
+      console.error('[Supabase upsert Scores Exception]:', e.message);
+    }
   }
 
   return getStudentById(studentId);
@@ -528,22 +641,83 @@ async function insertAuditLog(logEntry) {
   return data;
 }
 
-async function getAuditLogs(limit = 50) {
+async function getAuditLogs(options = 50) {
   const supabase = getSupabase();
-  if (!supabase) return [];
+  if (!supabase) {
+    if (typeof options === 'number') return [];
+    return { logs: [], totalCount: 0, totalPages: 0, currentPage: 1, limit: 50 };
+  }
 
-  const { data, error } = await supabase
+  const isNumericLimit = typeof options === 'number';
+  const opts = isNumericLimit ? { limit: options } : (options || {});
+
+  const {
+    page = 1,
+    limit = 50,
+    search = '',
+    action = '',
+    target = '',
+    actor = '',
+    startDate = '',
+    endDate = '',
+  } = opts;
+
+  const parsedLimit = Math.max(1, Math.min(parseInt(limit, 10) || 50, 500));
+  const parsedPage = Math.max(1, parseInt(page, 10) || 1);
+  const from = (parsedPage - 1) * parsedLimit;
+  const to = from + parsedLimit - 1;
+
+  let query = supabase
     .from('audit_logs')
-    .select('*')
-    .order('timestamp', { ascending: false })
-    .limit(limit);
+    .select('*', { count: 'exact' });
+
+  if (action && action !== 'ALL') {
+    query = query.eq('action', action);
+  }
+
+  if (actor && actor.trim()) {
+    const act = actor.trim();
+    query = query.or(`admin_email.ilike.%${act}%,admin_name.ilike.%${act}%`);
+  }
+
+  if (target && target.trim()) {
+    query = query.ilike('target', `%${target.trim()}%`);
+  }
+
+  if (search && search.trim()) {
+    const s = search.trim();
+    query = query.or(`action.ilike.%${s}%,target.ilike.%${s}%,admin_name.ilike.%${s}%,admin_email.ilike.%${s}%,target_id.ilike.%${s}%`);
+  }
+
+  if (startDate) {
+    try {
+      const startIso = new Date(startDate).toISOString();
+      query = query.gte('timestamp', startIso);
+    } catch (e) {
+      console.warn('[getAuditLogs startDate parse warning]:', e.message);
+    }
+  }
+
+  if (endDate) {
+    try {
+      const endIso = new Date(endDate).toISOString();
+      query = query.lte('timestamp', endIso);
+    } catch (e) {
+      console.warn('[getAuditLogs endDate parse warning]:', e.message);
+    }
+  }
+
+  query = query.order('timestamp', { ascending: false }).range(from, to);
+
+  const { data, count, error } = await query;
 
   if (error) {
     console.error('[Supabase getAuditLogs Error]:', error.message);
-    return [];
+    if (isNumericLimit) return [];
+    return { logs: [], totalCount: 0, totalPages: 0, currentPage: parsedPage, limit: parsedLimit };
   }
 
-  return (data || []).map((row) => ({
+  const logs = (data || []).map((row) => ({
     id: String(row.id),
     adminId: row.admin_id,
     adminEmail: row.admin_email,
@@ -555,7 +729,23 @@ async function getAuditLogs(limit = 50) {
     ip: row.ip,
     userAgent: row.user_agent,
     timestamp: row.timestamp,
+    status: row.details?.status || 'SUCCESS',
+    reason: row.details?.reason || null,
+    before: row.details?.before || row.details?.before_data || null,
+    after: row.details?.after || row.details?.after_data || null,
   }));
+
+  if (isNumericLimit) {
+    return logs;
+  }
+
+  return {
+    logs,
+    totalCount: count || 0,
+    totalPages: Math.ceil((count || 0) / parsedLimit),
+    currentPage: parsedPage,
+    limit: parsedLimit,
+  };
 }
 
 // -----------------------------------------------------------------------------
@@ -829,6 +1019,7 @@ async function updateSystemSettings(payload) {
 module.exports = {
   getAllStudents,
   getStudentById,
+  getStudentByRollNumber,
   upsertStudent,
   updateStudent,
   deleteStudent,

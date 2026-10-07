@@ -13,6 +13,7 @@ const ProfileLinkForm = ({ onSaved }) => {
     gfgUrl: '',
     codeforcesUrl: '',
     codechefUrl: '',
+    hackerrankUrl: '',
   });
 
   const [successMessage, setSuccessMessage] = useState('');
@@ -25,6 +26,7 @@ const ProfileLinkForm = ({ onSaved }) => {
         gfgUrl: student.platforms.gfg?.profileUrl || student.platforms.gfg?.username || '',
         codeforcesUrl: student.platforms.codeforces?.profileUrl || student.platforms.codeforces?.username || '',
         codechefUrl: student.platforms.codechef?.profileUrl || student.platforms.codechef?.username || '',
+        hackerrankUrl: student.platforms.hackerrank?.profileUrl || student.platforms.hackerrank?.username || '',
       });
     }
   }, [student]);
@@ -77,76 +79,109 @@ const ProfileLinkForm = ({ onSaved }) => {
           </div>
         )}
 
-        {/* LeetCode */}
-        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-              <span className="font-bold text-xs text-slate-900">LeetCode Profile</span>
-            </div>
-            <span className="text-[10px] text-slate-400 font-mono">leetcode.com/u/[username]</span>
+        {/* Scoring Platforms Group */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 pt-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-brand-700">Official Scoring Platforms</span>
           </div>
-          <Input
-            name="leetcodeUrl"
-            placeholder="e.g. https://leetcode.com/u/john_doe/ or john_doe"
-            value={formData.leetcodeUrl}
-            onChange={handleChange}
-            helperText="Supports full URL or plain username"
-          />
+
+          {/* LeetCode */}
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                <span className="font-bold text-xs text-slate-900">LeetCode Profile</span>
+              </div>
+              <span className="text-[10px] text-slate-400 font-mono">leetcode.com/u/[username]</span>
+            </div>
+            <Input
+              name="leetcodeUrl"
+              placeholder="e.g. https://leetcode.com/u/john_doe/ or john_doe"
+              value={formData.leetcodeUrl}
+              onChange={handleChange}
+              helperText="Supports full URL or plain username"
+            />
+          </div>
+
+          {/* GeeksforGeeks */}
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
+                <span className="font-bold text-xs text-slate-900">GeeksforGeeks Profile</span>
+              </div>
+              <span className="text-[10px] text-slate-400 font-mono">geeksforgeeks.org/user/[username]/</span>
+            </div>
+            <Input
+              name="gfgUrl"
+              placeholder="e.g. https://www.geeksforgeeks.org/user/john_doe/ or john_doe"
+              value={formData.gfgUrl}
+              onChange={handleChange}
+              helperText="Supports profile link or GFG handle"
+            />
+          </div>
+
+          {/* HackerRank */}
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                <span className="font-bold text-xs text-slate-900">HackerRank Profile</span>
+              </div>
+              <span className="text-[10px] text-slate-400 font-mono">hackerrank.com/profile/[username]</span>
+            </div>
+            <Input
+              name="hackerrankUrl"
+              placeholder="e.g. https://www.hackerrank.com/profile/john_doe or john_doe"
+              value={formData.hackerrankUrl}
+              onChange={handleChange}
+              helperText="Supports user profile URL or username"
+            />
+          </div>
         </div>
 
-        {/* GeeksforGeeks */}
-        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
-              <span className="font-bold text-xs text-slate-900">GeeksforGeeks Profile</span>
-            </div>
-            <span className="text-[10px] text-slate-400 font-mono">geeksforgeeks.org/user/[username]/</span>
+        {/* Statistics-Only Platforms Group */}
+        <div className="space-y-3 pt-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Other Platforms</span>
+            <span className="text-[10px] text-slate-400 font-medium">Activity tracked for analytics</span>
           </div>
-          <Input
-            name="gfgUrl"
-            placeholder="e.g. https://www.geeksforgeeks.org/user/john_doe/ or john_doe"
-            value={formData.gfgUrl}
-            onChange={handleChange}
-            helperText="Supports profile link or GFG handle"
-          />
-        </div>
 
-        {/* Codeforces */}
-        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
-              <span className="font-bold text-xs text-slate-900">Codeforces Profile</span>
+          {/* Codeforces */}
+          <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-200/80">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+                <span className="font-bold text-xs text-slate-900">Codeforces Profile</span>
+              </div>
+              <span className="text-[10px] text-slate-400 font-mono">codeforces.com/profile/[handle]</span>
             </div>
-            <span className="text-[10px] text-slate-400 font-mono">codeforces.com/profile/[handle]</span>
+            <Input
+              name="codeforcesUrl"
+              placeholder="e.g. https://codeforces.com/profile/tourist or tourist"
+              value={formData.codeforcesUrl}
+              onChange={handleChange}
+              helperText="Supports profile URL or Codeforces handle"
+            />
           </div>
-          <Input
-            name="codeforcesUrl"
-            placeholder="e.g. https://codeforces.com/profile/tourist or tourist"
-            value={formData.codeforcesUrl}
-            onChange={handleChange}
-            helperText="Supports profile URL or Codeforces handle"
-          />
-        </div>
 
-        {/* CodeChef */}
-        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-orange-700"></span>
-              <span className="font-bold text-xs text-slate-900">CodeChef Profile</span>
+          {/* CodeChef */}
+          <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-200/80">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-orange-700"></span>
+                <span className="font-bold text-xs text-slate-900">CodeChef Profile</span>
+              </div>
+              <span className="text-[10px] text-slate-400 font-mono">codechef.com/users/[handle]</span>
             </div>
-            <span className="text-[10px] text-slate-400 font-mono">codechef.com/users/[handle]</span>
+            <Input
+              name="codechefUrl"
+              placeholder="e.g. https://www.codechef.com/users/john_doe or john_doe"
+              value={formData.codechefUrl}
+              onChange={handleChange}
+              helperText="Supports user profile URL or handle"
+            />
           </div>
-          <Input
-            name="codechefUrl"
-            placeholder="e.g. https://www.codechef.com/users/john_doe or john_doe"
-            value={formData.codechefUrl}
-            onChange={handleChange}
-            helperText="Supports user profile URL or handle"
-          />
         </div>
 
         <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
