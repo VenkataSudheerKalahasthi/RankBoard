@@ -32,6 +32,8 @@ const fetchLeetCodeProfile = async (input) => {
     return result;
   }
 
+  console.log(`[LeetCode] Fetching profile: ${username}`);
+
   try {
     const graphqlQuery = {
       query: `
@@ -77,6 +79,7 @@ const fetchLeetCodeProfile = async (input) => {
     if (!data || !data.matchedUser) {
       result.status = 'FAILED';
       result.errorMessage = `User "${username}" not found on LeetCode`;
+      console.warn(`[LeetCode] User "${username}" not found.`);
       return result;
     }
 
@@ -106,6 +109,9 @@ const fetchLeetCodeProfile = async (input) => {
     result.streak = matchedUser.userCalendar?.streak ?? null;
     result.status = 'SUCCESS';
     result.rawData = { ranking: matchedUser.profile?.ranking };
+
+    console.log(`[LeetCode] Parsed: Easy=${result.easySolved} Medium=${result.mediumSolved} Hard=${result.hardSolved} Total=${result.totalSolved} Score=${result.rating || 0}`);
+    console.log(`[LeetCode] Validation passed`);
 
     return result;
   } catch (error) {

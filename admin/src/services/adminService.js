@@ -58,7 +58,8 @@ export const adminService = {
   markNotificationRead: (id) => api.patch(`/admin/notifications/${id}/read`),
   clearNotifications: () => api.delete('/admin/notifications'),
 
-  // 13. Settings
+  // 13. Settings & System Health
   getSettings: () => api.get('/admin/settings'),
   updateSettings: (data) => api.put('/admin/settings', data),
+  getSystemHealth: () => api.get('/admin/system/health'),
 };

@@ -16,6 +16,14 @@ const DEPARTMENTS = [
   'Electrical & Electronics',
   'Mechanical Engineering',
   'Prime',
+  'CIVIL',
+  'CSDS',
+  'CSBS',
+  'IOT',
+  'AI&ML',
+  'CSIT',
+  'VLSI',
+  
 ];
 
 const Leaderboard = () => {

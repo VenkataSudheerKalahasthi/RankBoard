@@ -147,15 +147,19 @@ CREATE TABLE IF NOT EXISTS public.score_adjustments (
 -- 10. SYSTEM SETTINGS TABLE
 CREATE TABLE IF NOT EXISTS public.system_settings (
     id TEXT PRIMARY KEY DEFAULT 'config',
+    college_identifier TEXT DEFAULT 'COLLEGE_MAIN',
+    college_display_name TEXT DEFAULT 'Engineering College',
+    sync_concurrency INTEGER DEFAULT 5,
     sync_batch_size INTEGER DEFAULT 5,
     sync_throttle_ms INTEGER DEFAULT 350,
-    enable_auto_sync_on_import BOOLEAN DEFAULT TRUE,
+    auto_sync_after_import BOOLEAN DEFAULT FALSE,
+    enable_auto_sync_on_import BOOLEAN DEFAULT FALSE,
     scoring_weights JSONB DEFAULT '{
       "LEETCODE": { "OVERALL": 0.40, "EASY": 0.30, "MEDIUM": 0.40, "HARD": 0.30 },
       "GFG": { "OVERALL": 0.30 },
-      "CODEFORCES": { "OVERALL": 0.20 },
-      "CODECHEF": { "OVERALL": 0.10 },
-      "HACKERRANK": { "OVERALL": 0.00 }
+      "HACKERRANK": { "OVERALL": 0.30 },
+      "CODEFORCES": { "OVERALL": 0.00 },
+      "CODECHEF": { "OVERALL": 0.00 }
     }'::jsonb,
     updated_by TEXT,
     updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -262,7 +266,8 @@ DECLARE
     'scores',
     'platform_statistics',
     'admin_notifications',
-    'audit_logs'
+    'audit_logs',
+    'system_settings'
   ];
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN

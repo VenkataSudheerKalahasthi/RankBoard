@@ -33,16 +33,36 @@ const fetchHackerRankProfile = async (input) => {
     return result;
   }
 
+  console.log(`[HackerRank] Fetching profile: ${username}`);
+
   const headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
     'Accept': 'application/json',
   };
 
   try {
-    // 1. Fetch user badges and problems solved
-    let badgesModels = [];
     let isFound = false;
 
+    // 1. Check user profile endpoint to verify existence
+    try {
+      const profileRes = await axios.get(
+        `https://www.hackerrank.com/rest/hackers/${encodeURIComponent(username)}/profile`,
+        { headers, timeout: 10000 }
+      );
+      if (profileRes.status === 200 && profileRes.data) {
+        isFound = true;
+      }
+    } catch (pErr) {
+      if (pErr.response?.status === 429) {
+        result.status = 'RATE_LIMITED';
+        result.errorMessage = 'HackerRank API rate limit exceeded';
+        return result;
+      }
+      // Non-fatal, check badges endpoint next
+    }
+
+    // 2. Fetch user badges and problems solved
+    let badgesModels = [];
     try {
       const badgesRes = await axios.get(
         `https://www.hackerrank.com/rest/hackers/${encodeURIComponent(username)}/badges`,
@@ -65,7 +85,7 @@ const fetchHackerRankProfile = async (input) => {
       }
     }
 
-    // 2. Fetch track scores / contest ratings
+    // 3. Fetch track scores / contest ratings
     let scoresList = [];
     try {
       const scoresRes = await axios.get(
@@ -89,10 +109,11 @@ const fetchHackerRankProfile = async (input) => {
     if (!isFound) {
       result.status = 'NOT_FOUND';
       result.errorMessage = `User "${username}" not found on HackerRank`;
+      console.warn(`[HackerRank] User "${username}" not found.`);
       return result;
     }
 
-    // 3. Fetch certifications
+    // 4. Fetch certifications
     let certificatesCount = 0;
     try {
       const certRes = await axios.get(
@@ -141,6 +162,9 @@ const fetchHackerRankProfile = async (input) => {
       certificatesCount,
       tracksTracked: scoresList.length,
     };
+
+    console.log(`[HackerRank] Parsed: Solved=${result.totalSolved} Badges=${result.badges} Stars=${result.stars} Certificates=${result.certificates} Score=${result.rating || 0}`);
+    console.log(`[HackerRank] Validation passed`);
 
     return result;
   } catch (error) {

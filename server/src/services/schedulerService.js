@@ -1,6 +1,7 @@
 const { getAllStudents } = require('../supabase/supabaseRepository');
 const { syncStudentPlatforms, isPlatformInCooldown } = require('./syncService');
 const { recalculateCollegeRankings } = require('./ranking/rankingEngine');
+const { getSystemSettings } = require('./settingsService');
 const { config } = require('../config/env');
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -70,8 +71,11 @@ const executeSyncTick = async () => {
       return;
     }
 
-    const concurrencyLimit = config.SYNC_CONFIG?.MAX_CONCURRENT_SYNCS || 2;
-    const throttleMs = config.SYNC_CONFIG?.BATCH_THROTTLE_MS || 600;
+    // Read dynamic settings configured by Admin
+    const sysSettings = await getSystemSettings();
+    const concurrencyLimit = sysSettings.syncConcurrency || sysSettings.syncBatchSize || 5;
+    const throttleMs = sysSettings.syncThrottleMs !== undefined ? sysSettings.syncThrottleMs : 350;
+    const collegeIdentifier = sysSettings.collegeIdentifier || config.COLLEGE_ID || 'COLLEGE_MAIN';
 
     let totalChanged = 0;
 
@@ -97,14 +101,14 @@ const executeSyncTick = async () => {
         })
       );
 
-      if (i + concurrencyLimit < dueStudents.length) {
+      if (i + concurrencyLimit < dueStudents.length && throttleMs > 0) {
         await sleep(throttleMs);
       }
     }
 
     if (totalChanged > 0) {
       // Recalculate college rankings once after batch updates if any changes occurred
-      await recalculateCollegeRankings(config.COLLEGE_ID || 'COLLEGE_MAIN');
+      await recalculateCollegeRankings(collegeIdentifier);
     }
   } catch (error) {
     console.error('[Near-Real-Time Scheduler Error]:', error.message);

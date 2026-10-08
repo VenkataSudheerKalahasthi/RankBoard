@@ -964,7 +964,7 @@ async function getScoreAdjustments(limit = 50, studentId = null) {
 
 async function getSystemSettings() {
   const supabase = getSupabase();
-  if (!supabase) return {};
+  if (!supabase) return null;
 
   const { data, error } = await supabase
     .from('system_settings')
@@ -974,16 +974,23 @@ async function getSystemSettings() {
 
   if (error) {
     console.error('[Supabase getSystemSettings Error]:', error.message);
-    return {};
+    return null;
   }
 
-  if (!data) return {};
+  if (!data) return null;
+
+  const embeddedConfig = data.scoring_weights?._config || {};
 
   return {
-    syncBatchSize: data.sync_batch_size,
-    syncThrottleMs: data.sync_throttle_ms,
-    enableAutoSyncOnImport: data.enable_auto_sync_on_import,
-    scoringWeights: data.scoring_weights,
+    id: data.id,
+    collegeIdentifier: data.college_identifier || data.college_id || embeddedConfig.collegeIdentifier || 'COLLEGE_MAIN',
+    collegeDisplayName: data.college_display_name || data.college_name || embeddedConfig.collegeDisplayName || 'Engineering College',
+    syncConcurrency: data.sync_concurrency ?? data.sync_batch_size ?? embeddedConfig.syncConcurrency ?? 5,
+    syncBatchSize: data.sync_concurrency ?? data.sync_batch_size ?? embeddedConfig.syncConcurrency ?? 5,
+    syncThrottleMs: data.sync_throttle_ms !== undefined && data.sync_throttle_ms !== null ? data.sync_throttle_ms : (embeddedConfig.syncThrottleMs ?? 350),
+    autoSyncAfterImport: data.auto_sync_after_import !== undefined && data.auto_sync_after_import !== null ? data.auto_sync_after_import : (data.enable_auto_sync_on_import ?? embeddedConfig.autoSyncAfterImport ?? false),
+    enableAutoSyncOnImport: data.auto_sync_after_import !== undefined && data.auto_sync_after_import !== null ? data.auto_sync_after_import : (data.enable_auto_sync_on_import ?? embeddedConfig.autoSyncAfterImport ?? false),
+    scoringWeights: data.scoring_weights || null,
     updatedBy: data.updated_by,
     updatedAt: data.updated_at,
   };
@@ -993,27 +1000,87 @@ async function updateSystemSettings(payload) {
   const supabase = getSupabase();
   if (!supabase) return null;
 
-  const dbPayload = {
+  const collegeIdentifier = payload.collegeIdentifier || payload.collegeId;
+  const collegeDisplayName = payload.collegeDisplayName || payload.collegeName;
+  const syncConcurrency = payload.syncConcurrency !== undefined ? parseInt(payload.syncConcurrency, 10) : (payload.syncBatchSize !== undefined ? parseInt(payload.syncBatchSize, 10) : undefined);
+  const syncThrottleMs = payload.syncThrottleMs !== undefined ? parseInt(payload.syncThrottleMs, 10) : undefined;
+  const autoSyncAfterImport = payload.autoSyncAfterImport !== undefined ? !!payload.autoSyncAfterImport : (payload.enableAutoSyncOnImport !== undefined ? !!payload.enableAutoSyncOnImport : undefined);
+
+  // Fetch existing scoring_weights to embed _config metadata fallback
+  let existingWeights = {};
+  try {
+    const { data: current } = await supabase.from('system_settings').select('scoring_weights').eq('id', 'config').maybeSingle();
+    if (current && current.scoring_weights) {
+      existingWeights = { ...current.scoring_weights };
+    }
+  } catch (e) {}
+
+  const mergedWeights = {
+    ...existingWeights,
+    ...(payload.scoringWeights && typeof payload.scoringWeights === 'object' ? payload.scoringWeights : {}),
+    _config: {
+      ...(existingWeights._config || {}),
+      ...(collegeIdentifier !== undefined && { collegeIdentifier }),
+      ...(collegeDisplayName !== undefined && { collegeDisplayName }),
+      ...(syncConcurrency !== undefined && { syncConcurrency }),
+      ...(syncThrottleMs !== undefined && { syncThrottleMs }),
+      ...(autoSyncAfterImport !== undefined && { autoSyncAfterImport }),
+    },
+  };
+
+  // 1. Try upserting full payload with primary schema columns
+  const primaryPayload = {
     id: 'config',
-    ...(payload.syncBatchSize !== undefined && { sync_batch_size: parseInt(payload.syncBatchSize, 10) }),
-    ...(payload.syncThrottleMs !== undefined && { sync_throttle_ms: parseInt(payload.syncThrottleMs, 10) }),
-    ...(payload.enableAutoSyncOnImport !== undefined && { enable_auto_sync_on_import: !!payload.enableAutoSyncOnImport }),
-    ...(payload.scoringWeights !== undefined && { scoring_weights: payload.scoringWeights }),
+    ...(syncConcurrency !== undefined && { sync_batch_size: syncConcurrency, sync_concurrency: syncConcurrency }),
+    ...(syncThrottleMs !== undefined && { sync_throttle_ms: syncThrottleMs }),
+    ...(autoSyncAfterImport !== undefined && { enable_auto_sync_on_import: autoSyncAfterImport, auto_sync_after_import: autoSyncAfterImport }),
+    ...(collegeIdentifier !== undefined && { college_identifier: collegeIdentifier }),
+    ...(collegeDisplayName !== undefined && { college_display_name: collegeDisplayName }),
+    scoring_weights: mergedWeights,
     updated_by: payload.updatedBy || null,
     updated_at: new Date().toISOString(),
   };
 
-  const { data, error } = await supabase
+  try {
+    const { data, error } = await supabase
+      .from('system_settings')
+      .upsert(primaryPayload, { onConflict: 'id' })
+      .select()
+      .single();
+
+    if (!error && data) {
+      return data;
+    }
+    if (error) {
+      console.warn('[Supabase updateSystemSettings Info]: Falling back to baseline columns:', error.message);
+    }
+  } catch (primaryErr) {
+    console.warn('[Supabase updateSystemSettings Primary Notice]:', primaryErr.message);
+  }
+
+  // 2. Fallback upsert with guaranteed baseline columns
+  const fallbackPayload = {
+    id: 'config',
+    ...(syncConcurrency !== undefined && { sync_batch_size: syncConcurrency }),
+    ...(syncThrottleMs !== undefined && { sync_throttle_ms: syncThrottleMs }),
+    ...(autoSyncAfterImport !== undefined && { enable_auto_sync_on_import: autoSyncAfterImport }),
+    scoring_weights: mergedWeights,
+    updated_by: payload.updatedBy || null,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data: fallbackData, error: fallbackError } = await supabase
     .from('system_settings')
-    .upsert(dbPayload, { onConflict: 'id' })
+    .upsert(fallbackPayload, { onConflict: 'id' })
     .select()
     .single();
 
-  if (error) {
-    console.error('[Supabase updateSystemSettings Error]:', error.message);
-    throw error;
+  if (fallbackError) {
+    console.error('[Supabase updateSystemSettings Fallback Error]:', fallbackError.message);
+    throw fallbackError;
   }
-  return data;
+
+  return fallbackData;
 }
 
 module.exports = {

@@ -142,6 +142,8 @@ const executeSingleCodeChefRequest = async (username) => {
   const profileUrl = `https://www.codechef.com/users/${username}`;
   const now = new Date().toISOString();
 
+  console.log(`[CodeChef] Fetching profile: ${username}`);
+
   // If currently cooling down, return RATE_LIMITED immediately without network request
   if (isCodeChefInCooldown()) {
     codechefMetrics.cachedResults++;
@@ -185,6 +187,7 @@ const executeSingleCodeChefRequest = async (username) => {
       (html.includes('<title>\n        CodeChef - Learn and Practice Coding with Problems') && !html.includes('user-details-container'))
     ) {
       codechefMetrics.failedRequests++;
+      console.warn(`[CodeChef] User "${username}" not found.`);
       return {
         platform: 'codechef',
         username,
@@ -216,6 +219,9 @@ const executeSingleCodeChefRequest = async (username) => {
     currentBackoffMs = INITIAL_BACKOFF_MS;
     codechefMetrics.successfulRequests++;
     codechefMetrics.lastSuccessfulFetch = now;
+
+    console.log(`[CodeChef] Parsed: Total Solved=${solvedCount}`);
+    console.log(`[CodeChef] Validation passed`);
 
     return {
       platform: 'codechef',

@@ -73,8 +73,7 @@ export const ImportStudents = () => {
   const [previewSearch, setPreviewSearch] = useState('');
 
   // Import options
-  const [updateDuplicates, setUpdateDuplicates] = useState(true);
-  const [autoSync, setAutoSync] = useState(true);
+  const [autoSync, setAutoSync] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
 
@@ -96,8 +95,23 @@ export const ImportStudents = () => {
     }
   };
 
+  const loadSettingsConfig = async () => {
+    try {
+      const res = await adminService.getSettings();
+      if (res.success && res.settings) {
+        const autoSyncEnabled = res.settings.autoSyncAfterImport !== undefined
+          ? res.settings.autoSyncAfterImport
+          : (res.settings.enableAutoSyncOnImport ?? false);
+        setAutoSync(Boolean(autoSyncEnabled));
+      }
+    } catch (err) {
+      console.warn('Could not pre-load autoSync setting:', err.message);
+    }
+  };
+
   useEffect(() => {
     fetchHistory();
+    loadSettingsConfig();
   }, []);
 
   const handleDownloadTemplate = () => {

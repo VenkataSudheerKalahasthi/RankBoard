@@ -43,9 +43,12 @@ const {
   getImportHistory: getImportHistoryFromRepo,
   insertScoreAdjustment,
   getScoreAdjustments: getScoreAdjustmentsFromRepo,
-  getSystemSettings,
-  updateSystemSettings: updateSystemSettingsInRepo,
 } = require('../supabase/supabaseRepository');
+const {
+  getSystemSettings,
+  updateSystemSettings: updateSystemSettingsService,
+  getSystemHealth,
+} = require('../services/settingsService');
 
 // Global in-memory sync job tracking
 let activeSyncJob = null;
@@ -1127,8 +1130,9 @@ const syncAllStudents = async (req, res, next) => {
 
     // Background executor
     (async () => {
-      const batchSize = 5;
-      const throttleMs = 350;
+      const sysSettings = await getSystemSettings();
+      const batchSize = sysSettings.syncConcurrency || sysSettings.syncBatchSize || 5;
+      const throttleMs = sysSettings.syncThrottleMs !== undefined ? sysSettings.syncThrottleMs : 350;
       const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
       for (let i = 0; i < studentsToSync.length; i += batchSize) {
@@ -1655,10 +1659,15 @@ const confirmImport = async (req, res, next) => {
       req,
     });
 
-    // Background controlled batch synchronization
-    if (autoSync && idsToSync.length > 0) {
+    // Background controlled batch synchronization according to authoritative Admin Settings
+    const sysSettings = await getSystemSettings();
+    const shouldAutoSync = req.body.autoSync !== undefined ? Boolean(req.body.autoSync) : sysSettings.autoSyncAfterImport;
+
+    if (shouldAutoSync && idsToSync.length > 0) {
       (async () => {
-        const batchSize = 3;
+        const batchSize = sysSettings.syncConcurrency || sysSettings.syncBatchSize || 5;
+        const throttleMs = sysSettings.syncThrottleMs !== undefined ? sysSettings.syncThrottleMs : 350;
+
         for (let i = 0; i < idsToSync.length; i += batchSize) {
           const batch = idsToSync.slice(i, i + batchSize);
           await Promise.allSettled(
@@ -1670,8 +1679,9 @@ const confirmImport = async (req, res, next) => {
               }
             })
           );
-          // Small throttle between batches
-          await new Promise((res) => setTimeout(res, 500));
+          if (i + batchSize < idsToSync.length && throttleMs > 0) {
+            await new Promise((res) => setTimeout(res, throttleMs));
+          }
         }
       })().catch(console.error);
     }
@@ -2860,25 +2870,26 @@ const clearNotifications = async (req, res, next) => {
 
 const getSettings = async (req, res, next) => {
   try {
-    const saved = await getSystemSettings();
+    const settings = await getSystemSettings(true);
     const admins = await getAllAdmins();
+    const systemHealth = await getSystemHealth();
 
     return res.json({
       success: true,
       settings: {
-        collegeId: config.COLLEGE_ID,
-        collegeName: config.COLLEGE_NAME,
-        syncBatchSize: saved.syncBatchSize || 5,
-        syncThrottleMs: saved.syncThrottleMs || 350,
-        enableAutoSyncOnImport: saved.enableAutoSyncOnImport !== false,
-        scoringWeights: SCORING_WEIGHTS,
-        systemHealth: {
-          serverUptimeSeconds: Math.floor(process.uptime()),
-          nodeVersion: process.version,
-          supabaseConnected: true,
-          clerkConfigured: !!config.CLERK_SECRET_KEY,
-          environment: config.NODE_ENV,
-        },
+        collegeId: settings.collegeIdentifier,
+        collegeIdentifier: settings.collegeIdentifier,
+        collegeName: settings.collegeDisplayName,
+        collegeDisplayName: settings.collegeDisplayName,
+        syncConcurrency: settings.syncConcurrency,
+        syncBatchSize: settings.syncBatchSize,
+        syncThrottleMs: settings.syncThrottleMs,
+        autoSyncAfterImport: settings.autoSyncAfterImport,
+        enableAutoSyncOnImport: settings.enableAutoSyncOnImport,
+        scoringWeights: settings.scoringWeights || SCORING_WEIGHTS,
+        systemHealth,
+        updatedBy: settings.updatedBy,
+        updatedAt: settings.updatedAt,
       },
       admins,
     });
@@ -2889,29 +2900,63 @@ const getSettings = async (req, res, next) => {
 
 const updateSettings = async (req, res, next) => {
   try {
-    const { syncBatchSize, syncThrottleMs, enableAutoSyncOnImport } = req.body;
+    const {
+      collegeId,
+      collegeIdentifier,
+      collegeName,
+      collegeDisplayName,
+      syncConcurrency,
+      syncBatchSize,
+      syncThrottleMs,
+      autoSyncAfterImport,
+      enableAutoSyncOnImport,
+    } = req.body;
 
-    const payload = {
-      ...(syncBatchSize !== undefined && { syncBatchSize: parseInt(syncBatchSize, 10) }),
-      ...(syncThrottleMs !== undefined && { syncThrottleMs: parseInt(syncThrottleMs, 10) }),
-      ...(enableAutoSyncOnImport !== undefined && { enableAutoSyncOnImport: !!enableAutoSyncOnImport }),
-      updatedBy: req.admin?.email || 'admin@rankboard.edu',
-    };
-
-    const saved = await updateSystemSettingsInRepo(payload);
+    const saved = await updateSystemSettingsService({
+      collegeIdentifier: collegeIdentifier !== undefined ? collegeIdentifier : collegeId,
+      collegeDisplayName: collegeDisplayName !== undefined ? collegeDisplayName : collegeName,
+      syncConcurrency: syncConcurrency !== undefined ? syncConcurrency : syncBatchSize,
+      syncThrottleMs,
+      autoSyncAfterImport: autoSyncAfterImport !== undefined ? autoSyncAfterImport : enableAutoSyncOnImport,
+    }, req.admin);
 
     await logAudit({
       admin: req.admin,
       action: AUDIT_ACTIONS.SETTINGS_CHANGED,
       target: 'SYSTEM_SETTINGS',
-      details: payload,
+      details: {
+        collegeIdentifier: saved.collegeIdentifier,
+        collegeDisplayName: saved.collegeDisplayName,
+        syncConcurrency: saved.syncConcurrency,
+        syncThrottleMs: saved.syncThrottleMs,
+        autoSyncAfterImport: saved.autoSyncAfterImport,
+      },
       req,
     });
 
     return res.json({
       success: true,
-      message: 'System settings updated successfully.',
+      message: 'System settings saved successfully.',
       settings: saved,
+    });
+  } catch (error) {
+    if (error.status === 400 || error.validationErrors) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+        errors: error.validationErrors || [error.message],
+      });
+    }
+    next(error);
+  }
+};
+
+const getSystemHealthEndpoint = async (req, res, next) => {
+  try {
+    const health = await getSystemHealth();
+    return res.json({
+      success: true,
+      ...health,
     });
   } catch (error) {
     next(error);
@@ -2954,4 +2999,5 @@ module.exports = {
   clearNotifications,
   getSettings,
   updateSettings,
+  getSystemHealth: getSystemHealthEndpoint,
 };

@@ -70,46 +70,24 @@ const calculateGFGScore = (stats) => {
 
 /**
  * Calculates Codeforces Platform Score
- * Allocation: 20%
+ * Allocation: 0% (Statistics-only platform, problems solved count displayed)
  * 
  * @param {Object|null} stats - Normalized Codeforces statistics
- * @returns {number} Score
+ * @returns {number} Score (0)
  */
 const calculateCodeforcesScore = (stats) => {
-  if (!stats || stats.status !== 'SUCCESS') {
-    return 0;
-  }
-
-  // ============================================================================
-  // EXACT FORMULA — TBD (TO BE SUPPLIED SEPARATELY)
-  // ============================================================================
-  const rating = stats.rating || 0;
-  const solved = stats.totalSolved || 0;
-
-  const rawScore = (rating * 0.1) + (solved * 1.2);
-  return Math.round(rawScore * 100) / 100;
+  return 0;
 };
 
 /**
  * Calculates CodeChef Platform Score
- * Allocation: 10%
+ * Allocation: 0% (Statistics-only platform, problems solved count displayed)
  * 
  * @param {Object|null} stats - Normalized CodeChef statistics
- * @returns {number} Score
+ * @returns {number} Score (0)
  */
 const calculateCodeChefScore = (stats) => {
-  if (!stats || stats.status !== 'SUCCESS') {
-    return 0;
-  }
-
-  // ============================================================================
-  // EXACT FORMULA — TBD (TO BE SUPPLIED SEPARATELY)
-  // ============================================================================
-  const rating = stats.rating || 0;
-  const solved = stats.totalSolved || 0;
-
-  const rawScore = (rating * 0.08) + (solved * 1.0);
-  return Math.round(rawScore * 100) / 100;
+  return 0;
 };
 
 /**

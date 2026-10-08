@@ -33,6 +33,8 @@ const fetchCodeforcesProfile = async (input) => {
     return result;
   }
 
+  console.log(`[Codeforces] Fetching profile: ${username}`);
+
   try {
     // 1. Fetch user general info (rating, maxRating, rank)
     const userInfoResponse = await axios.get(
@@ -46,6 +48,7 @@ const fetchCodeforcesProfile = async (input) => {
     if (userInfoResponse.data.status !== 'OK' || !userInfoResponse.data.result?.[0]) {
       result.status = 'FAILED';
       result.errorMessage = `User "${username}" not found on Codeforces`;
+      console.warn(`[Codeforces] User "${username}" not found.`);
       return result;
     }
 
@@ -76,7 +79,7 @@ const fetchCodeforcesProfile = async (input) => {
     let hard = 0;
     try {
       const statusResponse = await axios.get(
-        `https://codeforces.com/api/user.status?handle=${encodeURIComponent(username)}&from=1&count=2000`,
+        `https://codeforces.com/api/user.status?handle=${encodeURIComponent(username)}&from=1&count=5000`,
         { timeout: 10000 }
       );
 
@@ -115,6 +118,9 @@ const fetchCodeforcesProfile = async (input) => {
       rank: userInfo.rank ?? null,
       maxRating: userInfo.maxRating ?? null,
     };
+
+    console.log(`[Codeforces] Parsed: Solved=${result.totalSolved} Easy=${result.easySolved} Medium=${result.mediumSolved} Hard=${result.hardSolved} Rating=${result.rating || 0}`);
+    console.log(`[Codeforces] Validation passed`);
 
     return result;
   } catch (error) {

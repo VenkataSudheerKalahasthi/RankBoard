@@ -54,6 +54,38 @@ export const subscribeToAdminUpdates = (onChange) => {
       { event: '*', schema: 'public', table: 'audit_logs' },
       (payload) => onChange && onChange('audit_logs', payload)
     )
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'system_settings' },
+      (payload) => onChange && onChange('system_settings', payload)
+    )
+    .subscribe();
+
+  return () => {
+    try {
+      supabase.removeChannel(channel);
+    } catch (e) {
+      // Ignored
+    }
+  };
+};
+
+/**
+ * Dedicated realtime listener for System Settings updates across multiple admin sessions
+ * @param {Function} onSettingsChange - Callback when system_settings changes in Supabase
+ * @returns {Function} Unsubscribe cleanup function
+ */
+export const subscribeToSettingsUpdates = (onSettingsChange) => {
+  if (!supabase) return () => {};
+
+  const channelId = `admin-settings-realtime-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  const channel = supabase
+    .channel(channelId)
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'system_settings' },
+      (payload) => onSettingsChange && onSettingsChange(payload)
+    )
     .subscribe();
 
   return () => {

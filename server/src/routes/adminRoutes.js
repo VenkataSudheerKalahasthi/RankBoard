@@ -63,8 +63,9 @@ router.get('/notifications', adminController.getNotifications);
 router.patch('/notifications/:id/read', adminController.markNotificationRead);
 router.delete('/notifications', adminController.clearNotifications);
 
-// 13. Settings
+// 13. Settings & System Health
 router.get('/settings', adminController.getSettings);
 router.put('/settings', adminController.updateSettings);
+router.get('/system/health', adminController.getSystemHealth);
 
 module.exports = router;
