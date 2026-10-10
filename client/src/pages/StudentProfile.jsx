@@ -116,7 +116,7 @@ const StudentProfile = () => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="w-full max-w-4xl mx-auto space-y-6">
       <ShareAchievementModal
         isOpen={showcaseOpen}
         onClose={() => setShowcaseOpen(false)}

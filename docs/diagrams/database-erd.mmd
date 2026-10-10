@@ -1,0 +1,150 @@
+erDiagram
+    STUDENTS ||--o{ STUDENT_PLATFORM_PROFILES : "has platforms (1:N)"
+    STUDENTS ||--o{ PLATFORM_STATISTICS : "has stats (1:N)"
+    STUDENTS ||--|| SCORES : "has score (1:1)"
+    STUDENTS ||--o{ SCORE_ADJUSTMENTS : "has adjustments (1:N)"
+
+    ADMINS ||--o{ AUDIT_LOGS : "logs actions (1:N)"
+    ADMINS ||--o{ SCORE_ADJUSTMENTS : "authorizes (1:N)"
+    ADMINS ||--o{ IMPORT_HISTORY : "uploads (1:N)"
+
+    STUDENTS {
+        text id PK
+        text clerk_user_id UK
+        text college_id
+        text name
+        text email UK
+        text roll_number
+        text department
+        integer year
+        text profile_photo
+        text role
+        text account_status
+        boolean profile_completed
+        numeric final_score
+        integer rank
+        timestamptz last_data_updated_at
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    STUDENT_PLATFORM_PROFILES {
+        bigserial id PK
+        text student_id FK
+        text platform
+        text profile_url
+        text username
+        text status
+        text error_message
+        timestamptz last_fetched_at
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    PLATFORM_STATISTICS {
+        bigserial id PK
+        text student_id FK
+        text platform
+        integer total_solved
+        integer easy_solved
+        integer medium_solved
+        integer hard_solved
+        numeric rating
+        bigint global_rank
+        jsonb raw_stats
+        timestamptz last_synced_at
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    SCORES {
+        bigserial id PK
+        text student_id FK,UK
+        numeric leetcode_score
+        numeric gfg_score
+        numeric codeforces_score
+        numeric codechef_score
+        numeric hackerrank_score
+        numeric final_score
+        jsonb breakdown
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    ADMINS {
+        text id PK
+        text user_id UK
+        text email UK
+        text name
+        text role
+        text status
+        text photo
+        timestamptz last_login_at
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    AUDIT_LOGS {
+        bigserial id PK
+        text admin_id
+        text admin_email
+        text admin_name
+        text action
+        text target
+        text target_id
+        jsonb details
+        text ip
+        text user_agent
+        timestamptz timestamp
+    }
+
+    ADMIN_NOTIFICATIONS {
+        bigserial id PK
+        text type
+        text title
+        text message
+        text target_id
+        text severity
+        boolean read
+        timestamptz read_at
+        timestamptz created_at
+    }
+
+    IMPORT_HISTORY {
+        bigserial id PK
+        text admin_id
+        text admin_email
+        text file_name
+        integer total_rows
+        integer imported_count
+        integer skipped_count
+        integer failed_count
+        text status
+        jsonb details
+        timestamptz created_at
+    }
+
+    SCORE_ADJUSTMENTS {
+        bigserial id PK
+        text student_id FK
+        text admin_id
+        text admin_email
+        numeric previous_score
+        numeric adjusted_score
+        text reason
+        timestamptz created_at
+    }
+
+    SYSTEM_SETTINGS {
+        text id PK
+        text college_identifier
+        text college_display_name
+        integer sync_concurrency
+        integer sync_batch_size
+        integer sync_throttle_ms
+        boolean auto_sync_after_import
+        boolean enable_auto_sync_on_import
+        jsonb scoring_weights
+        text updated_by
+        timestamptz updated_at
+    }

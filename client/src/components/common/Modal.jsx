@@ -28,8 +28,8 @@ const Modal = ({
         onClick={onClose}
       />
 
-      <div className={`relative bg-white rounded-xl shadow-2xl border border-slate-200 w-full ${maxWidth} z-10 overflow-hidden transform transition-all`}>
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+      <div className={`relative bg-white rounded-xl shadow-2xl border border-slate-200 w-full ${maxWidth} z-10 overflow-hidden transform transition-all flex flex-col max-h-[90vh]`}>
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
           <div>
             {title && <h3 className="text-base font-semibold text-slate-900">{title}</h3>}
             {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
@@ -42,7 +42,7 @@ const Modal = ({
           </button>
         </div>
 
-        <div className="p-6">{children}</div>
+        <div className="p-6 overflow-y-auto flex-1">{children}</div>
       </div>
     </div>
   );

@@ -532,9 +532,9 @@ export const Dashboard = () => {
       </div>
 
       {/* Two Column Section: Department Breakdown + Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Department Distribution */}
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-7 xl:col-span-8">
           <CardHeader
             title="Department Distribution"
             subtitle="Ranked student distribution across branches & academic years"
@@ -626,7 +626,7 @@ export const Dashboard = () => {
                                 <div className="text-[11px] text-slate-400 flex items-center gap-1.5 flex-wrap">
                                   <span className="font-mono">{student.rollNumber || 'No Roll #'}</span>
                                   <span>•</span>
-                                  <span className="text-slate-300 font-medium truncate max-w-[150px]">
+                                  <span className="text-slate-300 font-medium truncate max-w-[150px] sm:max-w-[200px] xl:max-w-none">
                                     {normalizeBranch(student.department)}
                                   </span>
                                   <span>•</span>
@@ -666,7 +666,7 @@ export const Dashboard = () => {
         </Card>
 
         {/* Recent Audit Trail */}
-        <Card className="lg:col-span-1">
+        <Card className="lg:col-span-5 xl:col-span-4">
           <CardHeader
             title="Recent Administrative Actions"
             subtitle="Live audit trail of platform modifications"

@@ -109,8 +109,8 @@ const Home = () => {
   return (
     <div className="space-y-10 pb-16">
       {/* Hero Section */}
-      <section className="bg-slate-900 text-white py-14 px-4 sm:px-6 lg:px-8 border-b border-slate-800 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto relative z-10 text-center">
+      <section className="bg-slate-900 text-white py-12 px-4 sm:px-6 lg:px-8 xl:px-10 border-b border-slate-800 relative">
+        <div className="w-full relative z-10 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/30 text-brand-300 text-xs font-semibold uppercase tracking-wider mb-4">
             <Sparkles className="w-3.5 h-3.5" />
             Institutional Competitive Programming Rankboard
@@ -151,9 +151,9 @@ const Home = () => {
         </div>
       </section>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 -mt-8 relative z-20">
+      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-8 space-y-8">
         {/* Top Metric KPI Cards */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <StatCard
             title="Registered Students"
             value={data?.stats?.totalRegisteredStudents ?? 0}

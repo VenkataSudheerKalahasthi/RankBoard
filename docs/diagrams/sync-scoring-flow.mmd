@@ -1,0 +1,41 @@
+sequenceDiagram
+    autonumber
+    participant Scheduler as Background Scheduler / Student
+    participant SyncService as syncService.js
+    participant PlatformFetcher as Platform Fetchers (LC/GFG/HR/CF/CC)
+    participant ScoringEngine as scoringEngine.js
+    participant RankingEngine as rankingEngine.js
+    participant DB as Supabase PostgreSQL
+    participant Realtime as Supabase Realtime
+
+    Scheduler->>SyncService: syncStudentPlatforms(student, newUrls)
+    
+    par Parallel Scrapes with Rate Limits
+        SyncService->>PlatformFetcher: fetchLeetCodeProfile(handle)
+        SyncService->>PlatformFetcher: fetchGFGProfile(handle) [via Queue]
+        SyncService->>PlatformFetcher: fetchHackerRankProfile(handle)
+        SyncService->>PlatformFetcher: fetchCodeforcesProfile(handle)
+        SyncService->>PlatformFetcher: fetchCodeChefProfile(handle) [via Backoff]
+    end
+    
+    PlatformFetcher-->>SyncService: Normalized Platform Stats
+    
+    SyncService->>SyncService: detectPlatformStatChanges(prevStats, newStats)
+    
+    alt Stat Changes Detected OR URLs Updated
+        SyncService->>ScoringEngine: evaluateStudentScores(platformStats)
+        ScoringEngine->>ScoringEngine: LC (40%) + GFG (30%) + HR (30%)
+        ScoringEngine-->>SyncService: New finalScore & breakdown
+        
+        SyncService->>DB: Update `students`, `student_platform_profiles`, `platform_statistics`, `scores`
+        DB->>Realtime: Emit `UPDATE` event on `students` & `scores`
+        
+        SyncService->>RankingEngine: recalculateCollegeRankings(collegeId)
+        RankingEngine->>DB: Fetch active students sorted by score DESC, total solved DESC, name ASC
+        RankingEngine->>DB: Update rank numbers for changed positions
+        DB->>Realtime: Emit `UPDATE` events for adjusted ranks
+    else No Changes Detected
+        SyncService-->>Scheduler: Return cached student without unnecessary DB writes
+    end
+    
+    Realtime-->>Scheduler: Push WebSocket update to all open client dashboards

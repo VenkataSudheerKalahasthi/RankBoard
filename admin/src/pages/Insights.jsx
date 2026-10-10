@@ -809,7 +809,7 @@ export const Insights = () => {
                         <Badge variant={priorityVariant} size="xs">{rec.priority} Priority</Badge>
                         <Badge variant="default" size="xs">{rec.category}</Badge>
                       </div>
-                      <p className="text-xs text-slate-300 leading-relaxed max-w-3xl">{rec.description}</p>
+                      <p className="text-xs text-slate-300 leading-relaxed max-w-3xl xl:max-w-5xl 2xl:max-w-none">{rec.description}</p>
                     </div>
                   </div>
 

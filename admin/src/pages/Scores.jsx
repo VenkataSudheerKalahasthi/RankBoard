@@ -428,7 +428,7 @@ export const Scores = () => {
                       <td className="table-td font-mono">
                         {a.previousScore} → <strong className="text-slate-100">{a.newScore}</strong>
                       </td>
-                      <td className="table-td text-slate-300 max-w-sm truncate" title={a.reason}>
+                      <td className="table-td text-slate-300 max-w-sm xl:max-w-xl 2xl:max-w-none truncate" title={a.reason}>
                         {a.reason}
                       </td>
                       <td className="table-td font-mono text-[11px] text-slate-400">

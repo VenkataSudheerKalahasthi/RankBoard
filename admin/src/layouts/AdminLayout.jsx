@@ -178,7 +178,7 @@ export const AdminLayout = () => {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Header */}
-        <header className="hidden lg:flex items-center justify-between px-8 py-4 bg-slate-900/60 border-b border-slate-800/80 backdrop-blur-md sticky top-0 z-30">
+        <header className="hidden lg:flex items-center justify-between px-4 sm:px-6 lg:px-8 xl:px-10 py-4 bg-slate-900/60 border-b border-slate-800/80 backdrop-blur-md sticky top-0 z-30">
           <div>
             <div className="flex items-center gap-2 text-[11px] font-medium text-slate-400">
               <span>Admin Console</span>
@@ -211,7 +211,7 @@ export const AdminLayout = () => {
         </header>
 
         {/* Page Viewport */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 xl:px-10 xl:py-8 w-full min-w-0">
           <Outlet />
         </main>
       </div>

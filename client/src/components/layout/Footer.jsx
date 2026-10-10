@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 const Footer = () => {
   return (
     <footer className="bg-slate-900 text-slate-400 border-t border-slate-800 text-xs mt-auto">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-8">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded bg-brand-600 text-white flex items-center justify-center font-bold">
@@ -33,7 +33,7 @@ const Footer = () => {
         <div className="mt-6 pt-5 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2 text-slate-500 text-[11px]">
           <p>© {new Date().getFullYear()} College DSA Rankboard. Built for university coding excellence.</p>
           <div className="font-mono text-slate-400">
-            LeetCode • GeeksforGeeks • Codeforces • CodeChef
+            LeetCode • GeeksforGeeks • HackerRank • Codeforces • CodeChef
           </div>
         </div>
       </div>

@@ -31,16 +31,16 @@ export const Modal = ({
       />
 
       {/* Modal Box */}
-      <div className="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+      <div className="flex min-h-full items-center justify-center p-4 sm:p-6 text-center">
         <div
           className={clsx(
-            'relative transform overflow-hidden rounded-2xl bg-slate-900 border border-slate-800 text-left shadow-2xl transition-all w-full my-8 z-10',
+            'relative transform overflow-hidden rounded-2xl bg-slate-900 border border-slate-800 text-left shadow-2xl transition-all w-full my-auto z-10 flex flex-col max-h-[90vh]',
             maxWidth
           )}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+          <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between shrink-0">
             <div>
               <h3 className="text-sm font-bold text-slate-100">{title}</h3>
               {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
@@ -54,7 +54,7 @@ export const Modal = ({
           </div>
 
           {/* Body */}
-          <div className="p-6">{children}</div>
+          <div className="p-6 overflow-y-auto flex-1">{children}</div>
         </div>
       </div>
     </div>

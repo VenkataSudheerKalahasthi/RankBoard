@@ -111,7 +111,7 @@ const StudentDashboard = () => {
       )}
 
       {/* KPI Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-4 gap-4 sm:gap-6">
         <StatCard
           title="College Rank"
           value={student?.rank ? `#${student.rank}` : 'Unranked'}
@@ -168,7 +168,7 @@ const StudentDashboard = () => {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5 gap-6">
           <PlatformCard
             platformKey="leetcode"
             platformConfig={platforms.leetcode}

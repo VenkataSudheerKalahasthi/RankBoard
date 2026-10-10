@@ -1,0 +1,55 @@
+sequenceDiagram
+    autonumber
+    actor Client as Frontend Client (React)
+    participant Helmet as Helmet Security
+    participant Cors as CORS Middleware
+    participant RateLimit as Rate Limiter
+    participant BodyParser as Express JSON Parser (10MB)
+    participant AuthGuard as Clerk / Admin Auth Middleware
+    participant Validator as Zod Validator
+    participant Controller as Route Controller
+    participant Service as Business Logic Service
+    participant Cache as In-Memory Cache
+    participant DB as Supabase PostgreSQL
+
+    Client->>Helmet: HTTP Request
+    Helmet->>Cors: Set Cross-Origin Headers
+    Cors->>RateLimit: Verify Allowed Origin
+    RateLimit->>BodyParser: Check IP Request Window
+    BodyParser->>AuthGuard: Parse JSON Payload
+    
+    alt Protected Route
+        AuthGuard->>AuthGuard: Verify Bearer JWT with Clerk
+        alt Invalid or Expired Token
+            AuthGuard-->>Client: 401 Unauthorized
+        else Valid Token
+            AuthGuard->>DB: Query / Link Student or Admin Record
+            AuthGuard->>Validator: Attach req.auth & req.student / req.admin
+        end
+    end
+
+    Validator->>Validator: Validate Schema (Zod)
+    alt Validation Failed
+        Validator-->>Client: 400 Bad Request (Formatted Field Errors)
+    else Validation Passed
+        Validator->>Controller: Forward Clean Payload
+    end
+
+    Controller->>Service: Call Business Logic Method
+    alt Cached Read (e.g., Leaderboard)
+        Service->>Cache: Query Cache
+        alt Cache Fresh (<60s)
+            Cache-->>Service: Return In-Memory Students
+        else Cache Expired / Miss
+            Service->>DB: Fetch All Students & Relations
+            DB-->>Service: Relational Rows
+            Service->>Cache: Populate Cache with 60s TTL
+        end
+    else Write / Mutation Operation
+        Service->>DB: Perform SQL / Supabase Operation
+        DB-->>Service: Mutation Success
+        Service->>Cache: Invalidate In-Memory Cache
+    end
+
+    Service-->>Controller: Return Result Payload
+    Controller-->>Client: HTTP 200/201 JSON Response

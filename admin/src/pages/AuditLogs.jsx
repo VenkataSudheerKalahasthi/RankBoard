@@ -420,7 +420,7 @@ export const AuditLogs = () => {
                         {getStatusBadge(log.status || details.status)}
                       </td>
 
-                      <td className="table-td max-w-md">
+                      <td className="table-td max-w-md xl:max-w-xl 2xl:max-w-none">
                         {reason ? (
                           <div className="text-[11px] text-amber-300 font-medium truncate">
                             <span className="text-slate-400">Reason:</span> "{reason}"

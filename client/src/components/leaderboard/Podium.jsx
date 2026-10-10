@@ -16,7 +16,7 @@ const Podium = ({ topStudents = [] }) => {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto mb-10">
+    <div className="w-full mb-8">
       <div className="text-center mb-6">
         <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
           Hall of Champions
@@ -26,7 +26,7 @@ const Podium = ({ topStudents = [] }) => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end pt-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 items-end pt-2 w-full">
         {/* Rank 2 (Silver) */}
         {second ? (
           <div className="order-2 md:order-1 flex flex-col items-center">

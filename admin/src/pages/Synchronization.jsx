@@ -396,7 +396,7 @@ export const Synchronization = () => {
                       <td className="table-td font-mono text-[11px] text-slate-400">
                         {formatTimestamp(log.lastFetchedAt)}
                       </td>
-                      <td className="table-td max-w-xs truncate">
+                      <td className="table-td max-w-xs xl:max-w-md 2xl:max-w-none truncate">
                         {log.errorMessage ? (
                           <span className="text-rose-400 text-[11px]" title={log.errorMessage}>
                             {log.errorMessage}

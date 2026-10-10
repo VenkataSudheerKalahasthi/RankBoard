@@ -195,7 +195,7 @@ const PublicShowcase = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 py-10 px-4 sm:px-6 lg:px-8 text-slate-900">
-      <div className="max-w-4xl mx-auto space-y-8">
+      <div className="w-full max-w-5xl mx-auto space-y-8">
         {/* Navigation Bar */}
         <div className="flex items-center justify-between border-b border-slate-200 pb-5">
           <Link to="/" className="flex items-center gap-2.5 text-slate-900 hover:text-brand-600 transition">

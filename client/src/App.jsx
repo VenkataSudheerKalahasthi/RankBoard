@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { SignedIn, SignedOut, RedirectToSignIn } from '@clerk/clerk-react';
+import { SignedIn, SignedOut, RedirectToSignIn, AuthenticateWithRedirectCallback } from '@clerk/clerk-react';
 
 // Layouts
 import PublicLayout from './components/layout/PublicLayout';
@@ -61,6 +61,7 @@ export default function App() {
       {/* Auth Pages */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/sso-callback" element={<AuthenticateWithRedirectCallback />} />
 
       {/* Protected Student Portal Routes */}
       <Route

@@ -1,0 +1,14 @@
+flowchart TD
+    Start["Admin Request with Bearer Token"] --> VerifyJWT["Verify Clerk JWT via @clerk/backend"]
+    VerifyJWT --> CheckEnv{"Is userEmail in ADMIN_EMAILS env?"}
+    CheckEnv -->|Yes| GrantSuperAdmin["Grant SUPER_ADMIN Role"]
+    CheckEnv -->|No| CheckAdminsTable{"Query Supabase `admins` table by userId or email"}
+    
+    CheckAdminsTable -->|Found & Status ACTIVE| GrantAdmin["Grant Configured Admin Role"]
+    CheckAdminsTable -->|Not Found| CheckStudentRole{"Query Supabase `students` table: role == 'ADMIN'?"}
+    
+    CheckStudentRole -->|Yes| GrantAdminRole["Grant ADMIN Role"]
+    CheckStudentRole -->|No| CheckBootstrap{"Is `admins` table completely empty (count == 0)?"}
+    
+    CheckBootstrap -->|Yes (Fresh Install)| BootstrapAdmin["Bootstrap First Admin as SUPER_ADMIN & Upsert"]
+    CheckBootstrap -->|No| DenyAccess["Reject with HTTP 403 Forbidden ('Access Denied')"]

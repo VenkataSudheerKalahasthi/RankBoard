@@ -1,0 +1,58 @@
+graph TB
+    subgraph ClientLayer["Frontend Client Tier"]
+        SP["Student Portal (client/)<br/>React 18 + Vite :5173"]
+        AP["Admin Portal (admin/)<br/>React 18 + Vite :5174"]
+    end
+
+    subgraph AuthTier["Identity Tier"]
+        ClerkAuth["Clerk Identity Service<br/>OAuth2 / Session JWTs"]
+    end
+
+    subgraph ServerLayer["Backend API Server Tier (server/ :5000)"]
+        Express["Express.js Server Engine"]
+        Middlewares["Middleware Pipeline<br/>Helmet | CORS | Morgan | RateLimit | ClerkAuth | AdminAuth | Zod"]
+        Controllers["API Controllers<br/>Student | Admin | Platform | Leaderboard | Showcase"]
+        Services["Core Service Layer<br/>SyncService | ScoringEngine | RankingEngine | InsightsService | Cloudinary"]
+        Cache["In-Memory Student Cache<br/>60s TTL + Reactive Invalidation"]
+        Scheduler["Background Scheduler Worker<br/>3s Queue Tick Loop"]
+    end
+
+    subgraph DataTier["Data & Storage Tier"]
+        SupabaseDB[("Supabase PostgreSQL<br/>10 Relational Tables + Indexes + RLS")]
+        RealtimeCDC["Supabase Realtime Engine<br/>PostgreSQL CDC WebSocket Channels"]
+        CloudinaryCDN["Cloudinary Cloud CDN<br/>Optimized Profile Images"]
+    end
+
+    subgraph ExternalPlatforms["External Coding Platforms"]
+        LC["LeetCode GraphQL API"]
+        GFG["GeeksforGeeks Submissions API & HTML"]
+        HR["HackerRank REST API"]
+        CF["Codeforces REST API"]
+        CC["CodeChef HTTP Profile Scraper"]
+    end
+
+    SP -->|1. Sign In / Get Session Token| ClerkAuth
+    AP -->|1. Sign In / Get Session Token| ClerkAuth
+    SP -->|2. Authenticated REST Requests (Bearer Token)| Express
+    AP -->|2. Authenticated REST Requests (Bearer Token)| Express
+
+    SP -.->|WebSocket: postgres_changes on students, scores| RealtimeCDC
+    AP -.->|WebSocket: postgres_changes on notifications, audit_logs| RealtimeCDC
+    RealtimeCDC -.->|Stream Database Row Changes| SP
+    RealtimeCDC -.->|Stream Database Row Changes| AP
+
+    Express --> Middlewares
+    Middlewares --> Controllers
+    Controllers --> Services
+    Services <--> Cache
+    Scheduler --> Services
+
+    Services -->|Service Role Key Query| SupabaseDB
+    Services -->|Upload Profile Photo| CloudinaryCDN
+    Services -->|Fetch Stats| LC
+    Services -->|Fetch Stats & Handle 429| GFG
+    Services -->|Fetch Stats| HR
+    Services -->|Fetch Stats| CF
+    Services -->|Scrape Stats & Backoff| CC
+    Middlewares -->|Verify JWT Claims| ClerkAuth
+    SupabaseDB -->|Trigger CDC Events| RealtimeCDC

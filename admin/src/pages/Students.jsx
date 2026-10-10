@@ -602,7 +602,7 @@ export const Students = () => {
 
                       {/* Department / Year */}
                       <td className="table-td">
-                        <div className="text-xs text-slate-300 truncate max-w-[160px]" title={student.department}>
+                        <div className="text-xs text-slate-300 truncate max-w-[160px] xl:max-w-none" title={student.department}>
                           {student.department || 'General'}
                         </div>
                         <div className="text-[10px] text-slate-500 font-medium">

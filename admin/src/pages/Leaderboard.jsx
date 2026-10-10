@@ -419,7 +419,7 @@ export const Leaderboard = () => {
                       <div className="text-[11px] text-slate-400 font-mono">{student.rollNumber || student.email}</div>
                     </td>
 
-                    <td className="table-td text-slate-300 truncate max-w-[150px]">
+                    <td className="table-td text-slate-300 truncate max-w-[160px] xl:max-w-none">
                       {student.department}
                     </td>
 
