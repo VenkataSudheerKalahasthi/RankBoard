@@ -28,11 +28,19 @@ const {
   REQUIRED_COLUMNS,
 } = require('../utils/importValidator');
 const {
+  ALLOWED_PLATFORMS,
+  PLATFORM_DISPLAY_NAMES,
+  validateBulkPlatformUrlHeaders,
+  validateBulkPlatformUrlRows,
+} = require('../utils/bulkPlatformUrlValidator');
+const {
   getAllStudents,
   getStudentById: getStudentByIdFromRepo,
   upsertStudent,
   updateStudent: updateStudentInRepo,
   deleteStudent: deleteStudentInRepo,
+  updateStudentPlatformProfile,
+  batchUpdateStudentPlatformProfiles,
   upsertAdmin,
   getAllAdmins,
   getAuditLogs: getAuditLogsFromRepo,
@@ -49,6 +57,7 @@ const {
   updateSystemSettings: updateSystemSettingsService,
   getSystemHealth,
 } = require('../services/settingsService');
+const { invalidateStudentCache } = require('../utils/studentCache');
 
 // Global in-memory sync job tracking
 let activeSyncJob = null;
@@ -656,7 +665,7 @@ const createStudent = async (req, res, next) => {
       profilePhoto: '',
       role: 'STUDENT',
       accountStatus: 'ACTIVE',
-      profileCompleted: !!(lcHandle && gfgHandle && cfHandle && ccHandle),
+      profileCompleted: !!(lcHandle && gfgHandle && cfHandle && ccHandle && hrHandle),
       finalScore: 0,
       rank: null,
       scores: {
@@ -679,6 +688,7 @@ const createStudent = async (req, res, next) => {
     };
 
     const createdRecord = await upsertStudent(newStudent);
+    invalidateStudentCache();
 
     // Auto-sync platforms in background if URLs provided
     const hasAnyHandle = lcHandle || gfgHandle || cfHandle || ccHandle || hrHandle;
@@ -827,6 +837,7 @@ const updateStudent = async (req, res, next) => {
     }
 
     await updateStudentInRepo(id, updates);
+    invalidateStudentCache();
 
     let finalStudentRecord = null;
 
@@ -1761,6 +1772,503 @@ const getImportTemplate = (req, res) => {
 
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.setHeader('Content-Disposition', 'attachment; filename="student_import_template.xlsx"');
+  return res.send(buffer);
+};
+
+// ==============================================================================
+// 5B. BULK PLATFORM URL UPDATE (ADMIN-ONLY TARGETED IMPORT)
+// ==============================================================================
+
+/**
+ * Validates spreadsheet rows for updating existing students' platform URLs
+ * Matches students safely by Email or Roll Number (never name alone)
+ * Evaluates proposed URL changes: New Link, Replacement, Unchanged, Invalid, Not Found
+ */
+const validateBulkPlatformUrls = async (req, res, next) => {
+  try {
+    const { platform, identifierType = 'auto', rows = [], records = [], headers = null } = req.body;
+    const rawRows = rows.length > 0 ? rows : records;
+
+    if (!platform) {
+      return res.status(400).json({
+        success: false,
+        message: 'A coding platform must be selected (e.g., leetcode, gfg, hackerrank, codeforces, codechef).',
+      });
+    }
+
+    const pKey = String(platform).toLowerCase().trim();
+    if (!ALLOWED_PLATFORMS.includes(pKey)) {
+      return res.status(400).json({
+        success: false,
+        message: `Unsupported platform "${platform}". Allowed platforms: ${ALLOWED_PLATFORMS.join(', ')}`,
+      });
+    }
+
+    if (!Array.isArray(rawRows) || rawRows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Request body must include a "rows" array containing student URL update records.',
+      });
+    }
+
+    // Header validation if explicit header array provided
+    if (headers && Array.isArray(headers) && headers.length > 0) {
+      const headerCheck = validateBulkPlatformUrlHeaders(headers, pKey);
+      if (!headerCheck.isValid) {
+        return res.status(400).json({
+          success: false,
+          message: headerCheck.error,
+        });
+      }
+    }
+
+    // Fetch existing students from Supabase (using fresh or cached state)
+    let existingStudents = [];
+    try {
+      const { getAllStudentsCached } = require('../utils/studentCache');
+      existingStudents = await getAllStudentsCached();
+    } catch {
+      existingStudents = await getAllStudents();
+    }
+
+    // Perform safe, targeted validation
+    const result = validateBulkPlatformUrlRows(rawRows, pKey, existingStudents, identifierType);
+
+    return res.json({
+      success: true,
+      platform: pKey,
+      platformName: PLATFORM_DISPLAY_NAMES[pKey] || pKey,
+      summary: result.summary,
+      rows: result.rows,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Executes targeted platform URL updates for existing students
+ * Guarantees zero regression: touches ONLY the selected platform profile URL
+ * Preserves all student personal info, other platform URLs, statistics, scores, and ranks
+ */
+const confirmBulkPlatformUrls = async (req, res, next) => {
+  try {
+    const {
+      platform,
+      rows = [],
+      fileName = 'bulk_platform_url_update.xlsx',
+      autoSync = false,
+      confirmReplacements = false,
+    } = req.body;
+
+    if (!platform) {
+      return res.status(400).json({
+        success: false,
+        message: 'A coding platform must be selected.',
+      });
+    }
+
+    const pKey = String(platform).toLowerCase().trim();
+    if (!ALLOWED_PLATFORMS.includes(pKey)) {
+      return res.status(400).json({
+        success: false,
+        message: `Unsupported platform "${platform}". Allowed platforms: ${ALLOWED_PLATFORMS.join(', ')}`,
+      });
+    }
+
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No student URL rows provided for update.',
+      });
+    }
+
+    // Fetch fresh existing students to verify matches securely on server
+    const existingStudents = await getAllStudents();
+    const validated = validateBulkPlatformUrlRows(rows, pKey, existingStudents);
+
+    let updatedCount = 0;
+    let unchangedCount = 0;
+    let skippedCount = 0;
+    let failedCount = 0;
+    const failedRows = [];
+    const updatedRows = [];
+    const updateRecords = [];
+    const studentIdsToSync = [];
+
+    // Filter and prepare targeted updates
+    for (const r of validated.rows) {
+      if (!r.isValid || r.status === 'STUDENT_NOT_FOUND' || r.status === 'INVALID_URL' || r.status === 'MISSING_REQUIRED_VALUE' || r.status === 'AMBIGUOUS_MATCH' || r.status === 'DUPLICATE_IN_FILE') {
+        failedCount++;
+        failedRows.push({
+          rowNumber: r.rowNumber,
+          identifier: r.identifier || '—',
+          submittedUrl: r.submittedUrl || '—',
+          platform: pKey,
+          reason: r.reason || r.errors?.join('; ') || 'Invalid record',
+          status: 'UPDATE_FAILED',
+        });
+        continue;
+      }
+
+      if (r.status === 'UNCHANGED' || r.changeType === 'IDENTICAL') {
+        unchangedCount++;
+        continue;
+      }
+
+      // Check explicit confirmation for replacing existing URLs
+      if (r.changeType === 'REPLACEMENT' && !confirmReplacements) {
+        skippedCount++;
+        failedRows.push({
+          rowNumber: r.rowNumber,
+          identifier: r.identifier,
+          submittedUrl: r.submittedUrl,
+          platform: pKey,
+          reason: 'Replacement of existing URL requires explicit Admin confirmation.',
+          status: 'SKIPPED_UNCONFIRMED_REPLACEMENT',
+        });
+        continue;
+      }
+
+      updateRecords.push({
+        studentId: r.studentId,
+        platform: pKey,
+        profileUrl: r.canonicalUrl || r.newUrl,
+        username: r.handle || r.newHandle,
+        rowNumber: r.rowNumber,
+        identifier: r.identifier,
+        studentName: r.student?.name,
+      });
+    }
+
+    // Execute targeted database updates in controlled batches (respects Supabase connection limits)
+    if (updateRecords.length > 0) {
+      const batchResult = await batchUpdateStudentPlatformProfiles(updateRecords);
+      updatedCount = batchResult.updated;
+
+      // Track individual update results
+      const failedMap = new Map((batchResult.failed || []).map((f) => [f.studentId, f.reason]));
+
+      for (const rec of updateRecords) {
+        if (failedMap.has(rec.studentId)) {
+          failedCount++;
+          failedRows.push({
+            rowNumber: rec.rowNumber,
+            identifier: rec.identifier,
+            submittedUrl: rec.profileUrl,
+            platform: pKey,
+            reason: failedMap.get(rec.studentId) || 'Database update failed',
+            status: 'UPDATE_FAILED',
+          });
+        } else {
+          studentIdsToSync.push(rec.studentId);
+          updatedRows.push({
+            rowNumber: rec.rowNumber,
+            identifier: rec.identifier,
+            studentName: rec.studentName,
+            platform: pKey,
+            url: rec.profileUrl,
+            status: 'UPDATED',
+          });
+        }
+      }
+
+      // Invalidate student in-memory cache to reflect new URLs immediately
+      invalidateStudentCache();
+    }
+
+    const finalStatus =
+      failedCount === 0
+        ? 'SUCCESS'
+        : updatedCount > 0
+        ? 'COMPLETED_WITH_ERRORS'
+        : 'FAILED';
+
+    // Record Audit Log for Admin actions
+    await logAudit({
+      admin: req.admin,
+      action: AUDIT_ACTIONS.BULK_PLATFORM_URL_UPDATE,
+      target: `${PLATFORM_DISPLAY_NAMES[pKey] || pKey} Platform URLs (${fileName})`,
+      details: {
+        platform: pKey,
+        platformName: PLATFORM_DISPLAY_NAMES[pKey] || pKey,
+        fileName,
+        totalRows: rows.length,
+        updatedCount,
+        unchangedCount,
+        skippedCount,
+        failedCount,
+        autoSyncTriggered: Boolean(autoSync && studentIdsToSync.length > 0),
+        status: finalStatus,
+      },
+      req,
+    });
+
+    // Record entry in Supabase import_history
+    await insertImportHistory({
+      adminId: req.admin.userId,
+      adminEmail: req.admin.email,
+      fileName: `[${(PLATFORM_DISPLAY_NAMES[pKey] || pKey).toUpperCase()} Update] ${fileName}`,
+      totalRows: rows.length,
+      importedCount: updatedCount,
+      skippedCount: unchangedCount + skippedCount,
+      failedCount,
+      status: finalStatus,
+      details: {
+        mode: 'PLATFORM_URL_UPDATE',
+        platform: pKey,
+        updatedCount,
+        unchangedCount,
+        skippedCount,
+        failedCount,
+        failedRows,
+      },
+    });
+
+    // Optional controlled platform statistics synchronization for updated students only
+    let syncStarted = false;
+    if (autoSync && studentIdsToSync.length > 0) {
+      syncStarted = true;
+      (async () => {
+        const sysSettings = await getSystemSettings();
+        const batchSize = sysSettings.syncConcurrency || sysSettings.syncBatchSize || 5;
+        const throttleMs = sysSettings.syncThrottleMs !== undefined ? sysSettings.syncThrottleMs : 350;
+
+        for (let i = 0; i < studentIdsToSync.length; i += batchSize) {
+          const batch = studentIdsToSync.slice(i, i + batchSize);
+          await Promise.allSettled(
+            batch.map(async (studentId) => {
+              try {
+                // Sync ONLY the updated platform; do not scrape other platforms
+                await syncStudentPlatforms(studentId, null, {
+                  onlyPlatform: pKey,
+                  forceSync: true,
+                });
+              } catch (syncErr) {
+                console.warn(`[Bulk URL Update AutoSync Warning for ${studentId} on ${pKey}]:`, syncErr.message);
+              }
+            })
+          );
+          if (i + batchSize < studentIdsToSync.length && throttleMs > 0) {
+            await new Promise((res) => setTimeout(res, throttleMs));
+          }
+        }
+      })().catch(console.error);
+    }
+
+    return res.json({
+      success: true,
+      message: `${PLATFORM_DISPLAY_NAMES[pKey] || pKey} URLs updated: ${updatedCount} updated, ${unchangedCount} unchanged, ${skippedCount} skipped, ${failedCount} failed.`,
+      results: {
+        platform: pKey,
+        platformName: PLATFORM_DISPLAY_NAMES[pKey] || pKey,
+        totalRows: rows.length,
+        updatedCount,
+        unchangedCount,
+        skippedCount,
+        failedCount,
+        status: finalStatus,
+        autoSyncTriggered: syncStarted,
+        failedRows,
+        updatedRows,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Executes a single controlled batch of platform URL updates
+ * Used for streaming/chunked imports with frontend backpressure and progress reporting
+ */
+const executeBulkPlatformUrlsBatch = async (req, res, next) => {
+  try {
+    const { platform, rows = [], confirmReplacements = false, autoSync = false } = req.body;
+
+    if (!platform || !Array.isArray(rows) || rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid batch payload: platform and rows array are required.',
+      });
+    }
+
+    const pKey = String(platform).toLowerCase().trim();
+    if (!ALLOWED_PLATFORMS.includes(pKey)) {
+      return res.status(400).json({
+        success: false,
+        message: `Unsupported platform "${platform}". Allowed platforms: ${ALLOWED_PLATFORMS.join(', ')}`,
+      });
+    }
+
+    const updateRecords = [];
+    let updatedCount = 0;
+    let unchangedCount = 0;
+    let skippedCount = 0;
+    let failedCount = 0;
+    const failedRows = [];
+    const updatedRows = [];
+    const studentIdsToSync = [];
+
+    for (const r of rows) {
+      if (!r.isValid || !r.studentId) {
+        failedCount++;
+        failedRows.push({
+          rowNumber: r.rowNumber,
+          identifier: r.identifier,
+          submittedUrl: r.submittedUrl,
+          reason: r.reason || 'Invalid record',
+        });
+        continue;
+      }
+
+      if (r.status === 'UNCHANGED' || r.changeType === 'IDENTICAL') {
+        unchangedCount++;
+        continue;
+      }
+
+      if (r.changeType === 'REPLACEMENT' && !confirmReplacements) {
+        skippedCount++;
+        failedRows.push({
+          rowNumber: r.rowNumber,
+          identifier: r.identifier,
+          submittedUrl: r.submittedUrl,
+          reason: 'Replacement of existing URL requires confirmation',
+        });
+        continue;
+      }
+
+      updateRecords.push({
+        studentId: r.studentId,
+        platform: pKey,
+        profileUrl: r.canonicalUrl || r.newUrl,
+        username: r.handle || r.newHandle,
+        rowNumber: r.rowNumber,
+        identifier: r.identifier,
+        studentName: r.student?.name,
+      });
+    }
+
+    if (updateRecords.length > 0) {
+      const batchResult = await batchUpdateStudentPlatformProfiles(updateRecords);
+      updatedCount = batchResult.updated;
+
+      const failedMap = new Map((batchResult.failed || []).map((f) => [f.studentId, f.reason]));
+
+      for (const rec of updateRecords) {
+        if (failedMap.has(rec.studentId)) {
+          failedCount++;
+          failedRows.push({
+            rowNumber: rec.rowNumber,
+            identifier: rec.identifier,
+            submittedUrl: rec.profileUrl,
+            reason: failedMap.get(rec.studentId) || 'Database update failed',
+          });
+        } else {
+          studentIdsToSync.push(rec.studentId);
+          updatedRows.push({
+            rowNumber: rec.rowNumber,
+            identifier: rec.identifier,
+            studentName: rec.studentName,
+            url: rec.profileUrl,
+          });
+        }
+      }
+
+      invalidateStudentCache();
+    }
+
+    // Optional sync for this batch's updated students (only the affected platform)
+    if (autoSync && studentIdsToSync.length > 0) {
+      Promise.allSettled(
+        studentIdsToSync.map((id) =>
+          syncStudentPlatforms(id, null, { onlyPlatform: pKey, forceSync: true }).catch((e) =>
+            console.warn(`[Batch AutoSync Warning for ${id} on ${pKey}]:`, e.message)
+          )
+        )
+      ).catch(console.error);
+    }
+
+    return res.json({
+      success: true,
+      updatedCount,
+      unchangedCount,
+      skippedCount,
+      failedCount,
+      failedRows,
+      updatedRows,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Generates an Excel template specifically for the selected platform update
+ * Contains only Email and the selected Platform URL column
+ */
+const getBulkPlatformUrlTemplate = (req, res) => {
+  const platform = (req.params.platform || 'hackerrank').toLowerCase().trim();
+  const pName = PLATFORM_DISPLAY_NAMES[platform] || 'HackerRank';
+
+  const headers = ['Email', `${pName} URL`];
+  let sampleUrls = [];
+
+  switch (platform) {
+    case 'leetcode':
+      sampleUrls = [
+        'https://leetcode.com/u/student1_lc/',
+        'https://leetcode.com/u/student2_lc/',
+        'https://leetcode.com/u/student3_lc/',
+      ];
+      break;
+    case 'gfg':
+    case 'geeksforgeeks':
+      sampleUrls = [
+        'https://www.geeksforgeeks.org/user/student1_gfg/',
+        'https://www.geeksforgeeks.org/user/student2_gfg/',
+        'https://www.geeksforgeeks.org/user/student3_gfg/',
+      ];
+      break;
+    case 'codeforces':
+      sampleUrls = [
+        'https://codeforces.com/profile/student1_cf',
+        'https://codeforces.com/profile/student2_cf',
+        'https://codeforces.com/profile/student3_cf',
+      ];
+      break;
+    case 'codechef':
+      sampleUrls = [
+        'https://www.codechef.com/users/student1_cc',
+        'https://www.codechef.com/users/student2_cc',
+        'https://www.codechef.com/users/student3_cc',
+      ];
+      break;
+    case 'hackerrank':
+    default:
+      sampleUrls = [
+        'https://www.hackerrank.com/profile/student1_hr',
+        'https://www.hackerrank.com/profile/student2_hr',
+        'https://www.hackerrank.com/profile/student3_hr',
+      ];
+      break;
+  }
+
+  const sampleRows = [
+    ['student1@college.edu', sampleUrls[0]],
+    ['student2@college.edu', sampleUrls[1]],
+    ['student3@college.edu', sampleUrls[2]],
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...sampleRows]);
+  ws['!cols'] = [{ wch: 30 }, { wch: 45 }];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, `${pName} URLs`);
+  const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename="${platform}_url_update_template.xlsx"`);
   return res.send(buffer);
 };
 
@@ -2980,6 +3488,10 @@ module.exports = {
   confirmImport,
   getImportHistory,
   getImportTemplate,
+  validateBulkPlatformUrls,
+  confirmBulkPlatformUrls,
+  executeBulkPlatformUrlsBatch,
+  getBulkPlatformUrlTemplate,
   getAdminLeaderboard,
   recalculateLeaderboard,
   getPlatformStats,

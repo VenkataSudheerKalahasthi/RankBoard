@@ -1083,6 +1083,132 @@ async function updateSystemSettings(payload) {
   return fallbackData;
 }
 
+/**
+ * Targeted update for a single student's platform profile URL.
+ * Guarantees zero regression: touches ONLY the specified platform profile
+ * and updates the student timestamp, leaving all other fields intact.
+ */
+async function updateStudentPlatformProfile(studentId, platform, { profileUrl, username }) {
+  const supabase = getSupabase();
+  if (!supabase) throw new Error('Supabase client not initialized');
+
+  const now = new Date().toISOString();
+
+  // 1. Upsert student_platform_profiles for this student & platform only
+  const { error: profileErr } = await withSupabaseRetry(async () => {
+    return await supabase
+      .from('student_platform_profiles')
+      .upsert({
+        student_id: studentId,
+        platform,
+        profile_url: profileUrl || null,
+        username: username || null,
+        status: username ? 'PENDING' : 'NOT_CONNECTED',
+        error_message: null,
+        updated_at: now,
+      }, { onConflict: 'student_id,platform' });
+  });
+
+  if (profileErr) {
+    console.error(`[Supabase updateStudentPlatformProfile Error for ${studentId}]:`, profileErr.message);
+    throw profileErr;
+  }
+
+  // 2. Update students table timestamp
+  const { error: studentErr } = await withSupabaseRetry(async () => {
+    return await supabase
+      .from('students')
+      .update({
+        last_data_updated_at: now,
+        updated_at: now,
+      })
+      .eq('id', studentId);
+  });
+
+  if (studentErr) {
+    console.warn(`[Supabase update timestamp warning for ${studentId}]:`, studentErr.message);
+  }
+
+  return true;
+}
+
+/**
+ * Batch targeted update for student platform profiles.
+ * Executes in controlled chunks with Supabase retries.
+ */
+async function batchUpdateStudentPlatformProfiles(records) {
+  if (!Array.isArray(records) || records.length === 0) return { updated: 0, failed: [] };
+
+  const supabase = getSupabase();
+  if (!supabase) throw new Error('Supabase client not initialized');
+
+  const now = new Date().toISOString();
+  const profileRows = [];
+  const studentIds = new Set();
+  const failed = [];
+
+  for (const r of records) {
+    if (!r.studentId || !r.platform) continue;
+    profileRows.push({
+      student_id: r.studentId,
+      platform: r.platform,
+      profile_url: r.profileUrl || null,
+      username: r.username || null,
+      status: r.username ? 'PENDING' : 'NOT_CONNECTED',
+      error_message: null,
+      updated_at: now,
+    });
+    studentIds.add(r.studentId);
+  }
+
+  // Upsert profile rows in chunks
+  const chunkSize = 100;
+  for (let i = 0; i < profileRows.length; i += chunkSize) {
+    const chunk = profileRows.slice(i, i + chunkSize);
+    const { error } = await withSupabaseRetry(async () => {
+      return await supabase
+        .from('student_platform_profiles')
+        .upsert(chunk, { onConflict: 'student_id,platform' });
+    });
+
+    if (error) {
+      console.error('[Supabase batchUpdateStudentPlatformProfiles Chunk Error]:', error.message);
+      // Fallback row-by-row for this chunk
+      for (const item of chunk) {
+        try {
+          await updateStudentPlatformProfile(item.student_id, item.platform, {
+            profileUrl: item.profile_url,
+            username: item.username,
+          });
+        } catch (itemErr) {
+          failed.push({ studentId: item.student_id, reason: itemErr.message });
+        }
+      }
+    }
+  }
+
+  // Update timestamps for all successfully touched students
+  if (studentIds.size > 0) {
+    const idList = Array.from(studentIds);
+    for (let i = 0; i < idList.length; i += 200) {
+      const batchIds = idList.slice(i, i + 200);
+      try {
+        await supabase
+          .from('students')
+          .update({ last_data_updated_at: now, updated_at: now })
+          .in('id', batchIds);
+      } catch (e) {
+        console.warn('[Supabase batch timestamp update warning]:', e.message);
+      }
+    }
+  }
+
+  return {
+    updated: profileRows.length - failed.length,
+    failed,
+  };
+}
+
 module.exports = {
   getAllStudents,
   getStudentById,
@@ -1090,6 +1216,8 @@ module.exports = {
   upsertStudent,
   updateStudent,
   deleteStudent,
+  updateStudentPlatformProfile,
+  batchUpdateStudentPlatformProfiles,
   getAdminById,
   getAdminByEmail,
   getAdminsCount,

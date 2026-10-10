@@ -24,7 +24,7 @@ const StudentDashboard = () => {
   // Calculate connected platforms count
   const platformKeys = ['leetcode', 'gfg', 'codeforces', 'codechef', 'hackerrank'];
   const connectedCount = platformKeys.filter((k) => platforms[k]?.username).length;
-  const isComplete = connectedCount >= 4;
+  const isComplete = connectedCount >= 5;
 
   const totalSolvedCombined = ((platformStats.leetcode?.totalSolved || 0) +
                                (platformStats.gfg?.totalSolved || 0) +

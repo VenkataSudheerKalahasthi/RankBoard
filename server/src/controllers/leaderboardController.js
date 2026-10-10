@@ -1,5 +1,6 @@
 const { config } = require('../config/env');
 const { getAllStudentsCached } = require('../utils/studentCache');
+const { getActivePlatformsCount, getPlatformRegistryWithStatus } = require('../config/platformRegistry');
 
 /**
  * Public leaderboard endpoint returning sanitized college rankings for registered students
@@ -18,9 +19,10 @@ const getLeaderboard = async (req, res, next) => {
         stats: {
           totalRegisteredStudents: 0,
           totalProblemsSolved: 0,
-          codingPlatforms: 4,
+          codingPlatforms: getActivePlatformsCount(),
           lastUpdated: new Date().toISOString(),
         },
+        platforms: getPlatformRegistryWithStatus(),
         podium: [],
         leaderboard: [],
       });
@@ -171,9 +173,10 @@ const getLeaderboard = async (req, res, next) => {
       stats: {
         totalRegisteredStudents: rankedLeaderboard.length,
         totalProblemsSolved,
-        codingPlatforms: 5,
+        codingPlatforms: getActivePlatformsCount(),
         lastUpdated: latestUpdate || new Date().toISOString(),
       },
+      platforms: getPlatformRegistryWithStatus(),
       podium,
       leaderboard: filteredLeaderboard,
     });

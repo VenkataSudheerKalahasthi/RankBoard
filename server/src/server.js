@@ -29,6 +29,16 @@ const startServer = () => {
 
     // Start background sync scheduler for automated periodic platform updates
     startBackgroundScheduler();
+
+    // Pre-warm student cache in background so initial client request resolves instantaneously
+    const { getAllStudentsCached } = require('./utils/studentCache');
+    getAllStudentsCached()
+      .then((students) => {
+        console.log(`⚡ [Cache Warm] Loaded ${students.length} student records into memory for instant initial render.`);
+      })
+      .catch((err) => {
+        console.warn('⚠️ [Cache Warm Notice]:', err.message);
+      });
   });
 
   const shutdown = () => {

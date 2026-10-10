@@ -26,11 +26,17 @@ router.post('/sync/all', adminController.syncAllStudents);
 router.get('/sync/status', adminController.getSyncStatus);
 router.get('/sync/logs', adminController.getSyncLogs);
 
-// 5. Bulk Import
+// 5. Bulk Import (Mode A: Full Student Ingestion)
 router.post('/import/validate', adminController.validateImportData);
 router.post('/import/confirm', adminController.confirmImport);
 router.get('/import/history', adminController.getImportHistory);
 router.get('/import/template', adminController.getImportTemplate);
+
+// 5B. Bulk Platform URL Update (Mode B: Targeted Platform URL Update)
+router.post('/import/bulk-platform-urls/validate', adminController.validateBulkPlatformUrls);
+router.post('/import/bulk-platform-urls/confirm', adminController.confirmBulkPlatformUrls);
+router.post('/import/bulk-platform-urls/batch', adminController.executeBulkPlatformUrlsBatch);
+router.get('/import/bulk-platform-urls/template/:platform', adminController.getBulkPlatformUrlTemplate);
 
 // 6. Leaderboard
 router.get('/leaderboard', adminController.getAdminLeaderboard);

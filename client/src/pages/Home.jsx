@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { leaderboardService } from '../services/leaderboardService';
+import { subscribeToRankboardUpdates } from '../services/supabase';
+import { TOTAL_CONFIGURED_PLATFORMS } from '../config/platforms';
 import StatCard from '../components/common/StatCard';
 import Podium from '../components/leaderboard/Podium';
 import LeaderboardTable from '../components/leaderboard/LeaderboardTable';
 import LoadingState from '../components/common/LoadingState';
 import ErrorState from '../components/common/ErrorState';
 import Button from '../components/common/Button';
-import { Users, CheckCircle, Layers, Clock, Search, Sparkles, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Users, CheckCircle, Layers, Clock, Search, Sparkles, ArrowRight } from 'lucide-react';
 import { SignedIn, SignedOut } from '@clerk/clerk-react';
 
 const DEPARTMENTS = [
@@ -22,23 +24,17 @@ const DEPARTMENTS = [
 ];
 
 const Home = () => {
-  const [data, setData] = useState({
-    stats: {
-      totalRegisteredStudents: 0,
-      totalProblemsSolved: 0,
-      codingPlatforms: 4,
-      lastUpdated: null,
-    },
-    podium: [],
-    leaderboard: [],
-  });
-
+  // Authoritative data state; null while awaiting initial response
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [department, setDepartment] = useState('ALL');
   const [year, setYear] = useState('ALL');
+
+  // Track active request ID to prevent race conditions and ensure latest response wins
+  const activeRequestId = useRef(0);
 
   // Debounce search input for instant live search as user types
   useEffect(() => {
@@ -48,9 +44,15 @@ const Home = () => {
     return () => clearTimeout(handler);
   }, [search]);
 
-  const fetchLeaderboard = async () => {
-    setLoading(true);
-    setError(null);
+  const fetchLeaderboard = async (isBackground = false) => {
+    const requestId = ++activeRequestId.current;
+
+    // Only set loading if initial load or explicit user-triggered retry
+    if (!isBackground && !data) {
+      setLoading(true);
+      setError(null);
+    }
+
     try {
       const response = await leaderboardService.getLeaderboard({
         search: debouncedSearch.trim() || undefined,
@@ -58,25 +60,51 @@ const Home = () => {
         year: year !== 'ALL' ? year : undefined,
       });
 
-      if (response.success) {
+      // Discard slower, outdated responses if a newer request was dispatched
+      if (requestId !== activeRequestId.current) {
+        return;
+      }
+
+      if (response && response.success) {
         setData(response);
+        setError(null);
+      } else {
+        throw new Error(response?.message || 'Failed to load leaderboard data.');
       }
     } catch (err) {
+      if (requestId !== activeRequestId.current) {
+        return;
+      }
       console.error('Failed to load leaderboard data:', err);
-      setError(err.response?.data?.message || 'Failed to load leaderboard information.');
+      if (!data) {
+        setError(err.response?.data?.message || err.message || 'Failed to load leaderboard information.');
+      }
     } finally {
-      setLoading(false);
+      if (requestId === activeRequestId.current) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    fetchLeaderboard();
+    fetchLeaderboard(false);
+
+    // Subscribe to Supabase Realtime table changes to auto-update without flashing
+    const unsubscribe = subscribeToRankboardUpdates(() => {
+      fetchLeaderboard(true);
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, [department, year, debouncedSearch]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    fetchLeaderboard();
+    fetchLeaderboard(false);
   };
+
+  const isInitialLoading = loading && !data;
 
   return (
     <div className="space-y-10 pb-16">
@@ -128,40 +156,44 @@ const Home = () => {
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title="Registered Students"
-            value={data.stats.totalRegisteredStudents}
+            value={data?.stats?.totalRegisteredStudents ?? 0}
             subtitle="Active student profiles"
             icon={Users}
             badgeText="Enrolled"
             badgeVariant="brand"
+            loading={isInitialLoading}
           />
           <StatCard
             title="Problems Solved"
-            value={data.stats.totalProblemsSolved.toLocaleString()}
+            value={(data?.stats?.totalProblemsSolved ?? 0).toLocaleString()}
             subtitle="Verified across platforms"
             icon={CheckCircle}
             badgeText="Combined"
             badgeVariant="emerald"
+            loading={isInitialLoading}
           />
           <StatCard
             title="Coding Platforms"
-            value={data.stats.codingPlatforms}
+            value={data?.stats?.codingPlatforms ?? TOTAL_CONFIGURED_PLATFORMS}
             subtitle="LC • GFG • HR • CF • CC"
             icon={Layers}
             badgeText="Integrated"
             badgeVariant="slate"
+            loading={isInitialLoading}
           />
           <StatCard
             title="Last Updated"
-            value={data.stats.lastUpdated ? new Date(data.stats.lastUpdated).toLocaleDateString() : 'Just now'}
-            subtitle={data.stats.lastUpdated ? new Date(data.stats.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Live'}
+            value={data?.stats?.lastUpdated ? new Date(data.stats.lastUpdated).toLocaleDateString() : 'Just now'}
+            subtitle={data?.stats?.lastUpdated ? new Date(data.stats.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Live'}
             icon={Clock}
             badgeText="Live Sync"
             badgeVariant="amber"
+            loading={isInitialLoading}
           />
         </section>
 
         {/* Top 3 Podium */}
-        {!loading && data.podium.length > 0 && !search && department === 'ALL' && year === 'ALL' && (
+        {!isInitialLoading && data?.podium && data.podium.length > 0 && !search && department === 'ALL' && year === 'ALL' && (
           <section>
             <Podium topStudents={data.podium} />
           </section>
@@ -217,12 +249,12 @@ const Home = () => {
             </form>
           </div>
 
-          {loading ? (
-            <LoadingState message="Fetching live leaderboard from Firestore..." />
-          ) : error ? (
-            <ErrorState message={error} onRetry={fetchLeaderboard} />
+          {isInitialLoading ? (
+            <LoadingState message="Fetching live leaderboard from database..." />
+          ) : error && !data ? (
+            <ErrorState title="Leaderboard Unavailable" message={error} onRetry={() => fetchLeaderboard(false)} />
           ) : (
-            <LeaderboardTable students={data.leaderboard} loading={loading} />
+            <LeaderboardTable students={data?.leaderboard || []} loading={loading} />
           )}
         </section>
       </div>

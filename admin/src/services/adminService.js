@@ -27,6 +27,12 @@ export const adminService = {
   getImportHistory: () => api.get('/admin/import/history'),
   getImportTemplate: () => api.get('/admin/import/template'),
 
+  // 5B. Bulk Platform URL Update
+  validateBulkPlatformUrls: (data) => api.post('/admin/import/bulk-platform-urls/validate', data),
+  confirmBulkPlatformUrls: (data) => api.post('/admin/import/bulk-platform-urls/confirm', data),
+  executeBulkPlatformUrlsBatch: (data) => api.post('/admin/import/bulk-platform-urls/batch', data),
+  getBulkPlatformUrlTemplateUrl: (platform) => `/api/admin/import/bulk-platform-urls/template/${platform}`,
+
   // 6. Leaderboard
   getAdminLeaderboard: (params = {}) => api.get('/admin/leaderboard', { params }),
   recalculateLeaderboard: () => api.post('/admin/leaderboard/recalculate'),

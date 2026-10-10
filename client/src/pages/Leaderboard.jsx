@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { leaderboardService } from '../services/leaderboardService';
 import LeaderboardTable from '../components/leaderboard/LeaderboardTable';
 import LoadingState from '../components/common/LoadingState';
@@ -23,7 +23,6 @@ const DEPARTMENTS = [
   'AI&ML',
   'CSIT',
   'VLSI',
-  
 ];
 
 const Leaderboard = () => {
@@ -33,9 +32,10 @@ const Leaderboard = () => {
   const [search, setSearch] = useState('');
   const [department, setDepartment] = useState('ALL');
   const [year, setYear] = useState('ALL');
-  const [totalCount, setTotalCount] = useState(0);
+  const [totalCount, setTotalCount] = useState(null);
 
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const activeRequestId = useRef(0);
 
   // Debounce search query by 200ms for instant live search
   useEffect(() => {
@@ -46,10 +46,13 @@ const Leaderboard = () => {
   }, [search]);
 
   const fetchRankings = async (isBackground = false) => {
-    if (!isBackground) {
+    const requestId = ++activeRequestId.current;
+
+    if (!isBackground && students.length === 0) {
       setLoading(true);
       setError(null);
     }
+
     try {
       const response = await leaderboardService.getLeaderboard({
         search: debouncedSearch.trim() || undefined,
@@ -57,24 +60,35 @@ const Leaderboard = () => {
         year: year !== 'ALL' ? year : undefined,
       });
 
-      if (response.success) {
+      // Discard slower, outdated responses
+      if (requestId !== activeRequestId.current) {
+        return;
+      }
+
+      if (response && response.success) {
         setStudents(response.leaderboard || []);
         setTotalCount(response.stats?.totalRegisteredStudents || response.leaderboard?.length || 0);
+        setError(null);
+      } else {
+        throw new Error(response?.message || 'Failed to load rankings.');
       }
     } catch (err) {
+      if (requestId !== activeRequestId.current) {
+        return;
+      }
       console.error('Failed to load leaderboard:', err);
-      if (!isBackground) {
-        setError(err.response?.data?.message || 'Failed to load rankings.');
+      if (students.length === 0) {
+        setError(err.response?.data?.message || err.message || 'Failed to load rankings.');
       }
     } finally {
-      if (!isBackground) {
+      if (requestId === activeRequestId.current) {
         setLoading(false);
       }
     }
   };
 
   useEffect(() => {
-    fetchRankings();
+    fetchRankings(false);
 
     // Subscribe to Supabase Realtime table changes
     const unsubscribe = subscribeToRankboardUpdates(() => {
@@ -94,7 +108,7 @@ const Leaderboard = () => {
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    fetchRankings();
+    fetchRankings(false);
   };
 
   return (
@@ -110,7 +124,9 @@ const Leaderboard = () => {
             College DSA Leaderboard
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Displaying live performance scores for all {totalCount} registered students.
+            {loading && totalCount === null
+              ? 'Loading live performance standings...'
+              : `Displaying live performance scores for all ${totalCount ?? 0} registered students.`}
           </p>
         </div>
       </div>

@@ -361,4 +361,5 @@ const fetchGFGProfile = async (input) => {
 
 module.exports = {
   fetchGFGProfile,
+  isGFGInCooldown,
 };

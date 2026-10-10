@@ -132,7 +132,7 @@ export default function StudentRank() {
             <p className="text-zinc-400 text-sm max-w-xl leading-relaxed">
               {rank
                 ? `You are currently ranking higher than ${(percentile - 1).toFixed(0)}% of your peers in ${collegeName} with a combined performance score of ${finalScore.toFixed(2)}.`
-                : 'Connect your coding profiles (LeetCode, GFG, Codeforces, CodeChef) on the platforms page to calculate your platform scores and establish your college rank.'}
+                : 'Connect your coding profiles (LeetCode, GFG, HackerRank, Codeforces, CodeChef) on the platforms page to calculate your platform scores and establish your college rank.'}
             </p>
           </div>
 

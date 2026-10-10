@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { adminService } from '../services/adminService';
 import { useNotifications } from '../context/NotificationContext';
@@ -187,24 +187,31 @@ export const Dashboard = () => {
   const [selectedBranch, setSelectedBranch] = useState('ALL');
   const [selectedYear, setSelectedYear] = useState('ALL');
 
+  const activeRequestId = useRef(0);
+
   const fetchDashboardData = useCallback(async (isBackground = false) => {
-    if (!isBackground) setLoading(true);
+    const requestId = ++activeRequestId.current;
+    if (!isBackground && !stats) setLoading(true);
     setError(null);
     try {
       const response = await adminService.getDashboardStats();
+      if (requestId !== activeRequestId.current) return;
       if (response.success) {
         setStats(response.stats);
         setRecentAudits(response.stats?.recentActivity || response.recentAudits || []);
       }
     } catch (err) {
+      if (requestId !== activeRequestId.current) return;
       console.error('Failed to load dashboard:', err);
-      if (!isBackground) {
+      if (!stats) {
         setError(err.message || 'Failed to load dashboard metrics.');
       }
     } finally {
-      if (!isBackground) setLoading(false);
+      if (requestId === activeRequestId.current) {
+        setLoading(false);
+      }
     }
-  }, []);
+  }, [stats]);
 
   useEffect(() => {
     fetchDashboardData();

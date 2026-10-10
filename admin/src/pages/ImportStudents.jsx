@@ -24,7 +24,9 @@ import {
   UserCheck,
   UserPlus,
   Users,
+  Link2,
 } from 'lucide-react';
+import { BulkPlatformUrlUpdateTab } from './BulkPlatformUrlUpdateTab';
 
 const REQUIRED_HEADERS = [
   'Name',
@@ -62,6 +64,9 @@ export const ImportStudents = () => {
   const { notifySuccess, notifyError, notifyWarning } = useNotifications();
   const fileInputRef = useRef(null);
 
+  // Mode: 'FULL_IMPORT' (Mode A) | 'PLATFORM_URL_UPDATE' (Mode B)
+  const [activeMode, setActiveMode] = useState('FULL_IMPORT');
+
   // Flow Step: 'UPLOAD' -> 'PREVIEW' -> 'RESULT'
   const [step, setStep] = useState('UPLOAD');
   const [fileName, setFileName] = useState('');
@@ -73,6 +78,7 @@ export const ImportStudents = () => {
   const [previewSearch, setPreviewSearch] = useState('');
 
   // Import options
+  const [updateDuplicates, setUpdateDuplicates] = useState(true);
   const [autoSync, setAutoSync] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
@@ -368,30 +374,80 @@ export const ImportStudents = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
         <div>
           <h1 className="text-xl font-black text-slate-100 flex items-center gap-2">
-            <span>Bulk Student Excel Import</span>
+            <span>{activeMode === 'FULL_IMPORT' ? 'Bulk Student Excel Import' : "Update Existing Students' Platform URLs"}</span>
             <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-brand-950 text-brand-300 border border-brand-800">
-              Excel (.xlsx)
+              {activeMode === 'FULL_IMPORT' ? 'Full Ingestion' : 'Targeted Update'}
             </span>
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            Ingest student records, validate 10 required platform columns, resolve duplicates, and trigger live ranking updates.
+            {activeMode === 'FULL_IMPORT'
+              ? 'Ingest student records, validate 10 required platform columns, resolve duplicates, and trigger live ranking updates.'
+              : 'Targeted updates for a single coding platform URL for existing students. Protects all other student data and rankings.'}
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleDownloadTemplate}
-            icon={Download}
-          >
-            Download Excel Template
-          </Button>
-        </div>
+        {activeMode === 'FULL_IMPORT' && (
+          <div className="flex items-center gap-2.5">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleDownloadTemplate}
+              icon={Download}
+            >
+              Download Excel Template
+            </Button>
+          </div>
+        )}
       </div>
 
-      {/* STEP 1: FILE UPLOAD ZONE */}
-      {step === 'UPLOAD' && (
+      {/* Mode Selector Tabs */}
+      <div className="flex border-b border-slate-800 gap-2 sm:gap-6">
+        <button
+          type="button"
+          onClick={() => setActiveMode('FULL_IMPORT')}
+          className={`pb-3 text-xs sm:text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${
+            activeMode === 'FULL_IMPORT'
+              ? 'border-brand-500 text-brand-400'
+              : 'border-transparent text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          <span>Mode A — Full Student Import</span>
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 hidden sm:inline">
+            10 Columns
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveMode('PLATFORM_URL_UPDATE')}
+          className={`pb-3 text-xs sm:text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${
+            activeMode === 'PLATFORM_URL_UPDATE'
+              ? 'border-brand-500 text-brand-400'
+              : 'border-transparent text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <Link2 className="w-4 h-4" />
+          <span>Mode B — Update Existing Students' Platform URLs</span>
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-brand-950 text-brand-300 border border-brand-800 hidden sm:inline">
+            Targeted URL
+          </span>
+        </button>
+      </div>
+
+      {/* MODE B: BULK PLATFORM URL UPDATE */}
+      {activeMode === 'PLATFORM_URL_UPDATE' && (
+        <BulkPlatformUrlUpdateTab
+          onImportComplete={fetchHistory}
+          initialAutoSync={autoSync}
+        />
+      )}
+
+      {/* MODE A: FULL STUDENT IMPORT WORKFLOW */}
+      {activeMode === 'FULL_IMPORT' && (
+        <>
+          {/* STEP 1: FILE UPLOAD ZONE */}
+          {step === 'UPLOAD' && (
         <Card className="p-8">
           <div className="max-w-xl mx-auto text-center space-y-4">
             <div className="w-16 h-16 rounded-2xl bg-brand-500/10 text-brand-400 flex items-center justify-center mx-auto shadow-inner border border-brand-500/20">
@@ -812,6 +868,8 @@ export const ImportStudents = () => {
           )}
         </div>
       )}
+    </>
+  )}
 
       {/* IMPORT HISTORY SECTION */}
       <Card>

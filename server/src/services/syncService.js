@@ -211,8 +211,11 @@ const syncStudentPlatforms = async (studentIdOrClerkId, newPlatformUrls = null, 
     hackerrank: (config.SYNC_CONFIG?.HACKERRANK_INTERVAL_SECONDS || 120) * 1000,
   };
 
-  // Iterate across all configured platforms and fetch actual stats
-  const platformKeys = ['leetcode', 'gfg', 'codeforces', 'codechef', 'hackerrank'];
+  // Iterate across all configured platforms (or only the specified platform) and fetch actual stats
+  const allPlatformKeys = ['leetcode', 'gfg', 'codeforces', 'codechef', 'hackerrank'];
+  const platformKeys = (options && options.onlyPlatform)
+    ? [options.onlyPlatform.toLowerCase().trim()]
+    : allPlatformKeys;
   let anyPlatformChanged = false;
   const allDetectedChanges = [];
 
@@ -299,8 +302,8 @@ const syncStudentPlatforms = async (studentIdOrClerkId, newPlatformUrls = null, 
   // Calculate updated platform scores and final score
   const scoreResults = evaluateStudentScores(platformStats);
 
-  // Check if profile is complete
-  const connectedCount = platformKeys.filter((k) => platforms[k]?.username).length;
+  // Check if profile is complete across all platforms
+  const connectedCount = allPlatformKeys.filter((k) => platforms[k]?.username).length;
   const profileCompleted = connectedCount >= 3 && !!studentData.rollNumber && !!studentData.department;
 
   // Determine if database update is necessary

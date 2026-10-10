@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { toPng } from 'html-to-image';
 import { showcaseService } from '../services/showcaseService';
 import AchievementCard from '../components/showcase/AchievementCard';
+import AchievementExportCard from '../components/showcase/AchievementExportCard';
 import Button from '../components/common/Button';
 import LoadingState from '../components/common/LoadingState';
 import ErrorState from '../components/common/ErrorState';
+import {
+  exportAchievementCard,
+  buildAchievementFilename,
+} from '../utils/exportAchievementCard';
 import {
   Trophy,
   Share2,
@@ -18,17 +22,24 @@ import {
   ArrowRight,
   Code2,
   Sparkles,
+  Monitor,
+  Smartphone,
 } from 'lucide-react';
 
 const PublicShowcase = () => {
   const { studentId } = useParams();
   const cardRef = useRef(null);
+  const exportCardRef = useRef(null);
 
   const [showcase, setShowcase] = useState(null);
   const [isPrivate, setIsPrivate] = useState(false);
   const [studentName, setStudentName] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [selectedLayout, setSelectedLayout] = useState(() =>
+    typeof window !== 'undefined' && window.innerWidth < 640 ? 'mobile' : 'desktop'
+  );
 
   const [downloading, setDownloading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -96,21 +107,27 @@ const PublicShowcase = () => {
   };
 
   const handleDownloadImage = async () => {
-    if (!cardRef.current) return;
+    if (downloading) return;
+    const targetElement = exportCardRef.current || cardRef.current;
+    if (!targetElement) return;
+
     setDownloading(true);
     try {
-      const dataUrl = await toPng(cardRef.current, {
-        cacheBust: true,
+      const filename = buildAchievementFilename(
+        showcase?.name,
+        showcase?.rank,
+        selectedLayout
+      );
+
+      const targetWidth = selectedLayout === 'mobile' ? 472 : 872;
+
+      await exportAchievementCard(targetElement, {
+        filename,
+        width: targetWidth,
         pixelRatio: 2.5,
-        quality: 0.98,
       });
 
-      const link = document.createElement('a');
-      const safeName = (showcase?.name || 'student').toLowerCase().replace(/[^a-z0-9]/g, '_');
-      link.download = `rankboard_achievement_${safeName}.png`;
-      link.href = dataUrl;
-      link.click();
-      setToastMsg('Achievement card downloaded!');
+      setToastMsg(`Achievement card downloaded (${selectedLayout === 'mobile' ? 'Portrait' : 'Landscape'})!`);
       setTimeout(() => setToastMsg(''), 3500);
     } catch (err) {
       console.error('Download failed:', err);
@@ -215,9 +232,65 @@ const PublicShowcase = () => {
           </div>
         )}
 
-        {/* Achievement Card Component */}
-        <div className="flex justify-center">
-          <AchievementCard ref={cardRef} showcase={showcase} />
+        {/* Layout Format Selector Tabs */}
+        <div className="flex items-center justify-center gap-2">
+          <div className="bg-white p-1 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setSelectedLayout('desktop')}
+              className={`flex items-center gap-2 py-1.5 px-3.5 rounded-xl text-xs font-bold transition ${
+                selectedLayout === 'desktop'
+                  ? 'bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Monitor className="w-3.5 h-3.5" />
+              <span>Landscape View (840px)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedLayout('mobile')}
+              className={`flex items-center gap-2 py-1.5 px-3.5 rounded-xl text-xs font-bold transition ${
+                selectedLayout === 'mobile'
+                  ? 'bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+              <span>Portrait View (440px)</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Achievement Card Component Preview */}
+        <div className="flex justify-center overflow-x-auto py-2">
+          <AchievementCard
+            ref={cardRef}
+            showcase={showcase}
+            layout={selectedLayout}
+            forExport={false}
+          />
+        </div>
+
+        {/* Dedicated Off-Screen Export Container - Unclipped and explicit export dimensions */}
+        <div
+          style={{
+            position: 'fixed',
+            left: '-9999px',
+            top: 0,
+            width: selectedLayout === 'mobile' ? '472px' : '872px',
+            zIndex: -9999,
+            pointerEvents: 'none',
+            visibility: 'visible',
+            overflow: 'visible',
+          }}
+          aria-hidden="true"
+        >
+          <AchievementExportCard
+            ref={exportCardRef}
+            showcase={showcase}
+            layout={selectedLayout}
+          />
         </div>
 
         {/* Action Toolbar */}
@@ -228,9 +301,9 @@ const PublicShowcase = () => {
             loading={downloading}
             onClick={handleDownloadImage}
             icon={Download}
-            className="text-xs bg-indigo-600 hover:bg-indigo-700"
+            className="text-xs bg-indigo-600 hover:bg-indigo-700 shadow-sm"
           >
-            Download Card Image
+            {downloading ? 'Exporting...' : `Download ${selectedLayout === 'mobile' ? 'Portrait' : 'Landscape'} Card`}
           </Button>
 
           <Button
