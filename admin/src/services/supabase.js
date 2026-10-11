@@ -59,6 +59,16 @@ export const subscribeToAdminUpdates = (onChange) => {
       { event: '*', schema: 'public', table: 'system_settings' },
       (payload) => onChange && onChange('system_settings', payload)
     )
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'student_activity_snapshots' },
+      (payload) => onChange && onChange('student_activity_snapshots', payload)
+    )
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'activity_anomalies' },
+      (payload) => onChange && onChange('activity_anomalies', payload)
+    )
     .subscribe();
 
   return () => {

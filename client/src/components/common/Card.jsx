@@ -7,6 +7,7 @@ const Card = ({
   subtitle,
   action,
   noPadding = false,
+  bodyClassName = '',
   ...props
 }) => {
   const hasCustomBg = className.includes('bg-');
@@ -26,7 +27,7 @@ const Card = ({
           {action && <div className="shrink-0">{action}</div>}
         </div>
       )}
-      <div className={noPadding ? '' : 'p-6'}>{children}</div>
+      <div className={`${noPadding ? 'h-full flex flex-col flex-1' : 'p-6'} ${bodyClassName}`}>{children}</div>
     </div>
   );
 };

@@ -9,6 +9,7 @@ import { Badge, StatusBadge } from '../components/common/Badge';
 import { Modal } from '../components/common/Modal';
 import { LoadingState } from '../components/common/LoadingState';
 import { ErrorState } from '../components/common/ErrorState';
+import { StudentActivityTab } from '../components/activity/StudentActivityTab';
 import {
   ArrowLeft,
   RefreshCw,
@@ -24,6 +25,10 @@ import {
   Calculator,
   AlertTriangle,
   Clock,
+  Activity,
+  TrendingUp,
+  Info,
+  CheckCircle2,
 } from 'lucide-react';
 
 export const StudentDetails = () => {
@@ -48,6 +53,19 @@ export const StudentDetails = () => {
   const [adjustmentValue, setAdjustmentValue] = useState('');
   const [adjustmentReason, setAdjustmentReason] = useState('');
   const [adjustmentSubmitting, setAdjustmentSubmitting] = useState(false);
+
+  // Activity Monitor Section State
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'activity' | 'audit'
+  const [activityPeriod, setActivityPeriod] = useState('7d'); // 'today' | '7d' | '30d' | 'custom'
+  const [customStartDate, setCustomStartDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 7);
+    return d.toISOString().split('T')[0];
+  });
+  const [customEndDate, setCustomEndDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [activityReport, setActivityReport] = useState(null);
+  const [activityLoading, setActivityLoading] = useState(false);
+  const [takingSnapshot, setTakingSnapshot] = useState(false);
 
   const fetchStudentData = useCallback(async (isBackground = false) => {
     if (!studentId || studentId === 'undefined') {
@@ -95,6 +113,46 @@ export const StudentDetails = () => {
       unsubscribe();
     };
   }, [studentId, fetchStudentData]);
+
+  const fetchStudentActivity = useCallback(async () => {
+    if (!studentId || studentId === 'undefined') return;
+    setActivityLoading(true);
+    try {
+      const res = await adminService.getStudentActivity(studentId, {
+        period: activityPeriod,
+        startDate: activityPeriod === 'custom' ? customStartDate : undefined,
+        endDate: activityPeriod === 'custom' ? customEndDate : undefined,
+      });
+      if (res && res.success) {
+        setActivityReport(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to load student activity:', err);
+    } finally {
+      setActivityLoading(false);
+    }
+  }, [studentId, activityPeriod, customStartDate, customEndDate]);
+
+  useEffect(() => {
+    if (activeTab === 'activity') {
+      fetchStudentActivity();
+    }
+  }, [activeTab, fetchStudentActivity]);
+
+  const handleTakeSnapshot = async () => {
+    setTakingSnapshot(true);
+    try {
+      const res = await adminService.recordStudentSnapshot(studentId);
+      if (res.success) {
+        notifySuccess(res.message || 'Activity snapshot recorded successfully.');
+        fetchStudentActivity();
+      }
+    } catch (err) {
+      notifyError(err.message || 'Failed to record snapshot.');
+    } finally {
+      setTakingSnapshot(false);
+    }
+  };
 
   const handleRefreshSync = async () => {
     setSyncing(true);
@@ -392,8 +450,55 @@ export const StudentDetails = () => {
         </Card>
       </div>
 
-      {/* Achievement Showcase Card */}
-      <Card className="p-4 border-slate-800/80 bg-[#0d1322]">
+      {/* Detail Navigation Tabs */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-2">
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition ${
+            activeTab === 'overview'
+              ? 'bg-brand-600 text-white shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+          }`}
+        >
+          <Layers className="w-4 h-4" />
+          <span>Platforms & Showcase</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('activity')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition ${
+            activeTab === 'activity'
+              ? 'bg-brand-600 text-white shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+          }`}
+        >
+          <Activity className="w-4 h-4" />
+          <span>Activity Monitor (Daily, Weekly, Monthly)</span>
+          {activityReport?.totalNewSolvesAllPlatforms > 0 && (
+            <span className="px-1.5 py-0.5 rounded-full bg-emerald-400 text-slate-950 text-[10px] font-black">
+              +{activityReport.totalNewSolvesAllPlatforms}
+            </span>
+          )}
+        </button>
+
+        <button
+          onClick={() => setActiveTab('audit')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition ${
+            activeTab === 'audit'
+              ? 'bg-brand-600 text-white shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+          }`}
+        >
+          <Calculator className="w-4 h-4" />
+          <span>Score Adjustments & Audit Trail</span>
+        </button>
+      </div>
+
+      {/* TAB 1: OVERVIEW & PLATFORMS */}
+      {activeTab === 'overview' && (
+        <>
+          {/* Achievement Showcase Card */}
+          <Card className="p-4 border-slate-800/80 bg-[#0d1322]">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             {student.profilePhoto ? (
@@ -810,66 +915,80 @@ export const StudentDetails = () => {
           </Card>
         </div>
       </div>
+    </>
+  )}
 
-      {/* Score Adjustments & Audit Trail */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Score Adjustments */}
-        <Card>
-          <CardHeader
-            title="Manual Score Adjustments"
-            subtitle="Audited adjustments applied by administrators"
-          />
-          <CardContent className="p-0">
-            {scoreAdjustments.length === 0 ? (
-              <p className="text-xs text-slate-500 text-center py-6">No manual adjustments recorded for this student.</p>
-            ) : (
-              <div className="divide-y divide-slate-800/60">
-                {scoreAdjustments.map((adj, idx) => (
-                  <div key={adj.id || idx} className="p-3.5 text-xs space-y-1">
-                    <div className="flex justify-between font-semibold text-slate-200">
-                      <span>Adjustment: <span className={adj.adjustment >= 0 ? 'text-emerald-400' : 'text-rose-400'}>{adj.adjustment >= 0 ? '+' : ''}{adj.adjustment}</span></span>
-                      <span className="font-mono text-slate-400 text-[11px]">{new Date(adj.timestamp).toLocaleDateString()}</span>
-                    </div>
-                    <div className="text-[11px] text-slate-400">
-                      Previous: {adj.previousScore} → New: <span className="text-slate-200 font-bold">{adj.newScore}</span>
-                    </div>
-                    <div className="text-[11px] text-slate-300 bg-slate-950/60 p-1.5 rounded border border-slate-800/80">
-                      Reason: {adj.reason}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+  {/* TAB 2: ACTIVITY MONITOR */}
+  {activeTab === 'activity' && (
+    <StudentActivityTab
+      student={student}
+      studentId={studentId}
+      notifySuccess={notifySuccess}
+      notifyError={notifyError}
+    />
+  )}
 
-        {/* Audit Log for Student */}
-        <Card>
-          <CardHeader
-            title="Modification History"
-            subtitle="Actions taken regarding this student"
-          />
-          <CardContent className="p-0">
-            {auditLogs.length === 0 ? (
-              <p className="text-xs text-slate-500 text-center py-6">No audit records logged for this student.</p>
-            ) : (
-              <div className="divide-y divide-slate-800/60">
-                {auditLogs.map((log) => (
-                  <div key={log.id} className="p-3.5 text-xs flex justify-between items-center gap-2">
-                    <div>
-                      <div className="font-semibold text-slate-200">{log.action?.replace(/_/g, ' ')}</div>
-                      <div className="text-[11px] text-slate-400">By {log.adminName || log.adminEmail}</div>
-                    </div>
-                    <div className="text-[11px] text-slate-500 font-mono">
-                      {new Date(log.timestamp).toLocaleDateString()}
-                    </div>
+  {/* TAB 3: AUDIT TRAIL & ADJUSTMENTS */}
+  {activeTab === 'audit' && (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Score Adjustments */}
+      <Card>
+        <CardHeader
+          title="Manual Score Adjustments"
+          subtitle="Audited adjustments applied by administrators"
+        />
+        <CardContent className="p-0">
+          {scoreAdjustments.length === 0 ? (
+            <p className="text-xs text-slate-500 text-center py-6">No manual adjustments recorded for this student.</p>
+          ) : (
+            <div className="divide-y divide-slate-800/60">
+              {scoreAdjustments.map((adj, idx) => (
+                <div key={adj.id || idx} className="p-3.5 text-xs space-y-1">
+                  <div className="flex justify-between font-semibold text-slate-200">
+                    <span>Adjustment: <span className={adj.adjustment >= 0 ? 'text-emerald-400' : 'text-rose-400'}>{adj.adjustment >= 0 ? '+' : ''}{adj.adjustment}</span></span>
+                    <span className="font-mono text-slate-400 text-[11px]">{new Date(adj.timestamp).toLocaleDateString()}</span>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                  <div className="text-[11px] text-slate-400">
+                    Previous: {adj.previousScore} → New: <span className="text-slate-200 font-bold">{adj.newScore}</span>
+                  </div>
+                  <div className="text-[11px] text-slate-300 bg-slate-950/60 p-1.5 rounded border border-slate-800/80">
+                    Reason: {adj.reason}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Audit Log for Student */}
+      <Card>
+        <CardHeader
+          title="Modification History"
+          subtitle="Actions taken regarding this student"
+        />
+        <CardContent className="p-0">
+          {auditLogs.length === 0 ? (
+            <p className="text-xs text-slate-500 text-center py-6">No audit records logged for this student.</p>
+          ) : (
+            <div className="divide-y divide-slate-800/60">
+              {auditLogs.map((log) => (
+                <div key={log.id} className="p-3.5 text-xs flex justify-between items-center gap-2">
+                  <div>
+                    <div className="font-semibold text-slate-200">{log.action?.replace(/_/g, ' ')}</div>
+                    <div className="text-[11px] text-slate-400">By {log.adminName || log.adminEmail}</div>
+                  </div>
+                  <div className="text-[11px] text-slate-500 font-mono">
+                    {new Date(log.timestamp).toLocaleDateString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )}
 
       {/* Edit Profile Modal */}
       <Modal

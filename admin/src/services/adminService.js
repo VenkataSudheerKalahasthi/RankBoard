@@ -48,7 +48,20 @@ export const adminService = {
   adjustStudentScore: (studentId, data) => api.post(`/admin/scores/adjust/${studentId}`, data),
   getScoreAdjustments: () => api.get('/admin/scores/adjustments'),
 
-  // 9. Anomalies
+  // 8B. Student Activity Monitor & Unusual Activity Detection
+  getTodayTopSolvers: (params = {}) => api.get('/admin/activity/today-top-solvers', { params }),
+  getActivityAnomalies: (params = {}) => api.get('/admin/activity/anomalies', { params }),
+  scanActivityAnomalies: (data = {}) => api.post('/admin/activity/anomalies/scan', data),
+  reviewActivityAnomaly: (id, data) => api.post(`/admin/activity/anomalies/${id}/review`, data),
+  getActivityTrends: (params = {}) => api.get('/admin/activity/trends', { params }),
+  getStudentActivity: (studentId, params = {}) => api.get(`/admin/activity/student/${studentId}`, { params }),
+  recordStudentSnapshot: (studentId) => api.post(`/admin/activity/student/${studentId}/snapshot`),
+  exportActivityReportUrl: (params = {}) => {
+    const searchParams = new URLSearchParams(params).toString();
+    return `/api/admin/activity/export?${searchParams}`;
+  },
+
+  // 9. Data Inconsistencies / Sync Anomalies
   getAnomalies: () => api.get('/admin/anomalies'),
   resolveAnomaly: (data) => api.post('/admin/anomalies/resolve', data),
 

@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 
 const DEPARTMENTS = [
-  'ALL',
+   'ALL',
   'Computer Science and Engineering',
   'Information Technology',
   'Artificial Intelligence & DS',
@@ -30,15 +30,14 @@ const DEPARTMENTS = [
   'Electrical & Electronics',
   'Mechanical Engineering',
   'Prime',
+  'CIVIL',
+  'CSIT',
+  'AI',
+  'AIML',
   'CSDS',
   'CSBS',
-  'CSIT',
-  'AIML',
-  'CIVIL',
+  'CSIOT',
   'VLSI',
-  'AI',
-
-
 ];
 
 export const Leaderboard = () => {

@@ -21,6 +21,15 @@ const DEPARTMENTS = [
   'Electrical & Electronics',
   'Mechanical Engineering',
   'Prime',
+  'CIVIL',
+  'CSIT',
+  'AI',
+  'AIML',
+  'CSDS',
+  'CSBS',
+  'CSIOT',
+  'VLSI',
+ 
 ];
 
 const Home = () => {

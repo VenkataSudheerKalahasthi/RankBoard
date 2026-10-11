@@ -18,6 +18,7 @@ import {
 import { Link } from 'react-router-dom';
 
 const DEPARTMENTS = [
+   'ALL',
   'Computer Science and Engineering',
   'Information Technology',
   'Artificial Intelligence & DS',
@@ -25,6 +26,14 @@ const DEPARTMENTS = [
   'Electrical & Electronics',
   'Mechanical Engineering',
   'Prime',
+  'CIVIL',
+  'CSIT',
+  'AI',
+  'AIML',
+  'CSDS',
+  'CSBS',
+  'CSIOT',
+  'VLSI',
 ];
 
 const StudentProfile = () => {

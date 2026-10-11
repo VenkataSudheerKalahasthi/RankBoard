@@ -28,6 +28,7 @@ const NAV_ITEMS = [
   { name: 'Students', path: '/students', icon: Users },
   { name: 'Import Students', path: '/import', icon: FileSpreadsheet },
   { name: 'Leaderboard', path: '/leaderboard', icon: Trophy },
+  { name: 'Activity Monitor', path: '/activity-monitor', icon: Activity },
   { name: 'Platforms', path: '/platforms', icon: Layers },
   { name: 'Synchronization', path: '/synchronization', icon: RefreshCw },
   { name: 'Scores', path: '/scores', icon: Calculator },

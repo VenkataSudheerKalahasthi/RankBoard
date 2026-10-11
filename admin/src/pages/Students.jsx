@@ -35,14 +35,15 @@ const DEPARTMENTS = [
   'Electronics & Communication',
   'Electrical & Electronics',
   'Mechanical Engineering',
+  'Prime',
+  'CIVIL',
+  'CSIT',
   'AI',
   'AIML',
-  'CSBS',
-  'CSIT',
   'CSDS',
+  'CSBS',
+  'CSIOT',
   'VLSI',
-  'CIVIL',
-  'Prime',
 ];
 
 export const Students = () => {

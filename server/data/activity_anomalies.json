@@ -1,0 +1,32 @@
+[
+  {
+    "id": "anom_1791691149971_9r49i",
+    "anomalyKey": "import_6d656b616c616d616c6c696b_leetcode_2026-10-11_extreme_volume",
+    "studentId": "import_6d656b616c616d616c6c696b",
+    "platform": "leetcode",
+    "activityDate": "2026-10-11",
+    "observedCount": 55,
+    "baselineCount": 0.71,
+    "absoluteIncrease": 54.29,
+    "relativeIncreasePct": 7746.5,
+    "ruleTriggered": "EXTREME_DAILY_VOLUME",
+    "detectionReason": "Observed 55 solves on LEETCODE on 2026-10-11, exceeding the standard review threshold of 40 solves in 24 hours.",
+    "severity": "HIGH",
+    "difficultyBreakdown": {
+      "easy": 0,
+      "medium": 0,
+      "hard": 0
+    },
+    "dataConfidence": "HIGH",
+    "reviewStatus": "REVIEWED",
+    "reviewedBy": "Dr. Admin",
+    "reviewedAt": "2026-10-11T03:59:10.622Z",
+    "reviewNotes": "Verified through contest certificate.",
+    "metadata": {
+      "studentName": "Mekala Mallikharjuna",
+      "rollNumber": "23491A050B"
+    },
+    "createdAt": "2026-10-11T03:59:08.781Z",
+    "updatedAt": "2026-10-11T08:32:50.253Z"
+  }
+]

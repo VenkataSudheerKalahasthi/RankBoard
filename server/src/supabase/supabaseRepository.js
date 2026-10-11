@@ -1235,4 +1235,7 @@ module.exports = {
   getScoreAdjustments,
   getSystemSettings,
   updateSystemSettings,
+
+  // Student Activity Monitor & Anomaly Tracking
+  ...require('./activityRepository'),
 };

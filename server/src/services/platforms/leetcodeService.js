@@ -53,6 +53,7 @@ const fetchLeetCodeProfile = async (input) => {
             userCalendar {
               streak
               totalActiveDays
+              submissionCalendar
             }
           }
           userContestRanking(username: $username) {
@@ -60,6 +61,12 @@ const fetchLeetCodeProfile = async (input) => {
             rating
             globalRanking
             topPercentage
+          }
+          recentAcSubmissionList(username: $username, limit: 50) {
+            id
+            title
+            titleSlug
+            timestamp
           }
         }
       `,
@@ -107,10 +114,21 @@ const fetchLeetCodeProfile = async (input) => {
     result.rating = contestRanking?.rating ? Math.round(contestRanking.rating) : null;
     result.contests = contestRanking?.attendedContestsCount ?? null;
     result.streak = matchedUser.userCalendar?.streak ?? null;
+    result.recentSubmissions = Array.isArray(data.recentAcSubmissionList) ? data.recentAcSubmissionList : [];
+    
+    let submissionCalendar = null;
+    if (matchedUser.userCalendar?.submissionCalendar) {
+      try {
+        submissionCalendar = JSON.parse(matchedUser.userCalendar.submissionCalendar);
+      } catch (e) {
+        submissionCalendar = null;
+      }
+    }
+    result.submissionCalendar = submissionCalendar;
     result.status = 'SUCCESS';
     result.rawData = { ranking: matchedUser.profile?.ranking };
 
-    console.log(`[LeetCode] Parsed: Easy=${result.easySolved} Medium=${result.mediumSolved} Hard=${result.hardSolved} Total=${result.totalSolved} Score=${result.rating || 0}`);
+    console.log(`[LeetCode] Parsed: Easy=${result.easySolved} Medium=${result.mediumSolved} Hard=${result.hardSolved} Total=${result.totalSolved} Score=${result.rating || 0} RecentAC=${result.recentSubmissions.length}`);
     console.log(`[LeetCode] Validation passed`);
 
     return result;

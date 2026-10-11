@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/adminController');
+const activityController = require('../controllers/activityController');
 const { requireAdmin } = require('../middleware/adminAuth');
 
 // All admin endpoints require server-side Admin authorization
@@ -53,7 +54,17 @@ router.post('/scores/recalculate-all', adminController.recalculateAllScores);
 router.post('/scores/adjust/:studentId', adminController.adjustStudentScore);
 router.get('/scores/adjustments', adminController.getScoreAdjustments);
 
-// 9. Anomalies
+// 8B. Student Activity Monitor & Unusual Activity Detection
+router.get('/activity/today-top-solvers', activityController.getTodayTopSolversController);
+router.get('/activity/anomalies', activityController.getAnomaliesController);
+router.post('/activity/anomalies/scan', activityController.scanAnomaliesController);
+router.post('/activity/anomalies/:id/review', activityController.reviewAnomalyController);
+router.get('/activity/trends', activityController.getActivityTrendsController);
+router.get('/activity/student/:studentId', activityController.getStudentActivityController);
+router.post('/activity/student/:studentId/snapshot', activityController.recordStudentSnapshotController);
+router.get('/activity/export', activityController.exportActivityController);
+
+// 9. Data Inconsistencies / Sync Anomalies
 router.get('/anomalies', adminController.getAnomalies);
 router.post('/anomalies/resolve', adminController.resolveAnomaly);
 

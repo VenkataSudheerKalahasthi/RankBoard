@@ -11,6 +11,8 @@ const {
   parseHackerRankUrl,
   formatCanonicalUrl,
 } = require('../utils/urlParsers');
+const { recordPlatformSnapshot } = require('./activity/activityService');
+const { evaluateStudentAnomalies } = require('./activity/anomalyDetectionService');
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -277,6 +279,13 @@ const syncStudentPlatforms = async (studentIdOrClerkId, newPlatformUrls = null, 
         platforms[key].status = 'SUCCESS';
         platforms[key].lastFetchedAt = stats.fetchedAt || new Date().toISOString();
         platforms[key].errorMessage = null;
+
+        // Persist historical activity snapshot for daily/weekly/monthly tracking
+        try {
+          await recordPlatformSnapshot(studentData.id, key, stats);
+        } catch (snapErr) {
+          console.warn(`[Snapshot Record Warning] ${studentData.id} on ${key}:`, snapErr.message);
+        }
       } else if (stats && stats.status === 'RATE_LIMITED') {
         platforms[key].status = 'RATE_LIMITED';
         platforms[key].errorMessage = stats.errorMessage || 'Rate limit reached on platform';
@@ -342,6 +351,15 @@ const syncStudentPlatforms = async (studentIdOrClerkId, newPlatformUrls = null, 
     finalScore: scoreResults.finalScore,
     profileCompleted,
   };
+
+  // If activity changed, run evidence-based anomaly evaluation for this student
+  if (anyPlatformChanged) {
+    try {
+      await evaluateStudentAnomalies(studentData.id);
+    } catch (anomErr) {
+      console.warn(`[Anomaly Detection Warning] ${studentData.id}:`, anomErr.message);
+    }
+  }
 
   return {
     student: finalRecord,

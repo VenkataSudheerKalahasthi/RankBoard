@@ -13,6 +13,7 @@ import Students from './pages/Students';
 import StudentDetails from './pages/StudentDetails';
 import ImportStudents from './pages/ImportStudents';
 import Leaderboard from './pages/Leaderboard';
+import ActivityMonitor from './pages/ActivityMonitor';
 import Platforms from './pages/Platforms';
 import Synchronization from './pages/Synchronization';
 import Scores from './pages/Scores';
@@ -89,6 +90,7 @@ export function App() {
         <Route path="students/:studentId" element={<StudentDetails />} />
         <Route path="import" element={<ImportStudents />} />
         <Route path="leaderboard" element={<Leaderboard />} />
+        <Route path="activity-monitor" element={<ActivityMonitor />} />
         <Route path="platforms" element={<Platforms />} />
         <Route path="synchronization" element={<Synchronization />} />
         <Route path="scores" element={<Scores />} />
