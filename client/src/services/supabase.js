@@ -5,12 +5,12 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const supabase = (supabaseUrl && supabaseAnonKey)
   ? createClient(supabaseUrl, supabaseAnonKey, {
-      realtime: {
-        params: {
-          eventsPerSecond: 10,
-        },
+    realtime: {
+      params: {
+        eventsPerSecond: 10,
       },
-    })
+    },
+  })
   : null;
 
 /**
@@ -21,7 +21,7 @@ export const supabase = (supabaseUrl && supabaseAnonKey)
  * @returns {Function} Unsubscribe cleanup function
  */
 export const subscribeToRankboardUpdates = (onChange) => {
-  if (!supabase) return () => {};
+  if (!supabase) return () => { };
 
   const channelId = `rankboard-client-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
   const channel = supabase

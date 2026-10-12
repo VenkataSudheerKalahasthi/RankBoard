@@ -148,10 +148,10 @@ const Register = () => {
           <Sparkles className="w-3.5 h-3.5" />
           Join College DSA Rankboard
         </div>
-        <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+        <h1 className="text-2xl font-black theme-text-primary tracking-tight">
           Student Registration
         </h1>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs theme-text-secondary">
           Create your student account to submit coding handles and compete
         </p>
       </div>

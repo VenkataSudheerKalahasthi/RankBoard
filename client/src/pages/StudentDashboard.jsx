@@ -33,7 +33,7 @@ const StudentDashboard = () => {
                                (platformStats.hackerrank?.totalSolved || 0));
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-10">
       {/* Share Achievement Modal */}
       <ShareAchievementModal
         isOpen={showcaseOpen}
@@ -41,17 +41,17 @@ const StudentDashboard = () => {
       />
 
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-blue-100 dark:border-blue-900/40 pb-5">
         <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-brand-600 flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5" />
+          <span className="text-xs font-extrabold uppercase tracking-wider text-blue-600 dark:text-sky-400 flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-sky-400" />
             Student Dashboard
           </span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-1 tracking-tight">
             Welcome, {student?.name || 'Student'}
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Roll: <strong className="font-mono text-slate-700">{student?.rollNumber || 'Not set'}</strong> • {student?.department || 'Department pending'} • Year {student?.year || 1}
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+            Roll: <strong className="font-mono text-blue-700 dark:text-sky-300 bg-blue-50 dark:bg-blue-900/40 px-1.5 py-0.2 rounded border border-blue-100 dark:border-blue-800">{student?.rollNumber || 'Not set'}</strong> • {student?.department || 'Department pending'} • Year {student?.year || 1}
           </p>
         </div>
 
@@ -61,7 +61,7 @@ const StudentDashboard = () => {
             size="sm"
             onClick={() => setShowcaseOpen(true)}
             icon={Share2}
-            className="bg-brand-600 hover:bg-brand-700 shadow-sm"
+            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold shadow-md shadow-blue-500/20"
           >
             Share Achievement
           </Button>
@@ -86,12 +86,14 @@ const StudentDashboard = () => {
 
       {/* Profile Incomplete Notice if roll number or handles missing */}
       {(!student?.rollNumber || connectedCount === 0) && (
-        <div className="p-4 bg-amber-50/80 border border-amber-200 rounded-xl text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2.5">
-            <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
+        <div className="p-4 bg-amber-50/90 border border-amber-200/90 rounded-2xl text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 border border-amber-200">
+              <AlertCircle className="w-5 h-5 text-amber-600" />
+            </div>
             <div>
-              <strong className="block text-amber-900 font-semibold">Complete your profile setup</strong>
-              <p className="text-amber-800 mt-0.5">
+              <strong className="block text-amber-950 font-bold text-sm">Complete your profile setup</strong>
+              <p className="text-amber-800 mt-0.5 font-medium">
                 {!student?.rollNumber ? 'Add your roll number in settings. ' : ''}
                 {connectedCount === 0 ? 'Connect your coding platforms to view statistics and rankings.' : `You have connected ${connectedCount}/5 coding platforms.`}
               </p>
@@ -100,11 +102,11 @@ const StudentDashboard = () => {
           <div className="flex items-center gap-2">
             {!student?.rollNumber && (
               <Link to="/student/profile">
-                <Button variant="secondary" size="sm">Set Roll No</Button>
+                <Button variant="secondary" size="sm" className="font-bold">Set Roll No</Button>
               </Link>
             )}
             <Link to="/student/platforms">
-              <Button variant="primary" size="sm">Link Platforms</Button>
+              <Button variant="primary" size="sm" className="bg-amber-600 hover:bg-amber-700 text-white font-bold border-none">Link Platforms</Button>
             </Link>
           </div>
         </div>
@@ -154,16 +156,16 @@ const StudentDashboard = () => {
 
       {/* Platform Specific Cards */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+        <div className="flex items-center justify-between border-b border-blue-100 dark:border-blue-900/40 pb-3">
           <div>
-            <h3 className="text-base font-bold text-slate-900">
+            <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
               Coding Platform Statistics
             </h3>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
               Actual statistics retrieved from your submitted public profiles.
             </p>
           </div>
-          <Link to="/student/platforms" className="text-xs font-semibold text-brand-600 hover:text-brand-700">
+          <Link to="/student/platforms" className="text-xs font-bold text-blue-600 dark:text-sky-400 hover:text-blue-700 dark:hover:text-sky-300">
             Manage Links &rarr;
           </Link>
         </div>
@@ -215,3 +217,4 @@ const StudentDashboard = () => {
 };
 
 export default StudentDashboard;
+

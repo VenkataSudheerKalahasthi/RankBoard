@@ -12,21 +12,21 @@ const Button = ({
   icon: Icon,
   ...props
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed select-none';
+  const baseStyles = 'inline-flex items-center justify-center font-bold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed select-none';
 
   const variants = {
-    primary: 'bg-brand-600 hover:bg-brand-700 text-white shadow-subtle focus:ring-brand-500 border border-transparent',
-    secondary: 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 shadow-subtle focus:ring-brand-500',
-    navy: 'bg-slate-900 hover:bg-slate-800 text-white shadow-subtle focus:ring-slate-700 border border-transparent',
-    danger: 'bg-red-600 hover:bg-red-700 text-white shadow-subtle focus:ring-red-500 border border-transparent',
-    ghost: 'bg-transparent hover:bg-slate-100 text-slate-600 focus:ring-slate-400 border border-transparent',
-    outline: 'bg-transparent hover:bg-brand-50 text-brand-600 border border-brand-300 focus:ring-brand-500',
+    primary: 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md shadow-blue-500/20 focus:ring-blue-500 border border-transparent',
+    secondary: 'bg-white dark:bg-[#111E3D] hover:bg-slate-50 dark:hover:bg-[#162653] text-[#0F172A] dark:text-white border border-[#D9E4F2] dark:border-blue-400/30 shadow-xs focus:ring-blue-500',
+    navy: 'bg-[#0D1830] hover:bg-[#111E3D] text-white shadow-md focus:ring-slate-700 border border-blue-500/30',
+    danger: 'bg-red-600 hover:bg-red-700 text-white shadow-md focus:ring-red-500 border border-transparent',
+    ghost: 'bg-transparent hover:bg-blue-50 dark:hover:bg-slate-800 text-[#0F172A] dark:text-slate-200 hover:text-blue-700 dark:hover:text-white focus:ring-blue-400 border border-transparent',
+    outline: 'bg-transparent hover:bg-blue-50 dark:hover:bg-blue-950/40 text-blue-600 dark:text-sky-400 border border-blue-300 dark:border-blue-500/40 focus:ring-blue-500',
   };
 
   const sizes = {
-    sm: 'px-3 py-1.5 text-xs gap-1.5',
+    sm: 'px-3.5 py-1.5 text-xs gap-1.5',
     md: 'px-4 py-2 text-sm gap-2',
-    lg: 'px-5 py-2.5 text-base gap-2.5',
+    lg: 'px-6 py-3 text-base gap-2.5',
   };
 
   return (

@@ -19,15 +19,15 @@ const StudentPlatforms = () => {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="border-b border-slate-200 pb-5">
-        <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-brand-600 mb-1">
+      <div className="border-b border-slate-200 dark:border-slate-800 pb-5">
+        <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 mb-1">
           <Layers className="w-3.5 h-3.5" />
           Platform Integrations
         </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+        <h1 className="text-2xl sm:text-3xl font-extrabold theme-text-primary">
           Coding Platform Profiles
         </h1>
-        <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+        <p className="text-xs sm:text-sm theme-text-secondary mt-0.5">
           Connect your competitive programming handles to automatically fetch problems solved, contest ratings, and calculate your overall score.
         </p>
       </div>
@@ -37,17 +37,17 @@ const StudentPlatforms = () => {
 
       {/* Current Platform Status Cards */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
           <div>
-            <h3 className="text-base font-bold text-slate-900">
+            <h3 className="text-base font-bold theme-text-primary">
               Synchronized Platform Metrics
             </h3>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs theme-text-secondary">
               Live statistics verified directly from external platforms.
             </p>
           </div>
 
-          <Link to="/student/score" className="text-xs font-semibold text-brand-600 hover:text-brand-800 flex items-center gap-1">
+          <Link to="/student/score" className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline flex items-center gap-1">
             View Overall Score <ArrowRight className="w-3 h-3" />
           </Link>
         </div>

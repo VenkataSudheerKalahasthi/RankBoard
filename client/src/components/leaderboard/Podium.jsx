@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trophy, Medal, Award } from 'lucide-react';
+import { Trophy, Medal, Award, Sparkles } from 'lucide-react';
 
 const Podium = ({ topStudents = [] }) => {
   if (!topStudents || topStudents.length === 0) return null;
@@ -16,43 +16,47 @@ const Podium = ({ topStudents = [] }) => {
   };
 
   return (
-    <div className="w-full mb-8">
-      <div className="text-center mb-6">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+    <div className="w-full max-w-6xl mx-auto mb-10">
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100/80 dark:bg-blue-500/15 border border-blue-200 dark:border-blue-400/30 text-blue-700 dark:text-sky-300 text-xs font-bold uppercase tracking-wider mb-2">
+          <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-sky-400" />
           Hall of Champions
-        </h2>
-        <p className="text-lg font-extrabold text-slate-900 mt-0.5">
+        </div>
+        <h2 className="text-2xl font-black text-[#0F172A] dark:text-white tracking-tight">
           Top Performing DSA Leaders
+        </h2>
+        <p className="text-xs text-[#475569] dark:text-slate-300 max-w-md mx-auto mt-1 font-medium">
+          Leading students with highest evaluated competitive programming scores.
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 items-end pt-2 w-full">
         {/* Rank 2 (Silver) */}
         {second ? (
-          <div className="order-2 md:order-1 flex flex-col items-center">
-            <div className="relative mb-2.5 flex flex-col items-center">
-              <div className="absolute -top-2.5 right-0 bg-slate-200 text-slate-800 p-1.5 rounded-full shadow-subtle border border-slate-300">
-                <Medal className="w-3.5 h-3.5" />
+          <div className="order-2 md:order-1 flex flex-col items-center group">
+            <div className="relative mb-3 flex flex-col items-center">
+              <div className="absolute -top-3 right-0 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 p-2 rounded-full shadow-md border border-slate-300 dark:border-slate-700 z-10">
+                <Medal className="w-4 h-4 text-slate-600 dark:text-slate-300" />
               </div>
-              <div className="w-12 h-12 rounded-full bg-slate-200 text-slate-700 font-bold flex items-center justify-center border border-slate-300 text-sm">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-slate-200 to-slate-100 dark:from-slate-700 dark:to-slate-800 text-slate-800 dark:text-slate-100 font-black flex items-center justify-center border-2 border-slate-300 dark:border-slate-600 shadow-md text-base group-hover:scale-105 transition-all">
                 {renderInitial(second.name)}
               </div>
             </div>
 
-            <div className="text-center w-full bg-white rounded-xl p-4 border border-slate-200 shadow-card">
-              <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200 mb-1.5">
+            <div className="text-center w-full bg-white dark:bg-[#111E3D] rounded-2xl p-5 border border-[#D9E4F2] dark:border-blue-400/20 shadow-sm hover:shadow-md transition-all">
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-extrabold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 mb-2">
                 RANK #2
               </span>
-              <h3 className="font-bold text-slate-900 text-sm truncate">
+              <h3 className="font-extrabold text-[#0F172A] dark:text-white text-sm truncate" title={second.name}>
                 {second.name}
               </h3>
-              <p className="text-[11px] text-slate-500 truncate mt-0.5">
+              <p className="text-xs text-[#475569] dark:text-slate-300 truncate mt-0.5 font-medium">
                 {second.department || 'Computer Science'}
               </p>
 
-              <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span className="text-slate-400 text-[11px]">Final Score</span>
-                <span className="font-bold text-slate-900 font-mono text-sm">
+              <div className="mt-4 pt-3 border-t border-[#D9E4F2] dark:border-blue-900/30 flex items-center justify-between text-xs">
+                <span className="text-slate-500 dark:text-slate-400 font-semibold">Overall Score</span>
+                <span className="font-black text-blue-700 dark:text-sky-300 font-mono text-base bg-blue-50 dark:bg-blue-600/20 px-2 py-0.5 rounded-lg border border-blue-100 dark:border-blue-400/30">
                   {second.finalScore ?? 0}
                 </span>
               </div>
@@ -62,34 +66,34 @@ const Podium = ({ topStudents = [] }) => {
           <div className="order-2 md:order-1 hidden md:block"></div>
         )}
 
-        {/* Rank 1 (Gold) */}
+        {/* Rank 1 (Gold / Champion) */}
         {first ? (
-          <div className="order-1 md:order-2 flex flex-col items-center -mt-4">
-            <div className="relative mb-2.5 flex flex-col items-center">
-              <div className="absolute -top-3.5 right-0 bg-amber-400 text-slate-950 p-2 rounded-full shadow-md border border-amber-300 animate-bounce">
-                <Trophy className="w-4 h-4" />
+          <div className="order-1 md:order-2 flex flex-col items-center -mt-6 group">
+            <div className="relative mb-3 flex flex-col items-center">
+              <div className="absolute -top-4 right-0 bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 p-2.5 rounded-full shadow-lg border border-amber-300 z-10 animate-bounce">
+                <Trophy className="w-5 h-5 text-amber-950" />
               </div>
-              <div className="w-14 h-14 rounded-full bg-amber-100 text-amber-900 font-extrabold flex items-center justify-center border-2 border-amber-300 ring-4 ring-amber-100 text-base">
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-amber-300 via-amber-200 to-yellow-100 dark:from-amber-500 dark:to-yellow-400 text-amber-950 font-black flex items-center justify-center border-4 border-amber-300 ring-4 ring-amber-100 dark:ring-amber-900/50 shadow-xl text-xl group-hover:scale-105 transition-all">
                 {renderInitial(first.name)}
               </div>
             </div>
 
-            <div className="text-center w-full bg-white rounded-xl p-5 border-2 border-amber-300 shadow-card relative overflow-hidden">
-              <div className="absolute top-0 inset-x-0 h-1 bg-amber-400"></div>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300 mb-1.5">
-                <Trophy className="w-3 h-3 text-amber-600" />
+            <div className="text-center w-full bg-gradient-to-b from-white via-amber-50/20 to-white dark:from-[#111E3D] dark:via-[#162653] dark:to-[#111E3D] rounded-2xl p-6 border-2 border-amber-300 dark:border-amber-400/60 shadow-lg relative overflow-hidden group-hover:border-amber-400 transition-all">
+              <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500"></div>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-amber-100 dark:bg-amber-400/20 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-400/40 mb-2 shadow-sm">
+                <Trophy className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                 CHAMPION • #1
               </span>
-              <h3 className="font-extrabold text-slate-900 text-base truncate">
+              <h3 className="font-black text-[#0F172A] dark:text-white text-base truncate" title={first.name}>
                 {first.name}
               </h3>
-              <p className="text-[11px] text-slate-500 truncate mt-0.5">
+              <p className="text-xs text-[#475569] dark:text-slate-300 truncate mt-0.5 font-semibold">
                 {first.department || 'Computer Science'} • Yr {first.year || 1}
               </p>
 
-              <div className="mt-3.5 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span className="text-slate-500 font-medium text-[11px]">Final Score</span>
-                <span className="font-black text-brand-600 font-mono text-base">
+              <div className="mt-4 pt-3 border-t border-amber-100 dark:border-amber-400/20 flex items-center justify-between text-xs">
+                <span className="text-slate-600 dark:text-slate-300 font-bold">Overall Score</span>
+                <span className="font-black text-blue-700 dark:text-sky-300 font-mono text-lg bg-blue-100/80 dark:bg-blue-600/30 px-2.5 py-0.5 rounded-lg border border-blue-200 dark:border-blue-400/40">
                   {first.finalScore ?? 0}
                 </span>
               </div>
@@ -99,30 +103,30 @@ const Podium = ({ topStudents = [] }) => {
 
         {/* Rank 3 (Bronze) */}
         {third ? (
-          <div className="order-3 flex flex-col items-center">
-            <div className="relative mb-2.5 flex flex-col items-center">
-              <div className="absolute -top-2.5 right-0 bg-amber-700 text-white p-1.5 rounded-full shadow-subtle border border-amber-800">
-                <Award className="w-3.5 h-3.5" />
+          <div className="order-3 flex flex-col items-center group">
+            <div className="relative mb-3 flex flex-col items-center">
+              <div className="absolute -top-3 right-0 bg-amber-700 text-white p-2 rounded-full shadow-md border border-amber-800 z-10">
+                <Award className="w-4 h-4" />
               </div>
-              <div className="w-12 h-12 rounded-full bg-orange-100 text-amber-900 font-bold flex items-center justify-center border border-orange-200 text-sm">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-orange-200 to-amber-100 dark:from-amber-800 dark:to-orange-900 text-amber-950 dark:text-amber-100 font-black flex items-center justify-center border-2 border-amber-300 dark:border-amber-600 shadow-md text-base group-hover:scale-105 transition-all">
                 {renderInitial(third.name)}
               </div>
             </div>
 
-            <div className="text-center w-full bg-white rounded-xl p-4 border border-slate-200 shadow-card">
-              <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-bold bg-orange-50 text-amber-900 border border-orange-200 mb-1.5">
+            <div className="text-center w-full bg-white dark:bg-[#111E3D] rounded-2xl p-5 border border-[#D9E4F2] dark:border-blue-400/20 shadow-sm hover:shadow-md transition-all">
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-extrabold bg-orange-50 dark:bg-orange-950/40 text-amber-900 dark:text-orange-300 border border-orange-200 dark:border-orange-800 mb-2">
                 RANK #3
               </span>
-              <h3 className="font-bold text-slate-900 text-sm truncate">
+              <h3 className="font-extrabold text-[#0F172A] dark:text-white text-sm truncate" title={third.name}>
                 {third.name}
               </h3>
-              <p className="text-[11px] text-slate-500 truncate mt-0.5">
+              <p className="text-xs text-[#475569] dark:text-slate-300 truncate mt-0.5 font-medium">
                 {third.department || 'Computer Science'}
               </p>
 
-              <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span className="text-slate-400 text-[11px]">Final Score</span>
-                <span className="font-bold text-slate-900 font-mono text-sm">
+              <div className="mt-4 pt-3 border-t border-[#D9E4F2] dark:border-blue-900/30 flex items-center justify-between text-xs">
+                <span className="text-slate-500 dark:text-slate-400 font-semibold">Overall Score</span>
+                <span className="font-black text-blue-700 dark:text-sky-300 font-mono text-base bg-blue-50 dark:bg-blue-600/20 px-2 py-0.5 rounded-lg border border-blue-100 dark:border-blue-400/30">
                   {third.finalScore ?? 0}
                 </span>
               </div>

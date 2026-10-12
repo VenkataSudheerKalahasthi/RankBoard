@@ -9,10 +9,10 @@ const Login = () => {
         <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-slate-900 text-brand-400 font-bold shadow-subtle mb-2">
           <Code2 className="w-5 h-5" />
         </div>
-        <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+        <h1 className="text-2xl font-black theme-text-primary tracking-tight">
           Student Portal Sign In
         </h1>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs theme-text-secondary">
           Sign in via Clerk to access your DSA Rankboard student dashboard
         </p>
       </div>

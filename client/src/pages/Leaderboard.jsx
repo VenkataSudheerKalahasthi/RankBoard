@@ -114,16 +114,16 @@ const Leaderboard = () => {
   return (
     <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-8 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#D9E4F2] dark:border-blue-900/40 pb-5">
         <div>
-          <div className="flex items-center gap-1.5 text-brand-600 font-bold text-xs uppercase tracking-wider">
+          <div className="flex items-center gap-1.5 text-blue-600 dark:text-sky-400 font-extrabold text-xs uppercase tracking-wider">
             <Trophy className="w-4 h-4 text-amber-500" />
             Standings & Analytics
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
+          <h1 className="text-2xl sm:text-3xl font-black text-[#0F172A] dark:text-white mt-1 tracking-tight">
             College DSA Leaderboard
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-[#475569] dark:text-slate-300 mt-0.5 font-medium">
             {loading && totalCount === null
               ? 'Loading live performance standings...'
               : `Displaying live performance scores for all ${totalCount ?? 0} registered students.`}
@@ -132,9 +132,9 @@ const Leaderboard = () => {
       </div>
 
       {/* Filter and Search */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-card flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 w-full md:w-auto">
-          <Filter className="w-4 h-4 text-slate-400" />
+      <div className="bg-white dark:bg-[#111E3D] p-4 sm:p-5 rounded-2xl border border-[#D9E4F2] dark:border-blue-400/20 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 transition-colors duration-300">
+        <div className="flex items-center gap-2 text-xs font-bold text-[#0F172A] dark:text-white w-full md:w-auto">
+          <Filter className="w-4 h-4 text-blue-600 dark:text-sky-400" />
           Filter Rankings
         </div>
 
@@ -142,7 +142,7 @@ const Leaderboard = () => {
           <select
             value={department}
             onChange={(e) => setDepartment(e.target.value)}
-            className="text-xs bg-slate-50 border border-slate-300 text-slate-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500 font-medium"
+            className="text-xs bg-slate-50 dark:bg-[#0D1830] border border-[#D9E4F2] dark:border-blue-500/30 text-[#0F172A] dark:text-white rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
           >
             <option value="ALL">All Departments</option>
             {DEPARTMENTS.filter((d) => d !== 'ALL').map((dept) => (
@@ -153,7 +153,7 @@ const Leaderboard = () => {
           <select
             value={year}
             onChange={(e) => setYear(e.target.value)}
-            className="text-xs bg-slate-50 border border-slate-300 text-slate-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500 font-medium"
+            className="text-xs bg-slate-50 dark:bg-[#0D1830] border border-[#D9E4F2] dark:border-blue-500/30 text-[#0F172A] dark:text-white rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
           >
             <option value="ALL">All Years</option>
             <option value="1">Year 1</option>
@@ -168,9 +168,9 @@ const Leaderboard = () => {
               placeholder="Search by student name or roll..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full text-xs pl-8 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 text-slate-800"
+              className="w-full text-xs pl-9 pr-3.5 py-2.5 bg-slate-50 dark:bg-[#0D1830] border border-[#D9E4F2] dark:border-blue-500/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-[#0F172A] dark:text-white placeholder-slate-400 dark:placeholder-slate-500 font-medium"
             />
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" />
+            <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3 top-3 pointer-events-none" />
           </div>
         </form>
       </div>

@@ -131,12 +131,12 @@ const StudentProfile = () => {
         onClose={() => setShowcaseOpen(false)}
       />
 
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+          <h1 className="text-2xl sm:text-3xl font-extrabold theme-text-primary">
             Academic Profile Settings
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+          <p className="text-xs sm:text-sm theme-text-secondary mt-0.5">
             Manage your student identity, Cloudinary profile photo, and institutional registration.
           </p>
         </div>
@@ -163,10 +163,10 @@ const StudentProfile = () => {
               <img
                 src={student.profilePhoto}
                 alt={student.name || 'Student'}
-                className="w-24 h-24 rounded-2xl object-cover border-2 border-slate-200 shadow-md bg-slate-100"
+                className="w-24 h-24 rounded-2xl object-cover border-2 border-slate-200 dark:border-slate-700 shadow-md bg-slate-100 dark:bg-slate-800"
               />
             ) : (
-              <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-brand-500 to-slate-800 border-2 border-slate-200 flex items-center justify-center text-2xl font-bold text-white shadow-md">
+              <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-brand-500 to-slate-800 border-2 border-slate-200 dark:border-slate-700 flex items-center justify-center text-2xl font-bold text-white shadow-md">
                 {(student?.name || 'ST').slice(0, 2).toUpperCase()}
               </div>
             )}
@@ -182,10 +182,10 @@ const StudentProfile = () => {
 
           <div className="flex-1 text-center sm:text-left space-y-2">
             <div>
-              <h3 className="text-sm font-bold text-slate-900">
+              <h3 className="text-sm font-bold theme-text-primary">
                 Official Photo Identification
               </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs theme-text-muted mt-0.5">
                 Supported formats: JPEG, PNG, WEBP (Max 5 MB). Secured and optimized by Cloudinary.
               </p>
             </div>
@@ -218,15 +218,15 @@ const StudentProfile = () => {
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           {successMsg && (
-            <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-xs flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+            <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 rounded-lg text-xs flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
               <span>{successMsg}</span>
             </div>
           )}
 
           {errorMsg && (
-            <div className="p-3.5 bg-red-50 border border-red-200 text-red-800 rounded-lg text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+            <div className="p-3.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 rounded-lg text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-red-600 dark:text-red-400" />
               <span>{errorMsg}</span>
             </div>
           )}
@@ -254,14 +254,14 @@ const StudentProfile = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider theme-text-secondary mb-1.5">
                 Department <span className="text-red-500">*</span>
               </label>
               <select
                 name="department"
                 value={formData.department}
                 onChange={handleChange}
-                className="block w-full rounded-lg border border-slate-300 bg-white text-slate-900 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 font-medium"
+                className="block w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 font-medium"
               >
                 {DEPARTMENTS.map((dept) => (
                   <option key={dept} value={dept}>{dept}</option>
@@ -270,14 +270,14 @@ const StudentProfile = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider theme-text-secondary mb-1.5">
                 Academic Year <span className="text-red-500">*</span>
               </label>
               <select
                 name="year"
                 value={formData.year}
                 onChange={handleChange}
-                className="block w-full rounded-lg border border-slate-300 bg-white text-slate-900 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 font-medium"
+                className="block w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 font-medium"
               >
                 <option value="1">Year 1 (Freshman)</option>
                 <option value="2">Year 2 (Sophomore)</option>
@@ -287,10 +287,10 @@ const StudentProfile = () => {
             </div>
           </div>
 
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+          <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
             <Link
               to="/student/platforms"
-              className="text-xs text-brand-600 hover:text-brand-800 font-semibold"
+              className="text-xs text-brand-600 dark:text-brand-400 hover:underline font-semibold"
             >
               Configure Coding Profiles &rarr;
             </Link>
