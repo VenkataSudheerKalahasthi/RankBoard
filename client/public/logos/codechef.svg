@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="16 6 68 76" fill="none">
+  <!-- Chef Toque Hat -->
+  <path
+    d="M30 38 C18 38 16 16 30 12 C36 6 64 6 70 12 C84 16 82 38 70 38 Z"
+    fill="#F8FAFC"
+    stroke="#94A3B8"
+    stroke-width="1.8"
+  />
+  <path
+    d="M35 36 C30 26 36 16 50 14 C64 16 70 26 65 36 Z"
+    fill="#FFFFFF"
+  />
+  <path d="M42 18 C40 26 41 33 41 36" stroke="#CBD5E1" stroke-width="1.8" stroke-linecap="round" fill="none" />
+  <path d="M58 18 C60 26 59 33 59 36" stroke="#CBD5E1" stroke-width="1.8" stroke-linecap="round" fill="none" />
+  <!-- Hat Band -->
+  <rect x="26" y="35" width="48" height="8" rx="2" fill="#E11D48" />
+  <!-- Face -->
+  <circle cx="50" cy="59" r="21" fill="#5B3214" />
+  <!-- Eyes / Code Brackets -->
+  <path d="M41 53 L35 56.5 L41 60" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  <path d="M59 53 L65 56.5 L59 60" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  <!-- Smile -->
+  <path d="M46 64.5 Q50 68.5 54 64.5" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" fill="none" />
+  <!-- Collar / Shirt -->
+  <path
+    d="M28 72 C36 68 44 71 50 74 C56 71 64 68 72 72 C67 80 57 77 50 80 C43 77 33 80 28 72 Z"
+    fill="#3E1F09"
+  />
+</svg>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { SignIn } from '@clerk/clerk-react';
+import { Link } from 'react-router-dom';
 import { Code2 } from 'lucide-react';
 
 const Login = () => {
@@ -30,6 +31,13 @@ const Login = () => {
             },
           }}
         />
+      </div>
+
+      <div className="mt-5 text-center text-xs text-slate-500 dark:text-slate-400">
+        <span>Need to register a new student account on this computer? </span>
+        <Link to="/register" className="text-blue-600 dark:text-sky-400 font-semibold hover:underline">
+          Register here
+        </Link>
       </div>
     </div>
   );

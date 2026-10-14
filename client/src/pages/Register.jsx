@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useSignUp } from '@clerk/clerk-react';
+import React, { useState, useEffect } from 'react';
+import { useSignUp, useAuth } from '@clerk/clerk-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   Sparkles, 
@@ -18,7 +18,15 @@ import { validatePassword, VALIDATION_MESSAGES } from '../utils/passwordValidato
 
 const Register = () => {
   const { isLoaded, signUp, setActive } = useSignUp();
+  const { isSignedIn } = useAuth();
   const navigate = useNavigate();
+
+  // If already authenticated, redirect to student dashboard
+  useEffect(() => {
+    if (isSignedIn) {
+      navigate('/student/dashboard', { replace: true });
+    }
+  }, [isSignedIn, navigate]);
 
   // Form states
   const [firstName, setFirstName] = useState('');

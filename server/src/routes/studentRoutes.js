@@ -8,7 +8,10 @@ const { syncLimiter } = require('../middleware/rateLimiter');
 const { updateProfileSchema } = require('../validators/studentValidator');
 const { platformUrlsSchema } = require('../validators/platformValidator');
 
-// All student endpoints require authenticated Clerk session
+// Public endpoint to verify registration completion for returning visitors (no sensitive data)
+router.get('/verify-registration', studentController.verifyRegistration);
+
+// All student endpoints below require authenticated Clerk session
 router.use(requireAuth);
 
 // Profile

@@ -9,8 +9,10 @@ import LeaderboardTable from '../components/leaderboard/LeaderboardTable';
 import LoadingState from '../components/common/LoadingState';
 import ErrorState from '../components/common/ErrorState';
 import Button from '../components/common/Button';
+import ScrollReveal from '../components/common/ScrollReveal';
 import { Users, CheckCircle, Layers, Clock, Search, Sparkles, ArrowRight, Building2 } from 'lucide-react';
 import { SignedIn, SignedOut } from '@clerk/clerk-react';
+import { useStudent } from '../context/StudentContext';
 
 const DEPARTMENTS = [
   'ALL',
@@ -33,17 +35,40 @@ const DEPARTMENTS = [
 ];
 
 const PLATFORMS = [
-  { name: 'LeetCode', logo: '/logos/leetcode.jpg' },
-  { name: 'GeeksforGeeks', logo: '/logos/gfg.jpg' },
-  { name: 'HackerRank', logo: '/logos/hackerrank.jpg' },
-  { name: 'Codeforces', logo: '/logos/codeforces.jpg' },
-  { name: 'CodeChef', logo: '/logos/codechef.jpg' },
+  {
+    name: 'LeetCode',
+    logo: '/logos/leetcode.svg',
+    imgClass: 'w-[82%] h-[82%] object-contain',
+  },
+  {
+    name: 'GeeksforGeeks',
+    logo: '/logos/gfg.svg',
+    imgClass: 'w-[84%] h-[84%] object-contain',
+  },
+  {
+    name: 'HackerRank',
+    logo: '/logos/hackerrank.svg',
+    imgClass: 'w-[80%] h-[80%] object-contain',
+  },
+  {
+    name: 'Codeforces',
+    logo: '/logos/codeforces.svg',
+    imgClass: 'w-[82%] h-[82%] object-contain',
+  },
+  {
+    name: 'CodeChef',
+    logo: '/logos/codechef.svg',
+    imgClass: 'w-[84%] h-[84%] object-contain',
+  },
 ];
 
 const Home = () => {
-  // Authoritative data state; null while awaiting initial response
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { isRegistered, isRegistrationChecking } = useStudent();
+  // Synchronous cache hydration for instant initial render
+  const initialCache = leaderboardService.getCachedLeaderboard();
+
+  const [data, setData] = useState(() => initialCache || null);
+  const [loading, setLoading] = useState(() => !initialCache);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -167,109 +192,130 @@ const Home = () => {
             <div className="lg:col-span-7 flex flex-col items-center lg:items-start text-center lg:text-left space-y-6">
               
               {/* 1. Institutional Badge */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-100/90 dark:bg-blue-500/15 border border-blue-200 dark:border-blue-400/30 text-blue-700 dark:text-sky-300 text-xs font-bold uppercase tracking-wider backdrop-blur-sm">
-                <Sparkles className="w-4 h-4 text-blue-600 dark:text-sky-400 animate-pulse" />
-                Institutional Competitive Programming Hub
-              </div>
+              <ScrollReveal delay={0} distance={14}>
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-100/90 dark:bg-blue-500/15 border border-blue-200 dark:border-blue-400/30 text-blue-700 dark:text-sky-300 text-xs font-bold uppercase tracking-wider backdrop-blur-sm">
+                  <Sparkles className="w-4 h-4 text-blue-600 dark:text-sky-400 animate-pulse" />
+                  Institutional Competitive Programming Hub
+                </div>
+              </ScrollReveal>
 
               {/* 2. Main Heading */}
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-none text-[#0F172A] dark:text-white">
-                COLLEGEDSA <br className="hidden sm:inline" />
-                <span className="bg-gradient-to-r from-[#2563EB] to-[#38BDF8] bg-clip-text text-transparent">
-                  RANKBOARD
-                </span>
-              </h1>
+              <ScrollReveal delay={70} distance={16}>
+                <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-none text-[#0F172A] dark:text-white">
+                  COLLEGEDSA <br className="hidden sm:inline" />
+                  <span className="bg-gradient-to-r from-[#2563EB] to-[#38BDF8] bg-clip-text text-transparent">
+                    RANKBOARD
+                  </span>
+                </h1>
+              </ScrollReveal>
 
               {/* 3. Description */}
-              <p className="text-base sm:text-lg text-[#475569] dark:text-slate-300 max-w-xl mx-auto lg:mx-0 font-medium leading-relaxed">
-                Track, evaluate, and benchmark student DSA performance across leading competitive coding platforms in real time.
-              </p>
+              <ScrollReveal delay={130} distance={16}>
+                <p className="text-base sm:text-lg text-[#475569] dark:text-slate-300 max-w-xl mx-auto lg:mx-0 font-medium leading-relaxed">
+                  Track, evaluate, and benchmark student DSA performance across leading competitive coding platforms in real time.
+                </p>
+              </ScrollReveal>
 
               {/* 4. Uploaded Platform Logos */}
-              <div className="pt-2 pb-1">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#64748B] dark:text-slate-400 block mb-2.5">
-                  Integrated Platforms
-                </span>
-                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3">
-                  {PLATFORMS.map((p) => (
-                    <div
-                      key={p.name}
-                      title={p.name}
-                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white dark:bg-white/5 border border-[#D9E4F2] dark:border-blue-400/25 shadow-xs dark:shadow-glow-blue flex items-center justify-center p-2.5 transform hover:scale-105 hover:border-blue-500 dark:hover:border-sky-400 hover:shadow-md transition-all duration-300 cursor-pointer group"
-                    >
-                      <img
-                        src={p.logo}
-                        alt={p.name}
-                        className="w-full h-full object-contain filter group-hover:brightness-110 transition-all"
-                      />
-                    </div>
-                  ))}
+              <ScrollReveal delay={190} distance={16}>
+                <div className="pt-2 pb-1">
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#64748B] dark:text-slate-400 block mb-2.5">
+                    Integrated Platforms
+                  </span>
+                  <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3">
+                    {PLATFORMS.map((p) => (
+                      <div
+                        key={p.name}
+                        title={p.name}
+                        className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white dark:bg-white/5 border border-[#D9E4F2] dark:border-blue-400/25 shadow-xs dark:shadow-glow-blue flex items-center justify-center transform hover:scale-105 hover:border-blue-500 dark:hover:border-sky-400 hover:shadow-md transition-all duration-300 cursor-pointer group card-hover-interactive shrink-0"
+                      >
+                        <img
+                          src={p.logo}
+                          alt={p.name}
+                          className={`${p.imgClass || 'w-[80%] h-[80%] object-contain'} filter group-hover:brightness-110 transition-all select-none`}
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              </ScrollReveal>
 
               {/* 5. CTAs */}
-              <div className="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-3.5 w-full sm:w-auto">
-                <SignedOut>
-                  <Link to="/register" className="w-full sm:w-auto">
-                    <Button variant="primary" size="lg" className="w-full sm:w-auto bg-gradient-to-r from-[#2563EB] to-[#0EA5E9] dark:from-blue-600 dark:to-sky-400 hover:from-blue-700 hover:to-sky-500 text-white font-black shadow-md dark:shadow-glow-blue border-none">
-                      Register as Student
-                    </Button>
-                  </Link>
-                  <Link to="/leaderboard" className="w-full sm:w-auto">
-                    <Button variant="secondary" size="lg" className="w-full sm:w-auto bg-white dark:bg-[#111E3D] hover:bg-blue-50 dark:hover:bg-[#162653] text-[#0F172A] dark:text-white border border-[#D9E4F2] dark:border-blue-400/30 font-bold">
-                      View Standings
-                    </Button>
-                  </Link>
-                </SignedOut>
-                <SignedIn>
-                  <Link to="/student/dashboard" className="w-full sm:w-auto">
-                    <Button variant="primary" size="lg" icon={ArrowRight} className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-700 hover:to-sky-600 text-white font-extrabold shadow-md dark:shadow-glow-blue border-none">
-                      Open Student Dashboard
-                    </Button>
-                  </Link>
-                </SignedIn>
-              </div>
+              <ScrollReveal delay={250} distance={16}>
+                <div className="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-3.5 w-full sm:w-auto">
+                  <SignedOut>
+                    {isRegistrationChecking ? (
+                      <div className="h-12 w-44 bg-slate-200/60 dark:bg-slate-800 animate-pulse rounded-xl" />
+                    ) : isRegistered ? (
+                      <Link to="/login" className="w-full sm:w-auto">
+                        <Button variant="primary" size="lg" icon={ArrowRight} className="w-full sm:w-auto bg-gradient-to-r from-[#2563EB] to-[#0EA5E9] dark:from-blue-600 dark:to-sky-400 hover:from-blue-700 hover:to-sky-500 text-white font-black shadow-md dark:shadow-glow-blue border-none">
+                          Sign In
+                        </Button>
+                      </Link>
+                    ) : (
+                      <Link to="/register" className="w-full sm:w-auto">
+                        <Button variant="primary" size="lg" className="w-full sm:w-auto bg-gradient-to-r from-[#2563EB] to-[#0EA5E9] dark:from-blue-600 dark:to-sky-400 hover:from-blue-700 hover:to-sky-500 text-white font-black shadow-md dark:shadow-glow-blue border-none">
+                          Register as Student
+                        </Button>
+                      </Link>
+                    )}
+                    <Link to="/leaderboard" className="w-full sm:w-auto">
+                      <Button variant="secondary" size="lg" className="w-full sm:w-auto bg-white dark:bg-[#111E3D] hover:bg-blue-50 dark:hover:bg-[#162653] text-[#0F172A] dark:text-white border border-[#D9E4F2] dark:border-blue-400/30 font-bold">
+                        View Standings
+                      </Button>
+                    </Link>
+                  </SignedOut>
+                  <SignedIn>
+                    <Link to="/student/dashboard" className="w-full sm:w-auto">
+                      <Button variant="primary" size="lg" icon={ArrowRight} className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-700 hover:to-sky-600 text-white font-extrabold shadow-md dark:shadow-glow-blue border-none">
+                        Open Student Dashboard
+                      </Button>
+                    </Link>
+                  </SignedIn>
+                </div>
+              </ScrollReveal>
 
             </div>
 
             {/* Right Column: Floating University Coding Hub Glass Card over the Blended Image */}
             <div className="lg:col-span-5 flex flex-col items-center lg:items-end justify-end lg:self-end pt-6 lg:pt-16 lg:translate-y-2">
-              <div className="w-full max-w-md p-5 sm:p-6 rounded-2xl bg-white/85 dark:bg-[#111E3D]/85 backdrop-blur-md border border-[#D9E4F2] dark:border-blue-400/30 text-[#0F172A] dark:text-white shadow-xl hover:shadow-2xl transition-all duration-300 group">
-                
-                <div className="flex items-center justify-between pb-4 border-b border-[#D9E4F2] dark:border-blue-900/40">
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-xl bg-blue-50 dark:bg-blue-600/25 border border-blue-200 dark:border-blue-400/40 text-blue-600 dark:text-sky-400 flex items-center justify-center shrink-0 shadow-xs">
-                      <Building2 className="w-5 h-5" />
+              <ScrollReveal delay={180} distance={20} className="w-full flex justify-center lg:justify-end">
+                <div className="w-full max-w-md p-5 sm:p-6 rounded-2xl bg-white/85 dark:bg-[#111E3D]/85 backdrop-blur-md border border-[#D9E4F2] dark:border-blue-400/30 text-[#0F172A] dark:text-white shadow-xl hover:shadow-2xl transition-all duration-300 group card-hover-interactive">
+                  
+                  <div className="flex items-center justify-between pb-4 border-b border-[#D9E4F2] dark:border-blue-900/40">
+                    <div className="flex items-center gap-3">
+                      <div className="w-11 h-11 rounded-xl bg-blue-50 dark:bg-blue-600/25 border border-blue-200 dark:border-blue-400/40 text-blue-600 dark:text-sky-400 flex items-center justify-center shrink-0 shadow-xs">
+                        <Building2 className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-base font-black leading-tight text-[#0F172A] dark:text-white">
+                          University Coding Hub
+                        </h4>
+                        <p className="text-xs text-[#475569] dark:text-slate-300 font-semibold mt-0.5">
+                          Official Competitive Programming Portal
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="text-base font-black leading-tight text-[#0F172A] dark:text-white">
-                        University Coding Hub
-                      </h4>
-                      <p className="text-xs text-[#475569] dark:text-slate-300 font-semibold mt-0.5">
-                        Official Competitive Programming Portal
-                      </p>
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 shrink-0">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                      ACTIVE
+                    </span>
+                  </div>
+
+                  <div className="pt-4 grid grid-cols-2 gap-3 text-xs">
+                    <div className="p-3 rounded-xl bg-slate-50/80 dark:bg-[#0D1830]/80 border border-[#D9E4F2] dark:border-blue-500/20">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">Scoring Scope</span>
+                      <span className="font-extrabold text-[#0F172A] dark:text-white">5 Active Platforms</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-slate-50/80 dark:bg-[#0D1830]/80 border border-[#D9E4F2] dark:border-blue-500/20">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">Rank Calculation</span>
+                      <span className="font-extrabold text-blue-600 dark:text-sky-400">Real-Time Sync</span>
                     </div>
                   </div>
-                  <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 shrink-0">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-                    ACTIVE
-                  </span>
-                </div>
 
-                <div className="pt-4 grid grid-cols-2 gap-3 text-xs">
-                  <div className="p-3 rounded-xl bg-slate-50/80 dark:bg-[#0D1830]/80 border border-[#D9E4F2] dark:border-blue-500/20">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">Scoring Scope</span>
-                    <span className="font-extrabold text-[#0F172A] dark:text-white">5 Active Platforms</span>
-                  </div>
-                  <div className="p-3 rounded-xl bg-slate-50/80 dark:bg-[#0D1830]/80 border border-[#D9E4F2] dark:border-blue-500/20">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">Rank Calculation</span>
-                    <span className="font-extrabold text-blue-600 dark:text-sky-400">Real-Time Sync</span>
-                  </div>
                 </div>
-
-              </div>
+              </ScrollReveal>
             </div>
-
 
           </div>
 
@@ -279,54 +325,62 @@ const Home = () => {
       <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-8 space-y-10 relative z-20">
         {/* Top Metric KPI Cards */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          <StatCard
-            title="Registered Students"
-            value={data?.stats?.totalRegisteredStudents ?? 0}
-            subtitle="Active student profiles"
-            icon={Users}
-            badgeText="Enrolled"
-            badgeVariant="brand"
-            loading={isInitialLoading}
-          />
-          <StatCard
-            title="Problems Solved"
-            value={(data?.stats?.totalProblemsSolved ?? 0).toLocaleString()}
-            subtitle="Verified across platforms"
-            icon={CheckCircle}
-            badgeText="Combined"
-            badgeVariant="emerald"
-            loading={isInitialLoading}
-          />
-          <StatCard
-            title="Coding Platforms"
-            value={data?.stats?.codingPlatforms ?? TOTAL_CONFIGURED_PLATFORMS}
-            subtitle="LC • GFG • HR • CF • CC"
-            icon={Layers}
-            badgeText="Integrated"
-            badgeVariant="slate"
-            loading={isInitialLoading}
-          />
-          <StatCard
-            title="Last Updated"
-            value={data?.stats?.lastUpdated ? new Date(data.stats.lastUpdated).toLocaleDateString() : 'Just now'}
-            subtitle={data?.stats?.lastUpdated ? new Date(data.stats.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Live'}
-            icon={Clock}
-            badgeText="Live Sync"
-            badgeVariant="amber"
-            loading={isInitialLoading}
-          />
+          <ScrollReveal delay={0}>
+            <StatCard
+              title="Registered Students"
+              value={data?.stats?.totalRegisteredStudents ?? 0}
+              subtitle="Active student profiles"
+              icon={Users}
+              badgeText="Enrolled"
+              badgeVariant="brand"
+              loading={isInitialLoading}
+            />
+          </ScrollReveal>
+          <ScrollReveal delay={75}>
+            <StatCard
+              title="Problems Solved"
+              value={(data?.stats?.totalProblemsSolved ?? 0).toLocaleString()}
+              subtitle="Verified across platforms"
+              icon={CheckCircle}
+              badgeText="Combined"
+              badgeVariant="emerald"
+              loading={isInitialLoading}
+            />
+          </ScrollReveal>
+          <ScrollReveal delay={150}>
+            <StatCard
+              title="Coding Platforms"
+              value={data?.stats?.codingPlatforms ?? TOTAL_CONFIGURED_PLATFORMS}
+              subtitle="LC • GFG • HR • CF • CC"
+              icon={Layers}
+              badgeText="Integrated"
+              badgeVariant="slate"
+              loading={isInitialLoading}
+            />
+          </ScrollReveal>
+          <ScrollReveal delay={225}>
+            <StatCard
+              title="Last Updated"
+              value={data?.stats?.lastUpdated ? new Date(data.stats.lastUpdated).toLocaleDateString() : 'Just now'}
+              subtitle={data?.stats?.lastUpdated ? new Date(data.stats.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Live'}
+              icon={Clock}
+              badgeText="Live Sync"
+              badgeVariant="amber"
+              loading={isInitialLoading}
+            />
+          </ScrollReveal>
         </section>
 
         {/* Top 3 Podium */}
-        {!isInitialLoading && data?.podium && data.podium.length > 0 && !search && department === 'ALL' && year === 'ALL' && (
-          <section>
-            <Podium topStudents={data.podium} />
-          </section>
+        {!search && department === 'ALL' && year === 'ALL' && (
+          <ScrollReveal rootMargin="100px 0px" delay={0} as="section">
+            <Podium topStudents={data?.podium || []} loading={isInitialLoading} />
+          </ScrollReveal>
         )}
 
-        {/* Leaderboard Section */}
-        <section className="space-y-4">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white dark:bg-[#111E3D] p-5 rounded-2xl border border-[#D9E4F2] dark:border-blue-500/20 shadow-sm transition-colors duration-300">
+        {/* Official College Leaderboard Header & Filters */}
+        <ScrollReveal rootMargin="100px 0px" delay={0} as="section" className="space-y-4">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white dark:bg-[#111E3D] p-5 rounded-2xl border border-[#D9E4F2] dark:border-blue-500/20 shadow-sm transition-colors duration-300 card-hover-interactive">
             <div>
               <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full bg-blue-600 dark:bg-sky-400"></div>
@@ -376,15 +430,16 @@ const Home = () => {
               </div>
             </form>
           </div>
+        </ScrollReveal>
 
-          {isInitialLoading ? (
-            <LoadingState message="Fetching live leaderboard from database..." />
-          ) : error && !data ? (
+        {/* Leaderboard Table (Revealed progressively as user scrolls down) */}
+        <ScrollReveal rootMargin="100px 0px" delay={0}>
+          {error && !data ? (
             <ErrorState title="Leaderboard Unavailable" message={error} onRetry={() => fetchLeaderboard(false)} />
           ) : (
             <LeaderboardTable students={data?.leaderboard || []} loading={loading} />
           )}
-        </section>
+        </ScrollReveal>
       </div>
     </div>
   );

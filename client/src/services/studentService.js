@@ -30,6 +30,23 @@ export const getStudentRank = async () => {
   return res.data;
 };
 
+export const verifyRegistration = async (receipt) => {
+  if (!receipt) return { success: true, isRegistered: false };
+  try {
+    const res = await api.get('/student/verify-registration', {
+      headers: {
+        'x-registration-receipt': receipt,
+      },
+      params: {
+        receipt,
+      },
+    });
+    return res.data;
+  } catch (error) {
+    return { success: false, isRegistered: false };
+  }
+};
+
 export const studentService = {
   getProfile: getStudentProfile,
   updateProfile: updateStudentProfile,
@@ -37,6 +54,7 @@ export const studentService = {
   syncPlatforms: syncStudentPlatforms,
   getScore: getStudentScore,
   getRank: getStudentRank,
+  verifyRegistration,
 };
 
 export default studentService;

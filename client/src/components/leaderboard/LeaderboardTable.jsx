@@ -1,8 +1,85 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import RankBadge from '../common/RankBadge';
 import EmptyState from '../common/EmptyState';
 
+const INITIAL_BATCH = 25;
+const BATCH_SIZE = 25;
+
+export const LeaderboardTableSkeleton = ({ rows = 6 }) => (
+  <div className="bg-white dark:bg-[#111E3D] rounded-2xl border border-[#D9E4F2] dark:border-blue-400/20 shadow-md overflow-hidden animate-pulse" aria-hidden="true">
+    {/* Desktop header skeleton */}
+    <div className="hidden md:block border-b border-[#D9E4F2] dark:border-blue-900/40 bg-[#EFF6FF] dark:bg-[#0D1830] px-4 py-4">
+      <div className="flex items-center justify-between">
+        <div className="w-12 h-3.5 bg-blue-200/60 dark:bg-blue-800/40 rounded"></div>
+        <div className="w-48 h-3.5 bg-blue-200/60 dark:bg-blue-800/40 rounded"></div>
+        <div className="flex gap-8">
+          <div className="w-16 h-3.5 bg-blue-200/60 dark:bg-blue-800/40 rounded"></div>
+          <div className="w-16 h-3.5 bg-blue-200/60 dark:bg-blue-800/40 rounded"></div>
+          <div className="w-16 h-3.5 bg-blue-200/60 dark:bg-blue-800/40 rounded"></div>
+        </div>
+        <div className="w-24 h-3.5 bg-blue-200/60 dark:bg-blue-800/40 rounded"></div>
+      </div>
+    </div>
+
+    {/* Skeleton Rows */}
+    <div className="divide-y divide-[#D9E4F2] dark:divide-blue-900/30">
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="p-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 w-1/3 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-slate-200 dark:bg-slate-800 shrink-0"></div>
+            <div className="space-y-1.5 flex-1 min-w-0">
+              <div className="h-3.5 bg-slate-200 dark:bg-slate-700 rounded w-3/4"></div>
+              <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded w-1/2"></div>
+            </div>
+          </div>
+          <div className="hidden md:flex items-center gap-6 flex-1 justify-center">
+            <div className="h-4 w-12 bg-slate-100 dark:bg-slate-800 rounded"></div>
+            <div className="h-4 w-12 bg-slate-100 dark:bg-slate-800 rounded"></div>
+            <div className="h-4 w-12 bg-slate-100 dark:bg-slate-800 rounded"></div>
+            <div className="h-4 w-12 bg-slate-100 dark:bg-slate-800 rounded"></div>
+            <div className="h-4 w-12 bg-slate-100 dark:bg-slate-800 rounded"></div>
+          </div>
+          <div className="h-7 w-20 bg-blue-100/60 dark:bg-blue-900/30 rounded-lg shrink-0"></div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 const LeaderboardTable = ({ students = [], loading = false }) => {
+  const [displayLimit, setDisplayLimit] = useState(INITIAL_BATCH);
+  const sentinelRef = useRef(null);
+
+  // Reset progressive count whenever students array changes (filter/search/data update)
+  useEffect(() => {
+    setDisplayLimit(INITIAL_BATCH);
+  }, [students]);
+
+  // Observer to lazily append next batch as user scrolls near bottom
+  useEffect(() => {
+    if (displayLimit >= students.length) return;
+
+    const sentinelNode = sentinelRef.current;
+    if (!sentinelNode) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry && entry.isIntersecting) {
+          setDisplayLimit((prev) => Math.min(prev + BATCH_SIZE, students.length));
+        }
+      },
+      { rootMargin: '350px 0px' }
+    );
+
+    observer.observe(sentinelNode);
+    return () => observer.disconnect();
+  }, [displayLimit, students.length]);
+
+  if (loading && students.length === 0) {
+    return <LeaderboardTableSkeleton />;
+  }
+
   if (!loading && students.length === 0) {
     return (
       <EmptyState
@@ -19,18 +96,26 @@ const LeaderboardTable = ({ students = [], loading = false }) => {
     return name.slice(0, 2).toUpperCase();
   };
 
+  const visibleStudents = students.slice(0, displayLimit);
+
   return (
     <div className="bg-white dark:bg-[#111E3D] rounded-2xl border border-[#D9E4F2] dark:border-blue-400/20 shadow-md overflow-hidden transition-colors duration-300">
       {/* Mobile Card Layout (< md screens) */}
       <div className="block md:hidden divide-y divide-[#D9E4F2] dark:divide-blue-900/30">
-        {students.map((student, index) => {
+        {visibleStudents.map((student, index) => {
           const platforms = student.platforms || {};
           const score = typeof (student.overallScore ?? student.finalScore) === 'number'
             ? Number(student.overallScore ?? student.finalScore).toFixed(1)
             : (student.overallScore ?? student.finalScore ?? 0);
 
+          const staggerDelay = (index % BATCH_SIZE) * 20;
+
           return (
-            <div key={student.id || index} className="p-4 space-y-3 hover:bg-blue-50/60 dark:hover:bg-[#162653]/60 transition-colors">
+            <div
+              key={student.id || index}
+              className="p-4 space-y-3 hover:bg-blue-50/60 dark:hover:bg-[#162653]/60 transition-colors leaderboard-row-progressive"
+              style={{ animationDelay: `${staggerDelay}ms` }}
+            >
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <RankBadge rank={student.rank || index + 1} />
@@ -147,13 +232,15 @@ const LeaderboardTable = ({ students = [], loading = false }) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-[#D9E4F2] dark:divide-blue-900/30 text-[#0F172A] dark:text-slate-200">
-            {students.map((student, index) => {
+            {visibleStudents.map((student, index) => {
               const platforms = student.platforms || {};
+              const staggerDelay = (index % BATCH_SIZE) * 20;
 
               return (
                 <tr
                   key={student.id || index}
-                  className="hover:bg-blue-50/60 dark:hover:bg-[#162653]/60 transition-colors group"
+                  className="hover:bg-blue-50/60 dark:hover:bg-[#162653]/60 transition-colors group leaderboard-row-progressive"
+                  style={{ animationDelay: `${staggerDelay}ms` }}
                 >
                   {/* Rank */}
                   <td className="py-3.5 px-4 text-center align-middle">
@@ -261,6 +348,21 @@ const LeaderboardTable = ({ students = [], loading = false }) => {
             })}
           </tbody>
         </table>
+      </div>
+
+      {/* Progressive Scroll Sentinel & Status Bar */}
+      <div
+        ref={sentinelRef}
+        className="py-3.5 px-4 text-center text-xs font-semibold text-slate-400 dark:text-slate-500 border-t border-[#D9E4F2] dark:border-blue-900/30 bg-slate-50/50 dark:bg-[#0D1830]/40 flex items-center justify-center gap-2"
+      >
+        {visibleStudents.length < students.length ? (
+          <>
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+            <span>Showing top {visibleStudents.length} of {students.length} ranked students (scroll to reveal more)</span>
+          </>
+        ) : (
+          <span>Displaying all {students.length} students</span>
+        )}
       </div>
     </div>
   );

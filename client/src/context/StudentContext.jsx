@@ -15,12 +15,76 @@ export const StudentProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [syncing, setSyncing] = useState(false);
 
+  // Persistent registration status for returning visitors on this browser/account
+  const [isRegistered, setIsRegistered] = useState(() => {
+    return !!localStorage.getItem('rankboard_reg_receipt');
+  });
+  const [isRegistrationChecking, setIsRegistrationChecking] = useState(() => {
+    return !isSignedIn && !!localStorage.getItem('rankboard_reg_receipt');
+  });
+
   // Bind Clerk's getToken to Axios
   useEffect(() => {
     if (getToken) {
       setAuthTokenGetter(getToken);
     }
   }, [getToken]);
+
+  // Check persistent registration receipt against database when signed out
+  useEffect(() => {
+    let isCancelled = false;
+
+    const checkSavedRegistration = async () => {
+      if (isSignedIn) {
+        setIsRegistered(true);
+        setIsRegistrationChecking(false);
+        return;
+      }
+
+      const savedReceipt = localStorage.getItem('rankboard_reg_receipt');
+      if (!savedReceipt) {
+        setIsRegistered(false);
+        setIsRegistrationChecking(false);
+        return;
+      }
+
+      setIsRegistrationChecking(true);
+      try {
+        const result = await studentService.verifyRegistration(savedReceipt);
+        if (!isCancelled) {
+          if (result && result.success && result.isRegistered) {
+            setIsRegistered(true);
+          } else {
+            // Invalid or expired receipt, or student deactivated in database
+            setIsRegistered(false);
+            localStorage.removeItem('rankboard_reg_receipt');
+          }
+        }
+      } catch (err) {
+        if (!isCancelled) {
+          // If status verification fails, handle safely without falsely claiming registration succeeded
+          setIsRegistered(false);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsRegistrationChecking(false);
+        }
+      }
+    };
+
+    if (authLoaded) {
+      checkSavedRegistration();
+    }
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [authLoaded, isSignedIn]);
+
+  const clearRegistrationRecord = useCallback(() => {
+    localStorage.removeItem('rankboard_reg_receipt');
+    setIsRegistered(false);
+  }, []);
 
   const fetchStudentProfile = useCallback(async (showLoading = true) => {
     if (!isSignedIn) {
@@ -35,6 +99,10 @@ export const StudentProvider = ({ children }) => {
       const response = await studentService.getProfile();
       if (response.success && response.student) {
         setStudent(response.student);
+        setIsRegistered(true);
+        if (response.registrationReceipt) {
+          localStorage.setItem('rankboard_reg_receipt', response.registrationReceipt);
+        }
       }
     } catch (err) {
       console.error('[Student Context Fetch Error]:', err);
@@ -99,6 +167,9 @@ export const StudentProvider = ({ children }) => {
     syncing,
     isSignedIn,
     user,
+    isRegistered: isSignedIn ? true : isRegistered,
+    isRegistrationChecking,
+    clearRegistrationRecord,
     refreshStudent: fetchStudentProfile,
     updateProfile,
     syncPlatforms,

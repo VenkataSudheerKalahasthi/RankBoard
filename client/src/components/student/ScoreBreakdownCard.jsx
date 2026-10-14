@@ -1,6 +1,7 @@
 import React from 'react';
 import Card from '../common/Card';
 import RankBadge from '../common/RankBadge';
+import AnimatedCounter from '../common/AnimatedCounter';
 import { Trophy, CheckCircle2, Layers, ExternalLink, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -58,7 +59,7 @@ const ScoreBreakdownCard = ({ student }) => {
   ];
 
   return (
-    <Card className="bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white border border-blue-900/60 shadow-xl overflow-hidden relative rounded-2xl">
+    <Card hoverable className="bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white border border-blue-900/60 shadow-xl overflow-hidden relative rounded-2xl card-hover-interactive">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-blue-900/50 pb-5">
         <div>
           <span className="text-[11px] font-extrabold uppercase tracking-wider text-sky-400 flex items-center gap-1.5">
@@ -90,7 +91,7 @@ const ScoreBreakdownCard = ({ student }) => {
               Overall Score
             </span>
             <span className="text-3xl font-black text-sky-400 font-mono">
-              {finalScore}
+              <AnimatedCounter value={finalScore} />
             </span>
           </div>
         </div>
@@ -133,7 +134,7 @@ const ScoreBreakdownCard = ({ student }) => {
                   </div>
                   {p.problemsSolved !== null && p.problemsSolved !== undefined && (
                     <div className="text-sm font-extrabold font-mono text-white pt-1.5 border-t border-slate-800">
-                      {p.problemsSolved} <span className="text-[10px] font-normal text-slate-400">solved</span>
+                      <AnimatedCounter value={p.problemsSolved} /> <span className="text-[10px] font-normal text-slate-400">solved</span>
                     </div>
                   )}
                 </div>

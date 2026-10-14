@@ -1,4 +1,5 @@
 import React from 'react';
+import AnimatedCounter from './AnimatedCounter';
 
 const StatCard = ({
   title,
@@ -18,7 +19,7 @@ const StatCard = ({
   };
 
   return (
-    <div className={`bg-white dark:bg-[#111E3D] rounded-2xl border border-[#D9E4F2] dark:border-blue-400/20 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 flex flex-col justify-between ${className}`}>
+    <div className={`bg-white dark:bg-[#111E3D] rounded-2xl border border-[#D9E4F2] dark:border-blue-400/20 p-5 shadow-sm card-hover-interactive flex flex-col justify-between ${className}`}>
       <div className="flex items-start justify-between">
         <div className="flex-1 pr-2">
           <span className="text-xs font-extrabold text-[#64748B] dark:text-slate-400 uppercase tracking-wider">
@@ -28,7 +29,7 @@ const StatCard = ({
             <div className="h-7 w-24 bg-slate-200/80 dark:bg-slate-700 animate-pulse rounded mt-1.5" />
           ) : (
             <div className="text-2xl font-black text-[#0F172A] dark:text-white mt-1.5 tracking-tight font-mono">
-              {value}
+              <AnimatedCounter value={value} />
             </div>
           )}
         </div>

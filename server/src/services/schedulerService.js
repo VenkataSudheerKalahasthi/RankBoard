@@ -26,7 +26,7 @@ const isStudentDueForSync = (student) => {
     leetcode: (syncConfig.LEETCODE_INTERVAL_SECONDS || 60) * 1000,
     gfg: (syncConfig.GFG_INTERVAL_SECONDS || 120) * 1000,
     codeforces: (syncConfig.CODEFORCES_INTERVAL_SECONDS || 120) * 1000,
-    codechef: (syncConfig.CODECHEF_INTERVAL_SECONDS || 300) * 1000,
+    codechef: (syncConfig.CODECHEF_INTERVAL_SECONDS || 900) * 1000,
     hackerrank: (syncConfig.HACKERRANK_INTERVAL_SECONDS || 120) * 1000,
   };
 

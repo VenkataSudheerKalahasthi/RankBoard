@@ -1,8 +1,11 @@
 import React from 'react';
 import { Code2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useStudent } from '../../context/StudentContext';
 
 const Footer = () => {
+  const { isRegistered } = useStudent();
+
   return (
     <footer className="bg-white dark:bg-[#071226] text-[#475569] dark:text-slate-400 border-t border-[#D9E4F2] dark:border-blue-900/40 text-xs mt-auto transition-colors duration-300">
       <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-8">
@@ -24,9 +27,11 @@ const Footer = () => {
             <Link to="/login" className="hover:text-blue-600 dark:hover:text-white transition-colors">
               Student Sign In
             </Link>
-            <Link to="/register" className="hover:text-blue-600 dark:hover:text-white transition-colors">
-              Registration
-            </Link>
+            {!isRegistered && (
+              <Link to="/register" className="hover:text-blue-600 dark:hover:text-white transition-colors">
+                Registration
+              </Link>
+            )}
           </div>
         </div>
 

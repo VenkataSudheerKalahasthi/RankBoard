@@ -8,6 +8,7 @@ const Card = ({
   action,
   noPadding = false,
   bodyClassName = '',
+  hoverable = false,
   ...props
 }) => {
   const hasCustomBg = className.includes('bg-');
@@ -17,7 +18,7 @@ const Card = ({
     <div
       className={`${hasCustomBg ? '' : 'bg-white dark:bg-[#111E3D]'} rounded-2xl ${
         hasCustomBorder ? '' : 'border border-[#D9E4F2] dark:border-blue-400/20'
-      } shadow-sm transition-colors duration-300 ${className}`}
+      } shadow-sm transition-colors duration-300 ${hoverable ? 'card-hover-interactive' : ''} ${className}`}
       {...props}
     >
       {(title || subtitle || action) && (
