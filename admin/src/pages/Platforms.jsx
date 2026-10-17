@@ -276,18 +276,15 @@ export const Platforms = () => {
               {/* Header */}
               <div className="flex items-start justify-between border-b border-slate-800 pb-3">
                 <div className="flex items-center gap-3">
-                  <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center font-extrabold text-xs shadow-sm ${
-                      color === 'amber'
-                        ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
-                        : color === 'emerald'
-                        ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                        : color === 'sky'
-                        ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30'
-                        : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
-                    }`}
-                  >
-                    {icon}
+                  <div className="w-10 h-10 rounded-xl bg-white border border-slate-700/80 overflow-hidden flex items-center justify-center p-1 shadow-sm shrink-0">
+                    <img
+                      src={`/logos/${key}.jpg`}
+                      alt={label}
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5">

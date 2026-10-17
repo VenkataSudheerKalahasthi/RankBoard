@@ -89,7 +89,9 @@ const ProfileLinkForm = ({ onSaved }) => {
           <div className="bg-slate-50 dark:bg-[#0D1830] p-4 rounded-xl border border-[#D9E4F2] dark:border-blue-500/20">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                <div className="w-5 h-5 rounded-md bg-white border border-slate-200/90 dark:border-slate-700 overflow-hidden flex items-center justify-center shrink-0 p-0.5 shadow-2xs">
+                  <img src="/logos/leetcode.jpg" alt="LeetCode" className="w-full h-full object-contain" />
+                </div>
                 <span className="font-bold text-xs text-[#0F172A] dark:text-white">LeetCode Profile</span>
               </div>
               <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">leetcode.com/u/[username]</span>
@@ -107,7 +109,9 @@ const ProfileLinkForm = ({ onSaved }) => {
           <div className="bg-slate-50 dark:bg-[#0D1830] p-4 rounded-xl border border-[#D9E4F2] dark:border-blue-500/20">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
+                <div className="w-5 h-5 rounded-md bg-white border border-slate-200/90 dark:border-slate-700 overflow-hidden flex items-center justify-center shrink-0 p-0.5 shadow-2xs">
+                  <img src="/logos/gfg.jpg" alt="GeeksforGeeks" className="w-full h-full object-contain" />
+                </div>
                 <span className="font-bold text-xs text-[#0F172A] dark:text-white">GeeksforGeeks Profile</span>
               </div>
               <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">geeksforgeeks.org/user/[username]/</span>
@@ -125,7 +129,9 @@ const ProfileLinkForm = ({ onSaved }) => {
           <div className="bg-slate-50 dark:bg-[#0D1830] p-4 rounded-xl border border-[#D9E4F2] dark:border-blue-500/20">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                <div className="w-5 h-5 rounded-md bg-white border border-slate-200/90 dark:border-slate-700 overflow-hidden flex items-center justify-center shrink-0 p-0.5 shadow-2xs">
+                  <img src="/logos/hackerrank.jpg" alt="HackerRank" className="w-full h-full object-contain" />
+                </div>
                 <span className="font-bold text-xs text-[#0F172A] dark:text-white">HackerRank Profile</span>
               </div>
               <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">hackerrank.com/profile/[username]</span>
@@ -151,7 +157,9 @@ const ProfileLinkForm = ({ onSaved }) => {
           <div className="bg-slate-50 dark:bg-[#0D1830] p-4 rounded-xl border border-[#D9E4F2] dark:border-blue-500/20">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+                <div className="w-5 h-5 rounded-md bg-white border border-slate-200/90 dark:border-slate-700 overflow-hidden flex items-center justify-center shrink-0 p-0.5 shadow-2xs">
+                  <img src="/logos/codeforces.jpg" alt="Codeforces" className="w-full h-full object-contain" />
+                </div>
                 <span className="font-bold text-xs text-[#0F172A] dark:text-white">Codeforces Profile</span>
               </div>
               <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">codeforces.com/profile/[handle]</span>
@@ -169,7 +177,9 @@ const ProfileLinkForm = ({ onSaved }) => {
           <div className="bg-slate-50 dark:bg-[#0D1830] p-4 rounded-xl border border-[#D9E4F2] dark:border-blue-500/20">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-orange-700"></span>
+                <div className="w-5 h-5 rounded-md bg-white border border-slate-200/90 dark:border-slate-700 overflow-hidden flex items-center justify-center shrink-0 p-0.5 shadow-2xs">
+                  <img src="/logos/codechef.jpg" alt="CodeChef" className="w-full h-full object-contain" />
+                </div>
                 <span className="font-bold text-xs text-[#0F172A] dark:text-white">CodeChef Profile</span>
               </div>
               <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">codechef.com/users/[handle]</span>

@@ -120,8 +120,10 @@ const ScoreBreakdownCard = ({ student }) => {
               }`}
             >
               <div className="flex items-center justify-between text-xs mb-1">
-                <div className="flex items-center gap-1.5 font-bold text-slate-200">
-                  <span className={`w-2 h-2 rounded-full ${p.dotColor}`}></span>
+                <div className="flex items-center gap-2 font-bold text-slate-200">
+                  <div className="w-5 h-5 rounded-md bg-white border border-slate-700/80 overflow-hidden flex items-center justify-center shrink-0 p-0.5 shadow-2xs">
+                    <img src={`/logos/${p.key}.jpg`} alt={p.name} className="w-full h-full object-contain" />
+                  </div>
                   {p.name}
                 </div>
               </div>

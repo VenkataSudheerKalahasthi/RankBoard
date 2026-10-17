@@ -37,28 +37,28 @@ const DEPARTMENTS = [
 const PLATFORMS = [
   {
     name: 'LeetCode',
-    logo: '/logos/leetcode.svg',
-    imgClass: 'w-[82%] h-[82%] object-contain',
+    logo: '/logos/leetcode.jpg',
+    imgClass: 'w-full h-full object-contain rounded-lg',
   },
   {
     name: 'GeeksforGeeks',
-    logo: '/logos/gfg.svg',
-    imgClass: 'w-[84%] h-[84%] object-contain',
+    logo: '/logos/gfg.jpg',
+    imgClass: 'w-full h-full object-contain rounded-lg',
   },
   {
     name: 'HackerRank',
-    logo: '/logos/hackerrank.svg',
-    imgClass: 'w-[80%] h-[80%] object-contain',
+    logo: '/logos/hackerrank.jpg',
+    imgClass: 'w-full h-full object-contain rounded-lg',
   },
   {
     name: 'Codeforces',
-    logo: '/logos/codeforces.svg',
-    imgClass: 'w-[82%] h-[82%] object-contain',
+    logo: '/logos/codeforces.jpg',
+    imgClass: 'w-full h-full object-contain rounded-lg',
   },
   {
     name: 'CodeChef',
-    logo: '/logos/codechef.svg',
-    imgClass: 'w-[84%] h-[84%] object-contain',
+    logo: '/logos/codechef.jpg',
+    imgClass: 'w-full h-full object-contain rounded-lg',
   },
 ];
 
@@ -227,12 +227,12 @@ const Home = () => {
                       <div
                         key={p.name}
                         title={p.name}
-                        className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white dark:bg-white/5 border border-[#D9E4F2] dark:border-blue-400/25 shadow-xs dark:shadow-glow-blue flex items-center justify-center transform hover:scale-105 hover:border-blue-500 dark:hover:border-sky-400 hover:shadow-md transition-all duration-300 cursor-pointer group card-hover-interactive shrink-0"
+                        className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white dark:bg-slate-900 border border-[#D9E4F2] dark:border-blue-400/25 shadow-xs dark:shadow-glow-blue flex items-center justify-center transform hover:scale-105 hover:border-blue-500 dark:hover:border-sky-400 hover:shadow-md transition-all duration-300 cursor-pointer group card-hover-interactive shrink-0 overflow-hidden p-1.5"
                       >
                         <img
                           src={p.logo}
                           alt={p.name}
-                          className={`${p.imgClass || 'w-[80%] h-[80%] object-contain'} filter group-hover:brightness-110 transition-all select-none`}
+                          className={`${p.imgClass || 'w-full h-full object-contain'} filter group-hover:brightness-105 transition-all select-none`}
                         />
                       </div>
                     ))}

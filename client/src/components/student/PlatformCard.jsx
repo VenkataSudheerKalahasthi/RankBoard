@@ -287,8 +287,17 @@ const PlatformCard = ({
       <div
         className={`px-4 sm:px-5 py-3 border-b border-slate-100 dark:border-blue-900/30 ${meta.bgLight} dark:bg-slate-800/40 flex items-center justify-between gap-2.5 shrink-0 min-w-0`}
       >
-        <div className="flex items-center gap-2 min-w-0">
-          <span className={`w-3 h-3 rounded-full shrink-0 ${meta.dotColor}`} />
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-6 h-6 rounded-md bg-white border border-slate-200/90 dark:border-slate-700/80 overflow-hidden flex items-center justify-center shrink-0 p-0.5 shadow-2xs">
+            <img
+              src={`/logos/${pKey}.jpg`}
+              alt={meta.name}
+              className="w-full h-full object-contain"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          </div>
           <h3 className="font-bold text-slate-900 dark:text-white text-sm truncate" title={meta.name}>
             {meta.name}
           </h3>
