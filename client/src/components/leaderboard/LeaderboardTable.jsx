@@ -151,31 +151,46 @@ const LeaderboardTable = ({ students = [], loading = false }) => {
               {/* Platform breakdown chips */}
               <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 pt-1 border-t border-[#D9E4F2] dark:border-blue-900/30 text-[11px]">
                 <div className="bg-amber-50/70 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-400/20 rounded-md p-1.5 text-center">
-                  <div className="text-[9px] font-bold text-amber-700 dark:text-amber-400 uppercase">LeetCode</div>
+                  <div className="flex items-center justify-center gap-1 text-[9px] font-bold text-amber-700 dark:text-amber-400 uppercase">
+                    <img src="/logos/leetcode.jpg" alt="LC" className="w-3 h-3 object-contain rounded-xs shrink-0" />
+                    LeetCode
+                  </div>
                   <div className="font-mono font-bold text-[#0F172A] dark:text-white text-xs">
                     {platforms.leetcode?.problemsSolved ?? '—'}
                   </div>
                 </div>
                 <div className="bg-emerald-50/70 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-400/20 rounded-md p-1.5 text-center">
-                  <div className="text-[9px] font-bold text-emerald-700 dark:text-emerald-400 uppercase">GFG</div>
+                  <div className="flex items-center justify-center gap-1 text-[9px] font-bold text-emerald-700 dark:text-emerald-400 uppercase">
+                    <img src="/logos/gfg.jpg" alt="GFG" className="w-3 h-3 object-contain rounded-xs shrink-0" />
+                    GFG
+                  </div>
                   <div className="font-mono font-bold text-[#0F172A] dark:text-white text-xs">
                     {platforms.gfg?.problemsSolved ?? '—'}
                   </div>
                 </div>
                 <div className="bg-sky-50/70 dark:bg-sky-500/10 border border-sky-200/60 dark:border-sky-400/20 rounded-md p-1.5 text-center">
-                  <div className="text-[9px] font-bold text-sky-700 dark:text-sky-400 uppercase">HackerRank</div>
+                  <div className="flex items-center justify-center gap-1 text-[9px] font-bold text-sky-700 dark:text-sky-400 uppercase">
+                    <img src="/logos/hackerrank.jpg" alt="HR" className="w-3 h-3 object-contain rounded-xs shrink-0" />
+                    HackerRank
+                  </div>
                   <div className="font-mono font-bold text-[#0F172A] dark:text-white text-xs">
                     {platforms.hackerrank?.problemsSolved ?? '—'}
                   </div>
                 </div>
                 <div className="bg-blue-50/70 dark:bg-blue-500/10 border border-blue-200/60 dark:border-blue-400/20 rounded-md p-1.5 text-center">
-                  <div className="text-[9px] font-medium text-blue-700 dark:text-blue-300 uppercase">Codeforces</div>
+                  <div className="flex items-center justify-center gap-1 text-[9px] font-medium text-blue-700 dark:text-blue-300 uppercase">
+                    <img src="/logos/codeforces.jpg" alt="CF" className="w-3 h-3 object-contain rounded-xs shrink-0" />
+                    Codeforces
+                  </div>
                   <div className="font-mono font-bold text-[#0F172A] dark:text-slate-100 text-xs">
                     {platforms.codeforces?.problemsSolved ?? '—'}
                   </div>
                 </div>
                 <div className="bg-orange-50/70 dark:bg-orange-500/10 border border-orange-200/60 dark:border-orange-400/20 rounded-md p-1.5 text-center">
-                  <div className="text-[9px] font-medium text-orange-700 dark:text-orange-400 uppercase">CodeChef</div>
+                  <div className="flex items-center justify-center gap-1 text-[9px] font-medium text-orange-700 dark:text-orange-400 uppercase">
+                    <img src="/logos/codechef.jpg" alt="CC" className="w-3 h-3 object-contain rounded-xs shrink-0" />
+                    CodeChef
+                  </div>
                   <div className="font-mono font-bold text-[#0F172A] dark:text-slate-100 text-xs">
                     {platforms.codechef?.problemsSolved ?? '—'}
                   </div>
@@ -195,31 +210,31 @@ const LeaderboardTable = ({ students = [], loading = false }) => {
               <th className="py-4 px-4 min-w-[180px]">Student Details</th>
               <th className="py-4 px-3 text-center min-w-[100px]">
                 <div className="flex items-center justify-center gap-1.5 font-bold text-amber-500 dark:text-amber-400">
-                  <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                  <img src="/logos/leetcode.jpg" alt="LeetCode" className="w-4 h-4 object-contain rounded-xs shrink-0" />
                   LeetCode
                 </div>
               </th>
               <th className="py-4 px-3 text-center min-w-[90px]">
                 <div className="flex items-center justify-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <img src="/logos/gfg.jpg" alt="GFG" className="w-4 h-4 object-contain rounded-xs shrink-0" />
                   GFG
                 </div>
               </th>
               <th className="py-4 px-3 text-center min-w-[100px]">
                 <div className="flex items-center justify-center gap-1.5 font-bold text-sky-600 dark:text-sky-400">
-                  <span className="w-2 h-2 rounded-full bg-sky-400"></span>
+                  <img src="/logos/hackerrank.jpg" alt="HackerRank" className="w-4 h-4 object-contain rounded-xs shrink-0" />
                   HackerRank
                 </div>
               </th>
               <th className="py-4 px-3 text-center min-w-[100px]">
                 <div className="flex items-center justify-center gap-1.5 font-bold text-blue-600 dark:text-blue-300">
-                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                  <img src="/logos/codeforces.jpg" alt="Codeforces" className="w-4 h-4 object-contain rounded-xs shrink-0" />
                   Codeforces
                 </div>
               </th>
               <th className="py-4 px-3 text-center min-w-[100px]">
                 <div className="flex items-center justify-center gap-1.5 font-bold text-orange-600 dark:text-orange-400">
-                  <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                  <img src="/logos/codechef.jpg" alt="CodeChef" className="w-4 h-4 object-contain rounded-xs shrink-0" />
                   CodeChef
                 </div>
               </th>

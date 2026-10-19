@@ -125,6 +125,7 @@ const CodeChefLogo = () => (
 const PLATFORMS = [
   {
     name: 'LeetCode',
+<<<<<<< HEAD
     component: LeetCodeLogo,
   },
   {
@@ -142,6 +143,30 @@ const PLATFORMS = [
   {
     name: 'CodeChef',
     component: CodeChefLogo,
+=======
+    logo: '/logos/leetcode.jpg',
+    imgClass: 'w-full h-full object-contain rounded-lg',
+  },
+  {
+    name: 'GeeksforGeeks',
+    logo: '/logos/gfg.jpg',
+    imgClass: 'w-full h-full object-contain rounded-lg',
+  },
+  {
+    name: 'HackerRank',
+    logo: '/logos/hackerrank.jpg',
+    imgClass: 'w-full h-full object-contain rounded-lg',
+  },
+  {
+    name: 'Codeforces',
+    logo: '/logos/codeforces.jpg',
+    imgClass: 'w-full h-full object-contain rounded-lg',
+  },
+  {
+    name: 'CodeChef',
+    logo: '/logos/codechef.jpg',
+    imgClass: 'w-full h-full object-contain rounded-lg',
+>>>>>>> beaa2b7d2d8b8e830bad9730625ba27a3506fcde
   },
 ];
 
@@ -290,11 +315,81 @@ const Home = () => {
               </p>
             </ScrollReveal>
 
+<<<<<<< HEAD
             {/* 4. Action Buttons (Side by Side matching Image 3 & 4) */}
             <ScrollReveal delay={190} distance={16}>
               <div className="mt-7 flex flex-wrap items-center gap-4">
                 <SignedOut>
                   {isRegistrationChecking ? (
+=======
+              {/* 4. Uploaded Platform Logos */}
+              <ScrollReveal delay={190} distance={16}>
+                <div className="pt-2 pb-1">
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#64748B] dark:text-slate-400 block mb-2.5">
+                    Integrated Platforms
+                  </span>
+                  <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3">
+                    {PLATFORMS.map((p) => (
+                      <div
+                        key={p.name}
+                        title={p.name}
+                        className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white dark:bg-slate-900 border border-[#D9E4F2] dark:border-blue-400/25 shadow-xs dark:shadow-glow-blue flex items-center justify-center transform hover:scale-105 hover:border-blue-500 dark:hover:border-sky-400 hover:shadow-md transition-all duration-300 cursor-pointer group card-hover-interactive shrink-0 overflow-hidden p-1.5"
+                      >
+                        <img
+                          src={p.logo}
+                          alt={p.name}
+                          className={`${p.imgClass || 'w-full h-full object-contain'} filter group-hover:brightness-105 transition-all select-none`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </ScrollReveal>
+
+              {/* 5. CTAs */}
+              <ScrollReveal delay={250} distance={16}>
+                <div className="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-3.5 w-full sm:w-auto">
+                  <SignedOut>
+                    {isRegistrationChecking ? (
+                      <div className="h-12 w-44 bg-slate-200/60 dark:bg-slate-800 animate-pulse rounded-xl" />
+                    ) : isRegistered ? (
+                      <Link to="/login" className="w-full sm:w-auto">
+                        <Button variant="primary" size="lg" icon={ArrowRight} className="w-full sm:w-auto bg-gradient-to-r from-[#2563EB] to-[#0EA5E9] dark:from-blue-600 dark:to-sky-400 hover:from-blue-700 hover:to-sky-500 text-white font-black shadow-md dark:shadow-glow-blue border-none">
+                          Sign In
+                        </Button>
+                      </Link>
+                    ) : (
+                      <Link to="/register" className="w-full sm:w-auto">
+                        <Button variant="primary" size="lg" className="w-full sm:w-auto bg-gradient-to-r from-[#2563EB] to-[#0EA5E9] dark:from-blue-600 dark:to-sky-400 hover:from-blue-700 hover:to-sky-500 text-white font-black shadow-md dark:shadow-glow-blue border-none">
+                          Register as Student
+                        </Button>
+                      </Link>
+                    )}
+                    <Link to="/leaderboard" className="w-full sm:w-auto">
+                      <Button variant="secondary" size="lg" className="w-full sm:w-auto bg-white dark:bg-[#111E3D] hover:bg-blue-50 dark:hover:bg-[#162653] text-[#0F172A] dark:text-white border border-[#D9E4F2] dark:border-blue-400/30 font-bold">
+                        View Standings
+                      </Button>
+                    </Link>
+                  </SignedOut>
+                  <SignedIn>
+                    <Link to="/student/dashboard" className="w-full sm:w-auto">
+                      <Button variant="primary" size="lg" icon={ArrowRight} className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-700 hover:to-sky-600 text-white font-extrabold shadow-md dark:shadow-glow-blue border-none">
+                        Open Student Dashboard
+                      </Button>
+                    </Link>
+                  </SignedIn>
+                </div>
+              </ScrollReveal>
+
+            </div>
+
+            {/* Right Column: Floating University Coding Hub Glass Card over the Blended Image */}
+            <div className="lg:col-span-5 flex flex-col items-center lg:items-end justify-end lg:self-end pt-6 lg:pt-16 lg:translate-y-2">
+              <ScrollReveal delay={180} distance={20} className="w-full flex justify-center lg:justify-end">
+                <div className="w-full max-w-md p-5 sm:p-6 rounded-2xl bg-white/85 dark:bg-[#111E3D]/85 backdrop-blur-md border border-[#D9E4F2] dark:border-blue-400/30 text-[#0F172A] dark:text-white shadow-xl hover:shadow-2xl transition-all duration-300 group card-hover-interactive">
+                  
+                  <div className="flex items-center justify-between pb-4 border-b border-[#D9E4F2] dark:border-blue-900/40">
+>>>>>>> beaa2b7d2d8b8e830bad9730625ba27a3506fcde
                     <div className="flex items-center gap-3">
                       <div className="h-12 w-44 bg-slate-200/60 dark:bg-slate-800 animate-pulse rounded-xl" />
                       <div className="h-12 w-40 bg-slate-200/60 dark:bg-slate-800 animate-pulse rounded-xl hidden sm:block" />
