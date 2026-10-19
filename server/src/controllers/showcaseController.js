@@ -1,12 +1,25 @@
-const { getAllStudentsCached, invalidateStudentCache } = require('../utils/studentCache');
+const {
+  getAllStudentsCached,
+  getMemoizedLeaderboard,
+  setMemoizedLeaderboard,
+  invalidateStudentCache,
+} = require('../utils/studentCache');
 const { updateStudent, getStudentById } = require('../supabase/supabaseRepository');
 const { config } = require('../config/env');
 const cloudinaryService = require('../services/cloudinaryService');
 
 /**
- * Computes live, canonical college rankings for all active students
+ * Computes live, canonical college rankings for all active students using memoized rankings
  */
 const getRankedStudentsMap = async (collegeId = config.COLLEGE_ID) => {
+  const memoized = getMemoizedLeaderboard();
+  if (memoized && memoized.rankedLeaderboard) {
+    return {
+      rankedStudents: memoized.rankedLeaderboard,
+      totalRanked: memoized.rankedLeaderboard.length,
+    };
+  }
+
   const rawStudents = await getAllStudentsCached();
   if (!rawStudents || rawStudents.length === 0) {
     return { rankedStudents: [], totalRanked: 0 };

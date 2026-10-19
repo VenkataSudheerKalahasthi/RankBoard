@@ -85,4 +85,9 @@ router.get('/settings', adminController.getSettings);
 router.put('/settings', adminController.updateSettings);
 router.get('/system/health', adminController.getSystemHealth);
 
+// 14. Administrator Management
+router.post('/admins', adminController.createAdmin);
+router.patch('/admins/:adminId/status', adminController.toggleAdminStatus);
+router.delete('/admins/:adminId', adminController.deleteAdmin);
+
 module.exports = router;

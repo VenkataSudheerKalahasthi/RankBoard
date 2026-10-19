@@ -878,5 +878,383 @@
       "submissionCalendar": null
     },
     "createdAt": "2026-10-14T10:23:49.231Z"
+  },
+  {
+    "id": "snap_1792001194810_22tvd",
+    "studentId": "import_706f6c696d657261616e616e",
+    "platform": "gfg",
+    "snapshotTimestamp": "2026-10-14T18:04:56.752Z",
+    "activityDate": "2026-10-14",
+    "totalSolved": 0,
+    "easySolved": 0,
+    "mediumSolved": 0,
+    "hardSolved": 0,
+    "schoolSolved": 0,
+    "basicSolved": 0,
+    "rating": null,
+    "status": "SUCCESS",
+    "errorMessage": null,
+    "rawStats": {
+      "username": "polimeraanizvt",
+      "profileUrl": "https://www.geeksforgeeks.org/user/polimeraanizvt/",
+      "badges": 0,
+      "stars": 0,
+      "certificates": 0,
+      "streak": null,
+      "recentSubmissions": [],
+      "submissionCalendar": null
+    },
+    "createdAt": "2026-10-14T18:06:34.810Z"
+  },
+  {
+    "id": "snap_1792001195011_hre3n",
+    "studentId": "import_706f6c696d657261616e616e",
+    "platform": "codechef",
+    "snapshotTimestamp": "2026-10-14T17:43:29.127Z",
+    "activityDate": "2026-10-14",
+    "totalSolved": 3,
+    "easySolved": 0,
+    "mediumSolved": 0,
+    "hardSolved": 0,
+    "schoolSolved": 0,
+    "basicSolved": 0,
+    "rating": null,
+    "status": "SUCCESS",
+    "errorMessage": null,
+    "rawStats": {
+      "username": "anandi_143",
+      "profileUrl": "https://www.codechef.com/users/anandi_143",
+      "badges": 0,
+      "stars": 0,
+      "certificates": 0,
+      "streak": null,
+      "recentSubmissions": [],
+      "submissionCalendar": null
+    },
+    "createdAt": "2026-10-14T18:06:35.011Z"
+  },
+  {
+    "id": "snap_1792135925948_wfxyb",
+    "studentId": "import_6e656572616a6162616e6461",
+    "platform": "leetcode",
+    "snapshotTimestamp": "2026-10-16T07:31:45.839Z",
+    "activityDate": "2026-10-16",
+    "totalSolved": 158,
+    "easySolved": 85,
+    "mediumSolved": 58,
+    "hardSolved": 15,
+    "schoolSolved": 0,
+    "basicSolved": 0,
+    "rating": null,
+    "status": "SUCCESS",
+    "errorMessage": null,
+    "rawStats": {
+      "username": "neerajabandaru_1109",
+      "profileUrl": "https://leetcode.com/u/neerajabandaru_1109/",
+      "badges": 0,
+      "stars": 0,
+      "certificates": 0,
+      "streak": 5,
+      "recentSubmissions": [
+        {
+          "id": "2172693194",
+          "title": "Subarrays Distinct Element Sum of Squares I",
+          "titleSlug": "subarrays-distinct-element-sum-of-squares-i",
+          "timestamp": "1792039459"
+        },
+        {
+          "id": "2172666038",
+          "title": "Merge Two Sorted Lists",
+          "titleSlug": "merge-two-sorted-lists",
+          "timestamp": "1792037078"
+        },
+        {
+          "id": "2172658540",
+          "title": "Subarrays Distinct Element Sum of Squares I",
+          "titleSlug": "subarrays-distinct-element-sum-of-squares-i",
+          "timestamp": "1792036320"
+        },
+        {
+          "id": "2170764389",
+          "title": "Maximum Alternating Sum of Squares",
+          "titleSlug": "maximum-alternating-sum-of-squares",
+          "timestamp": "1791863934"
+        },
+        {
+          "id": "2170073786",
+          "title": "Apply Operations on Array to Maximize Sum of Squares",
+          "titleSlug": "apply-operations-on-array-to-maximize-sum-of-squares",
+          "timestamp": "1791799549"
+        },
+        {
+          "id": "2167959959",
+          "title": "Generate Binary Strings Without Adjacent Zeros",
+          "titleSlug": "generate-binary-strings-without-adjacent-zeros",
+          "timestamp": "1791619672"
+        },
+        {
+          "id": "2167814648",
+          "title": "Generate Parentheses",
+          "titleSlug": "generate-parentheses",
+          "timestamp": "1791607343"
+        },
+        {
+          "id": "2167784936",
+          "title": "Minimum Sum of Squared Difference",
+          "titleSlug": "minimum-sum-of-squared-difference",
+          "timestamp": "1791604139"
+        },
+        {
+          "id": "2167160145",
+          "title": "Reverse String",
+          "titleSlug": "reverse-string",
+          "timestamp": "1791538654"
+        },
+        {
+          "id": "2167153897",
+          "title": "To Lower Case",
+          "titleSlug": "to-lower-case",
+          "timestamp": "1791538206"
+        },
+        {
+          "id": "2167151836",
+          "title": "Valid Anagram",
+          "titleSlug": "valid-anagram",
+          "timestamp": "1791538067"
+        },
+        {
+          "id": "2166946851",
+          "title": "Minimum Insertions to Balance a Parentheses String",
+          "titleSlug": "minimum-insertions-to-balance-a-parentheses-string",
+          "timestamp": "1791522202"
+        },
+        {
+          "id": "2165022997",
+          "title": "Remove Invalid Parentheses",
+          "titleSlug": "remove-invalid-parentheses",
+          "timestamp": "1791356485"
+        },
+        {
+          "id": "2159133199",
+          "title": "Power of Two",
+          "titleSlug": "power-of-two",
+          "timestamp": "1790853106"
+        },
+        {
+          "id": "2159130181",
+          "title": "Fibonacci Number",
+          "titleSlug": "fibonacci-number",
+          "timestamp": "1790852823"
+        },
+        {
+          "id": "2159118678",
+          "title": "Lucky Numbers in a Matrix",
+          "titleSlug": "lucky-numbers-in-a-matrix",
+          "timestamp": "1790851849"
+        },
+        {
+          "id": "2159091786",
+          "title": "Sum of Squares of Special Elements ",
+          "titleSlug": "sum-of-squares-of-special-elements",
+          "timestamp": "1790849723"
+        },
+        {
+          "id": "2158741586",
+          "title": "Valid Parentheses",
+          "titleSlug": "valid-parentheses",
+          "timestamp": "1790825853"
+        },
+        {
+          "id": "2157746824",
+          "title": "Maximum Nesting Depth of Two Valid Parentheses Strings",
+          "titleSlug": "maximum-nesting-depth-of-two-valid-parentheses-strings",
+          "timestamp": "1790741708"
+        },
+        {
+          "id": "2156682645",
+          "title": "Longest Common Prefix",
+          "titleSlug": "longest-common-prefix",
+          "timestamp": "1790658584"
+        }
+      ],
+      "submissionCalendar": {
+        "1782777600": 1,
+        "1785196800": 2,
+        "1785283200": 3,
+        "1785369600": 1,
+        "1785456000": 1,
+        "1785715200": 1,
+        "1785801600": 7,
+        "1785974400": 8,
+        "1786060800": 4,
+        "1786147200": 5,
+        "1786320000": 11,
+        "1786406400": 11,
+        "1786492800": 7,
+        "1787097600": 8,
+        "1787356800": 2,
+        "1787529600": 10,
+        "1787616000": 6,
+        "1787788800": 9,
+        "1788739200": 10,
+        "1788825600": 3,
+        "1788912000": 1,
+        "1788998400": 1,
+        "1789084800": 7,
+        "1789430400": 7,
+        "1789516800": 8,
+        "1789603200": 13,
+        "1789689600": 1,
+        "1789776000": 1,
+        "1789948800": 13,
+        "1790208000": 3,
+        "1790294400": 29,
+        "1790640000": 20,
+        "1790726400": 1,
+        "1790812800": 7,
+        "1791331200": 1,
+        "1791504000": 4,
+        "1791590400": 4,
+        "1791763200": 1,
+        "1791849600": 1,
+        "1792022400": 3
+      }
+    },
+    "createdAt": "2026-10-16T07:32:05.948Z"
+  },
+  {
+    "id": "snap_1792136507599_yibme",
+    "studentId": "import_62696e64756d6168656e6472",
+    "platform": "codechef",
+    "snapshotTimestamp": "2026-10-16T07:41:27.531Z",
+    "activityDate": "2026-10-16",
+    "totalSolved": 65,
+    "easySolved": 0,
+    "mediumSolved": 0,
+    "hardSolved": 0,
+    "schoolSolved": 0,
+    "basicSolved": 0,
+    "rating": null,
+    "status": "SUCCESS",
+    "errorMessage": null,
+    "rawStats": {
+      "username": "bindumahendra",
+      "profileUrl": "https://www.codechef.com/users/bindumahendra",
+      "badges": 0,
+      "stars": 0,
+      "certificates": 0,
+      "streak": null,
+      "recentSubmissions": [],
+      "submissionCalendar": null
+    },
+    "createdAt": "2026-10-16T07:41:47.599Z"
+  },
+  {
+    "id": "snap_1792206736860_ivmsp",
+    "studentId": "import_3233343931613035336f4071",
+    "platform": "codechef",
+    "snapshotTimestamp": "2026-10-17T03:01:55.577Z",
+    "activityDate": "2026-10-17",
+    "totalSolved": 0,
+    "easySolved": 0,
+    "mediumSolved": 0,
+    "hardSolved": 0,
+    "schoolSolved": 0,
+    "basicSolved": 0,
+    "rating": null,
+    "status": "SUCCESS",
+    "errorMessage": null,
+    "rawStats": {
+      "username": "rupasrikotha",
+      "profileUrl": "https://www.codechef.com/users/rupasrikotha",
+      "badges": 0,
+      "stars": 0,
+      "certificates": 0,
+      "streak": null,
+      "recentSubmissions": [],
+      "submissionCalendar": null
+    },
+    "createdAt": "2026-10-17T03:12:16.860Z"
+  },
+  {
+    "id": "snap_1792206736872_g524b",
+    "studentId": "import_6e6172696b616c6c75726939",
+    "platform": "codechef",
+    "snapshotTimestamp": "2026-10-17T02:54:05.392Z",
+    "activityDate": "2026-10-17",
+    "totalSolved": 30,
+    "easySolved": 0,
+    "mediumSolved": 0,
+    "hardSolved": 0,
+    "schoolSolved": 0,
+    "basicSolved": 0,
+    "rating": null,
+    "status": "SUCCESS",
+    "errorMessage": null,
+    "rawStats": {
+      "username": "narikalluri_1",
+      "profileUrl": "https://www.codechef.com/users/narikalluri_1",
+      "badges": 0,
+      "stars": 0,
+      "certificates": 0,
+      "streak": null,
+      "recentSubmissions": [],
+      "submissionCalendar": null
+    },
+    "createdAt": "2026-10-17T03:12:16.872Z"
+  },
+  {
+    "id": "snap_1792210756697_jcwoa",
+    "studentId": "import_76656e6b79726176756c6131",
+    "platform": "gfg",
+    "snapshotTimestamp": "2026-10-17T04:13:50.084Z",
+    "activityDate": "2026-10-17",
+    "totalSolved": 126,
+    "easySolved": 45,
+    "mediumSolved": 44,
+    "hardSolved": 2,
+    "schoolSolved": 0,
+    "basicSolved": 35,
+    "rating": null,
+    "status": "SUCCESS",
+    "errorMessage": null,
+    "rawStats": {
+      "username": "ravulavenkawms",
+      "profileUrl": "https://www.geeksforgeeks.org/user/ravulavenkawms/",
+      "badges": 0,
+      "stars": 0,
+      "certificates": 0,
+      "streak": null,
+      "recentSubmissions": [],
+      "submissionCalendar": null
+    },
+    "createdAt": "2026-10-17T04:19:16.697Z"
+  },
+  {
+    "id": "snap_1792210910101_l2lno",
+    "studentId": "import_76656e6b6174617375646865",
+    "platform": "codechef",
+    "snapshotTimestamp": "2026-10-17T03:59:29.481Z",
+    "activityDate": "2026-10-17",
+    "totalSolved": 40,
+    "easySolved": 0,
+    "mediumSolved": 0,
+    "hardSolved": 0,
+    "schoolSolved": 0,
+    "basicSolved": 0,
+    "rating": null,
+    "status": "SUCCESS",
+    "errorMessage": null,
+    "rawStats": {
+      "username": "super_eagle_45",
+      "profileUrl": "https://www.codechef.com/users/super_eagle_45",
+      "badges": 0,
+      "stars": 0,
+      "certificates": 0,
+      "streak": null,
+      "recentSubmissions": [],
+      "submissionCalendar": null
+    },
+    "createdAt": "2026-10-17T04:21:50.101Z"
   }
 ]

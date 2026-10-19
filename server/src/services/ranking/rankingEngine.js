@@ -1,6 +1,6 @@
 const { getSupabase } = require('../../supabase/supabaseClient');
-const { getAllStudents, updateStudent } = require('../../supabase/supabaseRepository');
-const { invalidateStudentCache } = require('../../utils/studentCache');
+const { updateStudent } = require('../../supabase/supabaseRepository');
+const { getAllStudentsCached, invalidateStudentCache } = require('../../utils/studentCache');
 const { config } = require('../../config/env');
 
 /**
@@ -15,8 +15,11 @@ const recalculateCollegeRankings = async (collegeId = config.COLLEGE_ID) => {
     throw new Error('Supabase client not initialized');
   }
 
-  // Fetch all active students for the college
-  const allStudents = await getAllStudents({ accountStatus: 'ACTIVE', collegeId });
+  // Fetch all active students using in-memory cache to prevent unnecessary Supabase Egress
+  const cachedStudents = await getAllStudentsCached();
+  const allStudents = (cachedStudents || [])
+    .filter((s) => s.accountStatus === 'ACTIVE' && (!collegeId || s.collegeId === collegeId))
+    .map((s) => ({ ...s }));
 
   if (!allStudents || allStudents.length === 0) {
     return {
@@ -65,20 +68,18 @@ const recalculateCollegeRankings = async (collegeId = config.COLLEGE_ID) => {
   let currentRank = 1;
 
   const rankedStudents = [];
+  const studentsToUpdate = [];
 
   for (let index = 0; index < allStudents.length; index++) {
     const student = allStudents[index];
     const currentRank = index + 1;
 
-    // Only update rank in database if rank actually changed
+    // Collect students whose rank position actually changed
     if (student.rank !== currentRank) {
-      await supabase
-        .from('students')
-        .update({
-          rank: currentRank,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', student.id);
+      studentsToUpdate.push({
+        id: student.id,
+        rank: currentRank,
+      });
     }
 
     rankedStudents.push({
@@ -93,7 +94,26 @@ const recalculateCollegeRankings = async (collegeId = config.COLLEGE_ID) => {
     });
   }
 
-  invalidateStudentCache();
+  // Execute database updates in concurrent chunks of 15 to minimize latency
+  const BATCH_SIZE = 15;
+  for (let i = 0; i < studentsToUpdate.length; i += BATCH_SIZE) {
+    const chunk = studentsToUpdate.slice(i, i + BATCH_SIZE);
+    await Promise.all(
+      chunk.map((item) =>
+        supabase
+          .from('students')
+          .update({
+            rank: item.rank,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', item.id)
+      )
+    );
+  }
+
+  if (studentsToUpdate.length > 0) {
+    invalidateStudentCache();
+  }
 
   return {
     collegeId,

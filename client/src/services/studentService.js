@@ -40,10 +40,16 @@ export const verifyRegistration = async (receipt) => {
       params: {
         receipt,
       },
+      timeout: 10000,
     });
     return res.data;
   } catch (error) {
-    return { success: false, isRegistered: false };
+    // If the server explicitly responded with an HTTP status code
+    if (error.response && error.response.data) {
+      return error.response.data;
+    }
+    // Network error, offline, or request timeout
+    return { success: false, isRegistered: false, networkError: true, error: error.message };
   }
 };
 

@@ -1,0 +1,181 @@
+{
+  "stageResults": [
+    {
+      "stageName": "Stage 1 — 100 Virtual Users",
+      "concurrency": 100,
+      "durationSec": 10.111,
+      "totalRequests": 6745,
+      "rps": 667.1,
+      "successCount": 6745,
+      "errorCount": 0,
+      "errorRate": 0,
+      "statusCounts": {
+        "200": 6745
+      },
+      "latencies": {
+        "min": 1.6,
+        "p50": 139.13,
+        "p90": 201.62,
+        "p95": 251.29,
+        "p99": 330.63,
+        "max": 373.84,
+        "mean": 148.59
+      },
+      "mbTransferred": 244.06,
+      "memory": {
+        "heapUsedMb": 51.5,
+        "rssMb": 226
+      }
+    },
+    {
+      "stageName": "Stage 2 — 250 Virtual Users",
+      "concurrency": 250,
+      "durationSec": 10.308,
+      "totalRequests": 7309,
+      "rps": 709.1,
+      "successCount": 7309,
+      "errorCount": 0,
+      "errorRate": 0,
+      "statusCounts": {
+        "200": 7309
+      },
+      "latencies": {
+        "min": 3.49,
+        "p50": 335.94,
+        "p90": 403.06,
+        "p95": 428.18,
+        "p99": 765.54,
+        "max": 1633.77,
+        "mean": 346.8
+      },
+      "mbTransferred": 264.07,
+      "memory": {
+        "heapUsedMb": 35.1,
+        "rssMb": 220.4
+      }
+    },
+    {
+      "stageName": "Stage 3 — 500 Virtual Users",
+      "concurrency": 500,
+      "durationSec": 10.7,
+      "totalRequests": 7852,
+      "rps": 733.8,
+      "successCount": 7668,
+      "errorCount": 184,
+      "errorRate": 2.34,
+      "statusCounts": {
+        "0": 184,
+        "200": 7668
+      },
+      "latencies": {
+        "min": 4.12,
+        "p50": 640.27,
+        "p90": 731.13,
+        "p95": 736.18,
+        "p99": 3324.42,
+        "max": 4527.58,
+        "mean": 659.46
+      },
+      "mbTransferred": 274.57,
+      "memory": {
+        "heapUsedMb": 36.7,
+        "rssMb": 262.4
+      }
+    },
+    {
+      "stageName": "Stage 4 — 750 Virtual Users",
+      "concurrency": 750,
+      "durationSec": 11.014,
+      "totalRequests": 8809,
+      "rps": 799.8,
+      "successCount": 8296,
+      "errorCount": 513,
+      "errorRate": 5.82,
+      "statusCounts": {
+        "0": 513,
+        "200": 8296
+      },
+      "latencies": {
+        "min": 1.66,
+        "p50": 895.86,
+        "p90": 1045.51,
+        "p95": 1054.4,
+        "p99": 4774.47,
+        "max": 6649.67,
+        "mean": 892.86
+      },
+      "mbTransferred": 299.27,
+      "memory": {
+        "heapUsedMb": 22.1,
+        "rssMb": 263.7
+      }
+    },
+    {
+      "stageName": "Stage 5 — 1,000 Virtual Users",
+      "concurrency": 1000,
+      "durationSec": 11.977,
+      "totalRequests": 11996,
+      "rps": 1001.6,
+      "successCount": 8272,
+      "errorCount": 3724,
+      "errorRate": 31.04,
+      "statusCounts": {
+        "0": 3724,
+        "200": 8272
+      },
+      "latencies": {
+        "min": 4.73,
+        "p50": 782.82,
+        "p90": 1794.43,
+        "p95": 1950.54,
+        "p99": 4453.82,
+        "max": 6813.31,
+        "mean": 956.22
+      },
+      "mbTransferred": 297.16,
+      "memory": {
+        "heapUsedMb": 17.1,
+        "rssMb": 309.3
+      }
+    }
+  ],
+  "registrationResults": [
+    {
+      "batchSize": 10,
+      "elapsedMs": 18,
+      "rps": 556,
+      "successCount": 10,
+      "p50": 11.19,
+      "p95": 17.04,
+      "p99": 17.04
+    },
+    {
+      "batchSize": 25,
+      "elapsedMs": 36,
+      "rps": 694,
+      "successCount": 25,
+      "p50": 19.92,
+      "p95": 33.65,
+      "p99": 34.95
+    },
+    {
+      "batchSize": 50,
+      "elapsedMs": 66,
+      "rps": 758,
+      "successCount": 50,
+      "p50": 38.81,
+      "p95": 61.54,
+      "p99": 63.57
+    },
+    {
+      "batchSize": 100,
+      "elapsedMs": 135,
+      "rps": 741,
+      "successCount": 100,
+      "p50": 70.84,
+      "p95": 125.7,
+      "p99": 131.37
+    }
+  ],
+  "timestamp": "2026-10-17T03:56:37.474Z"
+}

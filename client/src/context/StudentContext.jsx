@@ -3,6 +3,11 @@ import { useAuth, useUser } from '@clerk/clerk-react';
 import { setAuthTokenGetter } from '../services/api';
 import { studentService } from '../services/studentService';
 import { subscribeToRankboardUpdates } from '../services/supabase';
+import {
+  getStoredRegistrationReceipt,
+  saveRegistrationReceipt,
+  clearRegistrationReceipt,
+} from '../utils/registrationReceipt';
 
 const StudentContext = createContext(null);
 
@@ -17,10 +22,10 @@ export const StudentProvider = ({ children }) => {
 
   // Persistent registration status for returning visitors on this browser/account
   const [isRegistered, setIsRegistered] = useState(() => {
-    return !!localStorage.getItem('rankboard_reg_receipt');
+    return !!getStoredRegistrationReceipt();
   });
   const [isRegistrationChecking, setIsRegistrationChecking] = useState(() => {
-    return !isSignedIn && !!localStorage.getItem('rankboard_reg_receipt');
+    return !isSignedIn && !!getStoredRegistrationReceipt();
   });
 
   // Bind Clerk's getToken to Axios
@@ -41,7 +46,7 @@ export const StudentProvider = ({ children }) => {
         return;
       }
 
-      const savedReceipt = localStorage.getItem('rankboard_reg_receipt');
+      const savedReceipt = getStoredRegistrationReceipt();
       if (!savedReceipt) {
         setIsRegistered(false);
         setIsRegistrationChecking(false);
@@ -54,16 +59,22 @@ export const StudentProvider = ({ children }) => {
         if (!isCancelled) {
           if (result && result.success && result.isRegistered) {
             setIsRegistered(true);
+            saveRegistrationReceipt(savedReceipt);
+          } else if (result && result.networkError) {
+            // Network error / offline / timeout: do NOT treat as a new visitor
+            console.warn('[StudentContext] Network error during registration check; preserving registered status.');
+            setIsRegistered(true);
           } else {
             // Invalid or expired receipt, or student deactivated in database
             setIsRegistered(false);
-            localStorage.removeItem('rankboard_reg_receipt');
+            clearRegistrationReceipt();
           }
         }
       } catch (err) {
         if (!isCancelled) {
-          // If status verification fails, handle safely without falsely claiming registration succeeded
-          setIsRegistered(false);
+          // If status verification fails due to network error, handle safely without demoting returning student
+          console.warn('[StudentContext] Network exception during status check:', err);
+          setIsRegistered(true);
         }
       } finally {
         if (!isCancelled) {
@@ -81,8 +92,15 @@ export const StudentProvider = ({ children }) => {
     };
   }, [authLoaded, isSignedIn]);
 
+  const recordRegistration = useCallback((receipt = null) => {
+    setIsRegistered(true);
+    if (receipt) {
+      saveRegistrationReceipt(receipt);
+    }
+  }, []);
+
   const clearRegistrationRecord = useCallback(() => {
-    localStorage.removeItem('rankboard_reg_receipt');
+    clearRegistrationReceipt();
     setIsRegistered(false);
   }, []);
 
@@ -101,7 +119,7 @@ export const StudentProvider = ({ children }) => {
         setStudent(response.student);
         setIsRegistered(true);
         if (response.registrationReceipt) {
-          localStorage.setItem('rankboard_reg_receipt', response.registrationReceipt);
+          saveRegistrationReceipt(response.registrationReceipt);
         }
       }
     } catch (err) {
@@ -169,6 +187,7 @@ export const StudentProvider = ({ children }) => {
     user,
     isRegistered: isSignedIn ? true : isRegistered,
     isRegistrationChecking,
+    recordRegistration,
     clearRegistrationRecord,
     refreshStudent: fetchStudentProfile,
     updateProfile,

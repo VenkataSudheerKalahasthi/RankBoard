@@ -1,4 +1,4 @@
-const { getAllStudents } = require('../supabase/supabaseRepository');
+const { getAllStudentsCached } = require('../utils/studentCache');
 const { syncStudentPlatforms, isPlatformInCooldown } = require('./syncService');
 const { recalculateCollegeRankings } = require('./ranking/rankingEngine');
 const { getSystemSettings } = require('./settingsService');
@@ -23,11 +23,11 @@ const isStudentDueForSync = (student) => {
   const syncConfig = config.SYNC_CONFIG || {};
 
   const platformIntervals = {
-    leetcode: (syncConfig.LEETCODE_INTERVAL_SECONDS || 60) * 1000,
-    gfg: (syncConfig.GFG_INTERVAL_SECONDS || 120) * 1000,
-    codeforces: (syncConfig.CODEFORCES_INTERVAL_SECONDS || 120) * 1000,
-    codechef: (syncConfig.CODECHEF_INTERVAL_SECONDS || 900) * 1000,
-    hackerrank: (syncConfig.HACKERRANK_INTERVAL_SECONDS || 120) * 1000,
+    leetcode: (syncConfig.LEETCODE_INTERVAL_SECONDS || 14400) * 1000,
+    gfg: (syncConfig.GFG_INTERVAL_SECONDS || 14400) * 1000,
+    codeforces: (syncConfig.CODEFORCES_INTERVAL_SECONDS || 43200) * 1000,
+    codechef: (syncConfig.CODECHEF_INTERVAL_SECONDS || 43200) * 1000,
+    hackerrank: (syncConfig.HACKERRANK_INTERVAL_SECONDS || 14400) * 1000,
   };
 
   const platformKeys = ['leetcode', 'gfg', 'codeforces', 'codechef', 'hackerrank'];
@@ -58,7 +58,8 @@ const executeSyncTick = async () => {
   isRunning = true;
 
   try {
-    const allStudents = await getAllStudents({ accountStatus: 'ACTIVE' });
+    const cachedStudents = await getAllStudentsCached();
+    const allStudents = (cachedStudents || []).filter((s) => s.accountStatus === 'ACTIVE');
     if (!allStudents || allStudents.length === 0) {
       isRunning = false;
       return;
@@ -124,15 +125,15 @@ const startBackgroundScheduler = () => {
   if (isLoopActive) return;
   isLoopActive = true;
 
-  const tickIntervalMs = 3000; // Check the scheduler queue every 3 seconds
+  const tickIntervalMs = 5 * 60 * 1000; // Check the scheduler queue every 5 minutes to prevent database and egress thrashing
   console.log('🚀 Near-Real-Time Platform Sync Worker activated.');
   console.log(`   Configured Intervals: LeetCode: ${config.SYNC_CONFIG?.LEETCODE_INTERVAL_SECONDS}s, GFG: ${config.SYNC_CONFIG?.GFG_INTERVAL_SECONDS}s, HackerRank: ${config.SYNC_CONFIG?.HACKERRANK_INTERVAL_SECONDS}s, Codeforces: ${config.SYNC_CONFIG?.CODEFORCES_INTERVAL_SECONDS}s, CodeChef: ${config.SYNC_CONFIG?.CODECHEF_INTERVAL_SECONDS}s`);
   console.log(`   Max Concurrency: ${config.SYNC_CONFIG?.MAX_CONCURRENT_SYNCS}`);
 
-  // Initial tick after 3s
+  // Initial tick after 5s
   setTimeout(() => {
     executeSyncTick().catch((e) => console.warn('[Scheduler Initial Tick]:', e.message));
-  }, 3000);
+  }, 5000);
 
   syncTickerTimer = setInterval(() => {
     executeSyncTick().catch((e) => console.warn('[Scheduler Tick Error]:', e.message));

@@ -101,10 +101,10 @@ const Leaderboard = () => {
       fetchRankings(true);
     });
 
-    // Fallback auto-refresh periodically (every 60s)
+    // Fallback auto-refresh periodically (every 5 minutes)
     const interval = setInterval(() => {
       fetchRankings(true);
-    }, 60000);
+    }, 5 * 60 * 1000);
 
     return () => {
       unsubscribe();

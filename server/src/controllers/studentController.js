@@ -1,6 +1,11 @@
 const crypto = require('crypto');
 const { config } = require('../config/env');
-const { getStudentByIdCached, getAllStudentsCached, invalidateStudentCache } = require('../utils/studentCache');
+const {
+  getStudentByIdCached,
+  getAllStudentsCached,
+  getActiveStudentsCount,
+  invalidateStudentCache,
+} = require('../utils/studentCache');
 const { getStudentById, getStudentByRollNumber, updateStudent } = require('../supabase/supabaseRepository');
 
 const getReceiptSecret = () => {
@@ -34,6 +39,12 @@ const verifyRegistrationReceipt = (receipt) => {
   }
 };
 
+const parseCookie = (cookieHeader, name) => {
+  if (!cookieHeader) return null;
+  const match = cookieHeader.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]*)'));
+  return match ? decodeURIComponent(match[1]) : null;
+};
+
 /**
  * Get current authenticated student profile with scores and platform stats
  */
@@ -53,13 +64,19 @@ const getMe = async (req, res, next) => {
       });
     }
 
-    const allStudents = await getAllStudentsCached();
-    const totalStudents = allStudents.filter((s) => s.accountStatus === 'ACTIVE').length || 1;
+    const totalStudents = await getActiveStudentsCount();
 
     // Sanitize to remove internal scoring breakdown
     const { scores, ...sanitizedStudent } = student;
     const effectiveId = student.id || student.clerkUserId;
     const registrationReceipt = createRegistrationReceipt(effectiveId);
+
+    if (registrationReceipt) {
+      res.setHeader(
+        'Set-Cookie',
+        `rankboard_reg_receipt=${registrationReceipt}; Path=/; Max-Age=${180 * 24 * 60 * 60}; SameSite=Lax`
+      );
+    }
 
     return res.json({
       success: true,
@@ -89,6 +106,13 @@ const updateProfile = async (req, res, next) => {
       return res.status(404).json({
         success: false,
         message: 'Student profile not found.',
+      });
+    }
+
+    if (profilePhoto && (profilePhoto.startsWith('data:') || profilePhoto.length > 2048)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Base64 image strings cannot be saved directly. Please use the /api/showcase/profile-image upload service.',
       });
     }
 
@@ -161,8 +185,7 @@ const getStudentScore = async (req, res, next) => {
       });
     }
 
-    const allStudents = await getAllStudentsCached();
-    const totalStudents = allStudents.filter((s) => s.accountStatus === 'ACTIVE').length || 1;
+    const totalStudents = await getActiveStudentsCount();
 
     return res.json({
       success: true,
@@ -196,8 +219,7 @@ const getStudentRank = async (req, res, next) => {
       });
     }
 
-    const allStudents = await getAllStudentsCached();
-    const totalStudents = allStudents.filter((s) => s.accountStatus === 'ACTIVE').length || 1;
+    const totalStudents = await getActiveStudentsCount();
 
     return res.json({
       success: true,
@@ -222,10 +244,12 @@ const getStudentRank = async (req, res, next) => {
  */
 const verifyRegistration = async (req, res, next) => {
   try {
+    const cookieReceipt = parseCookie(req.headers.cookie, 'rankboard_reg_receipt');
     const receipt =
       req.headers['x-registration-receipt'] ||
       req.query?.receipt ||
-      req.body?.receipt;
+      req.body?.receipt ||
+      cookieReceipt;
 
     if (!receipt) {
       return res.json({ success: true, isRegistered: false });
@@ -233,6 +257,7 @@ const verifyRegistration = async (req, res, next) => {
 
     const payload = verifyRegistrationReceipt(receipt);
     if (!payload || !payload.sub) {
+      res.setHeader('Set-Cookie', 'rankboard_reg_receipt=; Path=/; Max-Age=0; SameSite=Lax');
       return res.json({ success: true, isRegistered: false });
     }
 
@@ -243,8 +268,15 @@ const verifyRegistration = async (req, res, next) => {
     }
 
     if (!student || student.accountStatus !== 'ACTIVE') {
+      res.setHeader('Set-Cookie', 'rankboard_reg_receipt=; Path=/; Max-Age=0; SameSite=Lax');
       return res.json({ success: true, isRegistered: false });
     }
+
+    // Refresh cookie header so it stays active
+    res.setHeader(
+      'Set-Cookie',
+      `rankboard_reg_receipt=${receipt}; Path=/; Max-Age=${180 * 24 * 60 * 60}; SameSite=Lax`
+    );
 
     // Only return the registration boolean status - no sensitive fields exposed!
     return res.json({

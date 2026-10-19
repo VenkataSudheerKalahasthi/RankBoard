@@ -28,7 +28,7 @@ const Navbar = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      const scrolled = window.scrollY > 16;
+      const scrolled = window.scrollY > 10;
       setIsScrolled((prev) => (prev !== scrolled ? scrolled : prev));
     };
 
@@ -109,19 +109,19 @@ const Navbar = () => {
       <Link
         key={item.path}
         to={targetPath}
-        className={`student-nav-link group py-2 text-sm font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#071226] rounded-sm ${
+        className={`student-nav-link group py-2 text-sm transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#071226] rounded-sm ${
           active
-            ? 'text-blue-600 dark:text-sky-400'
-            : 'text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white'
+            ? 'text-blue-700 dark:text-sky-400 font-black'
+            : 'text-black font-extrabold dark:text-slate-200 dark:font-semibold hover:text-blue-700 dark:hover:text-white'
         }`}
       >
         <span className="flex items-center gap-1.5">
           {Icon && (
             <Icon
-              className={`w-4 h-4 transition-colors duration-200 ${
+              className={`w-4 h-4 stroke-[2.2] transition-colors duration-200 ${
                 active
-                  ? item.activeIconColor || 'text-blue-600 dark:text-sky-400'
-                  : 'text-slate-400 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-sky-400'
+                  ? item.activeIconColor || 'text-blue-700 dark:text-sky-400'
+                  : 'text-black dark:text-slate-400 group-hover:text-blue-700 dark:group-hover:text-sky-400'
               }`}
             />
           )}
@@ -147,26 +147,26 @@ const Navbar = () => {
         key={item.path}
         to={targetPath}
         onClick={() => setMobileOpen(false)}
-        className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors duration-200 ${
+        className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold transition-colors duration-200 ${
           active
-            ? 'text-blue-600 dark:text-sky-400 bg-blue-50/70 dark:bg-blue-500/10'
-            : 'text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-sky-400 hover:bg-slate-100/60 dark:hover:bg-slate-800/40'
+            ? 'text-blue-700 dark:text-sky-400 bg-blue-50/70 dark:bg-blue-500/10'
+            : 'text-black dark:text-slate-200 hover:text-blue-700 dark:hover:text-sky-400 hover:bg-slate-100/60 dark:hover:bg-slate-800/40'
         }`}
       >
         <div className="flex items-center gap-2.5">
           {Icon && (
             <Icon
-              className={`w-4 h-4 ${
+              className={`w-4 h-4 stroke-[2.2] ${
                 active
-                  ? item.activeIconColor || 'text-blue-600 dark:text-sky-400'
-                  : 'text-slate-400 dark:text-slate-400'
+                  ? item.activeIconColor || 'text-blue-700 dark:text-sky-400'
+                  : 'text-black dark:text-slate-400'
               }`}
             />
           )}
           <span>{item.label}</span>
         </div>
         {active && (
-          <span className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-sky-400" />
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-700 dark:bg-sky-400" />
         )}
       </Link>
     );
@@ -182,19 +182,14 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-blue-500 to-sky-400 text-white flex items-center justify-center font-extrabold shadow-md shadow-blue-500/20 group-hover:scale-105 transition-all duration-300">
-              <Code2 className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-extrabold shadow-md shadow-blue-500/20 group-hover:scale-105 transition-all duration-300">
+              <Code2 className="w-5 h-5 stroke-[2.5]" />
             </div>
             <div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-black text-base text-[#0F172A] dark:text-white leading-tight tracking-tight">
-                  COLLEGE DSA
-                </span>
-                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[10px] font-extrabold bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-sky-300 dark:border dark:border-blue-400/30">
-                  <Sparkles className="w-2.5 h-2.5" /> PORTAL
-                </span>
-              </div>
-              <span className="text-[10px] font-bold text-blue-600 dark:text-sky-400 uppercase tracking-widest block -mt-0.5">
+              <span className="font-black text-base text-black dark:text-white leading-tight tracking-tight block">
+                COLLEGE DSA
+              </span>
+              <span className="text-[10px] font-black text-blue-700 dark:text-sky-400 uppercase tracking-widest block -mt-0.5">
                 RANKBOARD
               </span>
             </div>
@@ -220,10 +215,14 @@ const Navbar = () => {
 
           {/* Right Auth controls + Icon-only Theme Toggle */}
           <div className="hidden md:flex items-center gap-3">
-            <ThemeToggle />
+            <ThemeToggle isScrolled={isScrolled} />
 
             <SignedIn>
-              <div className="flex items-center gap-3 pl-2 border-l border-slate-200 dark:border-blue-900/40">
+              <div
+                className={`flex items-center gap-3 pl-2 transition-colors duration-300 ${
+                  isScrolled ? 'border-l border-slate-200/80 dark:border-blue-900/40' : 'border-l border-transparent'
+                }`}
+              >
                 <UserButton
                   afterSignOutUrl="/"
                   appearance={{
@@ -238,7 +237,11 @@ const Navbar = () => {
 
             {isPreview ? (
               <SignedOut>
-                <div className="flex items-center gap-3 pl-2 border-l border-slate-200 dark:border-blue-900/40">
+                <div
+                  className={`flex items-center gap-3 pl-2 transition-colors duration-300 ${
+                    isScrolled ? 'border-l border-slate-200/80 dark:border-blue-900/40' : 'border-l border-transparent'
+                  }`}
+                >
                   <div
                     className="w-9 h-9 rounded-full ring-2 ring-blue-500/30 bg-gradient-to-tr from-blue-600 to-sky-400 text-white font-bold text-xs flex items-center justify-center shadow-sm"
                     aria-label="Student Alex Morgan"
@@ -264,22 +267,20 @@ const Navbar = () => {
                 ) : (
                   <>
                     <Link to="/login">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-sky-400 hover:bg-blue-50 dark:hover:bg-[#111E3D] font-semibold"
+                      <button
+                        type="button"
+                        className="px-4 py-2 rounded-xl text-sm font-semibold border transition-all duration-200 cursor-pointer text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700/80 hover:bg-slate-100/60 dark:hover:bg-slate-800/50 hover:text-blue-600 dark:hover:text-white"
                       >
                         Sign In
-                      </Button>
+                      </button>
                     </Link>
                     <Link to="/register">
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        className="bg-gradient-to-r from-blue-600 via-blue-500 to-sky-500 hover:from-blue-700 hover:to-sky-600 text-white font-bold shadow-md shadow-blue-500/20"
+                      <button
+                        type="button"
+                        className="px-4 py-2 rounded-xl text-sm font-bold bg-[#2563EB] hover:bg-blue-600 text-white shadow-md shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-200 cursor-pointer"
                       >
                         Student Register
-                      </Button>
+                      </button>
                     </Link>
                   </>
                 )}
@@ -299,12 +300,16 @@ const Navbar = () => {
                 </div>
               </SignedOut>
             )}
-            <ThemeToggle />
+            <ThemeToggle isScrolled={isScrolled} />
             <button
               type="button"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
-              className="p-2 rounded-xl bg-slate-100 dark:bg-[#111E3D] text-slate-700 dark:text-sky-300 border border-slate-200 dark:border-blue-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-colors"
+              className={`p-2 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-all duration-300 ${
+                isScrolled
+                  ? 'bg-slate-100 dark:bg-[#111E3D] text-slate-700 dark:text-sky-300 border border-slate-200 dark:border-blue-500/30'
+                  : 'bg-transparent text-slate-700 dark:text-slate-200 border border-transparent hover:bg-white/10'
+              }`}
             >
               {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -355,7 +360,7 @@ const Navbar = () => {
                         variant="primary"
                         className="w-full justify-center bg-blue-600 text-white font-bold"
                       >
-                        Register as Student
+                        Student Register
                       </Button>
                     </Link>
                   </>

@@ -294,9 +294,12 @@ const syncStudentPlatforms = async (studentIdOrClerkId, newPlatformUrls = null, 
         platforms[key].lastFetchedAt = stats.fetchedAt || new Date().toISOString();
         platforms[key].errorMessage = null;
 
-        // Persist historical activity snapshot for daily/weekly/monthly tracking
+        // Persist historical activity snapshot for daily/weekly/monthly tracking (deduplicated)
         try {
-          await recordPlatformSnapshot(studentData.id, key, stats);
+          await recordPlatformSnapshot(studentData.id, key, stats, {
+            hasChanged: changeResult.hasChanged,
+            force: options.forceSync,
+          });
         } catch (snapErr) {
           console.warn(`[Snapshot Record Warning] ${studentData.id} on ${key}:`, snapErr.message);
         }

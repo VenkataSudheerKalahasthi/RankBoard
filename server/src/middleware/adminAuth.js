@@ -11,6 +11,10 @@ if (config.CLERK_SECRET_KEY) {
   }
 }
 
+// In-memory cache for Clerk admin lookups
+const adminClerkCache = new Map();
+const ADMIN_CACHE_TTL = 15 * 60 * 1000;
+
 /**
  * Admin Authorization Middleware
  * Verifies Clerk JWT session token from Authorization: Bearer <token>
@@ -53,13 +57,21 @@ const requireAdmin = async (req, res, next) => {
       userId = decoded.sub;
 
       if (clerkClient) {
-        try {
-          const user = await clerkClient.users.getUser(userId);
-          userEmail = user.emailAddresses?.[0]?.emailAddress || null;
-          userName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || 'Administrator';
-          userPhoto = user.imageUrl || null;
-        } catch (fetchErr) {
-          // Fallback to token claims
+        const cachedAdmin = adminClerkCache.get(userId);
+        if (cachedAdmin && Date.now() - cachedAdmin.timestamp < ADMIN_CACHE_TTL) {
+          userEmail = cachedAdmin.email;
+          userName = cachedAdmin.name;
+          userPhoto = cachedAdmin.photo;
+        } else {
+          try {
+            const user = await clerkClient.users.getUser(userId);
+            userEmail = user.emailAddresses?.[0]?.emailAddress ? user.emailAddresses[0].emailAddress.toLowerCase().trim() : null;
+            userName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || 'Administrator';
+            userPhoto = user.imageUrl || null;
+            adminClerkCache.set(userId, { email: userEmail, name: userName, photo: userPhoto, timestamp: Date.now() });
+          } catch (fetchErr) {
+            // Fallback to token claims
+          }
         }
       }
     } catch (verifyErr) {
@@ -84,16 +96,19 @@ const requireAdmin = async (req, res, next) => {
     }
 
     // 2. Check Supabase `admins` table
+    let matchedAdminDoc = null;
     if (!isAuthorizedAdmin) {
       const adminDoc = await getAdminById(userId);
       if (adminDoc && adminDoc.status !== 'DISABLED') {
         isAuthorizedAdmin = true;
         adminRole = adminDoc.role || 'ADMIN';
+        matchedAdminDoc = adminDoc;
       } else if (userEmail) {
         const emailAdminDoc = await getAdminByEmail(userEmail);
         if (emailAdminDoc && emailAdminDoc.status !== 'DISABLED') {
           isAuthorizedAdmin = true;
           adminRole = emailAdminDoc.role || 'ADMIN';
+          matchedAdminDoc = emailAdminDoc;
         }
       }
     }
@@ -136,17 +151,22 @@ const requireAdmin = async (req, res, next) => {
     }
 
     // Attach admin identity to request
+    const effectiveName =
+      (userName && userName !== 'Administrator')
+        ? userName
+        : (matchedAdminDoc?.name || userName || 'Administrator');
+
     req.admin = {
       userId,
       email: userEmail,
-      name: userName,
-      photo: userPhoto,
+      name: effectiveName,
+      photo: userPhoto || matchedAdminDoc?.photo || null,
       role: adminRole,
     };
     req.auth = {
       userId,
       email: userEmail,
-      name: userName,
+      name: effectiveName,
     };
 
     next();

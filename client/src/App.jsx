@@ -145,8 +145,8 @@ export default function App() {
       <Route path="/showcase/:studentId" element={<PublicShowcase />} />
 
       {/* Auth Pages */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      <Route path="/login/*" element={<Login />} />
+      <Route path="/register/*" element={<Register />} />
       <Route path="/sso-callback" element={<AuthenticateWithRedirectCallback />} />
 
       {/* Visual / Inspection Preview Routes */}

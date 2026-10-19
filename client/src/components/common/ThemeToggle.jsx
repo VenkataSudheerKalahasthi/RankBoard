@@ -2,45 +2,35 @@ import React from 'react';
 import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
-const ThemeToggle = ({ className = '' }) => {
+const ThemeToggle = ({ className = '', isScrolled = false }) => {
   const { theme, setTheme } = useTheme();
 
-  return (
-    <div
-      className={`inline-flex items-center p-1 rounded-full bg-slate-200/50 dark:bg-[#0B1528]/80 backdrop-blur-md border border-slate-300/60 dark:border-blue-500/30 shadow-inner transition-colors duration-200 ${className}`}
-      role="radiogroup"
-      aria-label="Theme selector"
-    >
-      <button
-        type="button"
-        role="radio"
-        aria-checked={theme === 'light'}
-        aria-label="Switch to light theme"
-        onClick={() => setTheme('light')}
-        className={`flex items-center justify-center w-7 h-7 rounded-full transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
-          theme === 'light'
-            ? 'bg-white text-amber-500 shadow-sm'
-            : 'text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200'
-        }`}
-      >
-        <Sun className="w-3.5 h-3.5 stroke-[2.2]" />
-      </button>
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
 
-      <button
-        type="button"
-        role="radio"
-        aria-checked={theme === 'dark'}
-        aria-label="Switch to dark theme"
-        onClick={() => setTheme('dark')}
-        className={`flex items-center justify-center w-7 h-7 rounded-full transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
-          theme === 'dark'
-            ? 'bg-[#152347] text-sky-400 shadow-sm border border-blue-400/30'
-            : 'text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200'
-        }`}
-      >
-        <Moon className="w-3.5 h-3.5 stroke-[2.2]" />
-      </button>
-    </div>
+  return (
+    <button
+      type="button"
+      onClick={toggleTheme}
+      aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+      title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+        isScrolled
+          ? theme === 'dark'
+            ? 'bg-slate-800/60 border border-slate-700/70 text-slate-200 hover:text-white hover:bg-slate-800/90 shadow-xs'
+            : 'bg-white/90 border border-slate-300 text-black hover:text-black hover:bg-white shadow-xs'
+          : theme === 'dark'
+            ? 'bg-transparent border border-transparent text-slate-200 hover:text-white hover:bg-white/10 shadow-none'
+            : 'bg-transparent border border-transparent text-black hover:text-black hover:bg-black/5 shadow-none'
+      } ${className}`}
+    >
+      {theme === 'dark' ? (
+        <Moon className="w-4 h-4 stroke-[2]" />
+      ) : (
+        <Sun className="w-4 h-4 stroke-[2.5] text-amber-600 dark:text-amber-400" />
+      )}
+    </button>
   );
 };
 

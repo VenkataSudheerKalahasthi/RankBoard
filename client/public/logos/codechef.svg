@@ -1,29 +1,36 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="16 6 68 76" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Official CodeChef Chef Logo -->
   <!-- Chef Toque Hat -->
   <path
-    d="M30 38 C18 38 16 16 30 12 C36 6 64 6 70 12 C84 16 82 38 70 38 Z"
-    fill="#F8FAFC"
-    stroke="#94A3B8"
-    stroke-width="1.8"
-  />
-  <path
-    d="M35 36 C30 26 36 16 50 14 C64 16 70 26 65 36 Z"
+    d="M18 28 C10 27 9 12 19 8 C24 4 40 4 45 8 C55 12 54 27 46 28 Z"
     fill="#FFFFFF"
+    stroke="#CBD5E1"
+    stroke-width="1.2"
   />
-  <path d="M42 18 C40 26 41 33 41 36" stroke="#CBD5E1" stroke-width="1.8" stroke-linecap="round" fill="none" />
-  <path d="M58 18 C60 26 59 33 59 36" stroke="#CBD5E1" stroke-width="1.8" stroke-linecap="round" fill="none" />
-  <!-- Hat Band -->
-  <rect x="26" y="35" width="48" height="8" rx="2" fill="#E11D48" />
-  <!-- Face -->
-  <circle cx="50" cy="59" r="21" fill="#5B3214" />
-  <!-- Eyes / Code Brackets -->
-  <path d="M41 53 L35 56.5 L41 60" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-  <path d="M59 53 L65 56.5 L59 60" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-  <!-- Smile -->
-  <path d="M46 64.5 Q50 68.5 54 64.5" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" fill="none" />
-  <!-- Collar / Shirt -->
+  <path d="M26 12 C24 18 25 24 25 27" stroke="#E2E8F0" stroke-width="1.2" stroke-linecap="round" />
+  <path d="M38 12 C40 18 39 24 39 27" stroke="#E2E8F0" stroke-width="1.2" stroke-linecap="round" />
+  <!-- Red Hat Band -->
+  <rect x="17" y="26" width="30" height="5" rx="1.5" fill="#E11D48" />
+  <!-- Face Features (Cheeks < >, Eyes, Mustache) -->
   <path
-    d="M28 72 C36 68 44 71 50 74 C56 71 64 68 72 72 C67 80 57 77 50 80 C43 77 33 80 28 72 Z"
-    fill="#3E1F09"
+    d="M14 40 L8 44 L14 48"
+    stroke="#3B1F08"
+    stroke-width="2.4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M50 40 L56 44 L50 48"
+    stroke="#3B1F08"
+    stroke-width="2.4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <circle cx="26" cy="38" r="2" fill="#3B1F08" />
+  <circle cx="38" cy="38" r="2" fill="#3B1F08" />
+  <path d="M30 42 Q32 44 34 42" stroke="#3B1F08" stroke-width="1.5" stroke-linecap="round" />
+  <path
+    d="M23 49 C23 46 29 46 32 49 C35 46 41 46 41 49 C41 53 35 53 32 50 C29 53 23 53 23 49 Z"
+    fill="#3B1F08"
   />
 </svg>
