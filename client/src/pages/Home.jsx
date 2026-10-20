@@ -9,7 +9,8 @@ import LoadingState from '../components/common/LoadingState';
 import ErrorState from '../components/common/ErrorState';
 import Button from '../components/common/Button';
 import ScrollReveal from '../components/common/ScrollReveal';
-import { Users, Search, ArrowRight, Trophy, Code2, BarChart2 } from 'lucide-react';
+import HomeStatisticsStrip from '../components/home/HomeStatisticsStrip';
+import { Search, ArrowRight, Trophy } from 'lucide-react';
 import { SignedIn, SignedOut } from '@clerk/clerk-react';
 import { useStudent } from '../context/StudentContext';
 
@@ -148,10 +149,17 @@ const PLATFORMS = [
 const Home = () => {
   const { isRegistered, isRegistrationChecking } = useStudent();
   // Synchronous cache hydration for instant initial render
-  const initialCache = leaderboardService.getCachedLeaderboard();
+  const initialLeaderboard = leaderboardService.getCachedLeaderboard();
+  const initialStats = leaderboardService.getCachedStats();
 
-  const [data, setData] = useState(() => initialCache || null);
-  const [loading, setLoading] = useState(() => !initialCache);
+  const [data, setData] = useState(() => initialLeaderboard || null);
+  const [stats, setStats] = useState(() => initialStats || initialLeaderboard?.stats || null);
+  const [statsLoading, setStatsLoading] = useState(() => !initialStats && !initialLeaderboard?.stats);
+  const [statsError, setStatsError] = useState(null);
+  const [isLive, setIsLive] = useState(true);
+  const [realtimeStatus, setRealtimeStatus] = useState('CONNECTING');
+
+  const [loading, setLoading] = useState(() => !initialLeaderboard);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -160,6 +168,16 @@ const Home = () => {
 
   // Track active request ID to prevent race conditions and ensure latest response wins
   const activeRequestId = useRef(0);
+  const searchRef = useRef(debouncedSearch);
+  const departmentRef = useRef(department);
+  const yearRef = useRef(year);
+
+  // Keep filter refs synchronized so background Realtime events query current view
+  useEffect(() => {
+    searchRef.current = debouncedSearch;
+    departmentRef.current = department;
+    yearRef.current = year;
+  }, [debouncedSearch, department, year]);
 
   // Debounce search input for instant live search as user types
   useEffect(() => {
@@ -169,6 +187,35 @@ const Home = () => {
     return () => clearTimeout(handler);
   }, [search]);
 
+  /**
+   * Fetch lightweight summary stats (sub-millisecond when memoized)
+   */
+  const fetchStats = async (forceRefresh = false) => {
+    if (!forceRefresh && !stats) {
+      setStatsLoading(true);
+    }
+    try {
+      const fetchedStats = await leaderboardService.getStats({
+        forceRefresh,
+        preferCache: !forceRefresh,
+      });
+      if (fetchedStats) {
+        setStats(fetchedStats);
+        setStatsError(null);
+      }
+    } catch (err) {
+      console.warn('[Home Stats Fetch Notice]:', err.message);
+      if (!stats) {
+        setStatsError(err.response?.data?.message || err.message || 'Failed to load live metrics');
+      }
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  /**
+   * Fetch leaderboard rankings and table rows
+   */
   const fetchLeaderboard = async (isBackground = false) => {
     const requestId = ++activeRequestId.current;
 
@@ -179,11 +226,14 @@ const Home = () => {
     }
 
     try {
-      const response = await leaderboardService.getLeaderboard({
-        search: debouncedSearch.trim() || undefined,
-        department: department !== 'ALL' ? department : undefined,
-        year: year !== 'ALL' ? year : undefined,
-      });
+      const response = await leaderboardService.getLeaderboard(
+        {
+          search: searchRef.current.trim() || undefined,
+          department: departmentRef.current !== 'ALL' ? departmentRef.current : undefined,
+          year: yearRef.current !== 'ALL' ? yearRef.current : undefined,
+        },
+        { forceRefresh: isBackground }
+      );
 
       // Discard slower, outdated responses if a newer request was dispatched
       if (requestId !== activeRequestId.current) {
@@ -192,6 +242,10 @@ const Home = () => {
 
       if (response && response.success) {
         setData(response);
+        if (response.stats) {
+          setStats(response.stats);
+          setStatsError(null);
+        }
         setError(null);
       } else {
         throw new Error(response?.message || 'Failed to load leaderboard data.');
@@ -211,21 +265,42 @@ const Home = () => {
     }
   };
 
+  // 1. Dedicated Supabase Realtime Subscription & Initial Stats Fetch (Mounted ONCE)
   useEffect(() => {
-    fetchLeaderboard(false);
+    fetchStats(false);
 
-    // Subscribe to Supabase Realtime table changes to auto-update without flashing
-    const unsubscribe = subscribeToRankboardUpdates(() => {
-      fetchLeaderboard(true);
-    });
+    const unsubscribe = subscribeToRankboardUpdates(
+      () => {
+        // Backend data changed: refresh statistics and leaderboard without full page reload
+        fetchStats(true);
+        fetchLeaderboard(true);
+      },
+      {
+        debounceMs: 2000,
+        onStatusChange: (statusInfo) => {
+          setIsLive(statusInfo.isLive);
+          setRealtimeStatus(statusInfo.status);
+        },
+      }
+    );
 
     return () => {
       unsubscribe();
     };
+  }, []);
+
+  // 2. Filter / Search Updates for Leaderboard Table (Runs when filters change, without touching Realtime channel)
+  useEffect(() => {
+    fetchLeaderboard(false);
   }, [department, year, debouncedSearch]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
+    fetchLeaderboard(false);
+  };
+
+  const handleRetryStats = () => {
+    fetchStats(true);
     fetchLeaderboard(false);
   };
 
@@ -378,71 +453,14 @@ const Home = () => {
 
           {/* 6. Bottom Statistics Strip (Spanning Across Hero) */}
           <ScrollReveal delay={310} distance={16}>
-            <div className="mt-12 sm:mt-14 w-full p-4 sm:p-5 lg:p-6 rounded-2xl sm:rounded-3xl bg-white/45 dark:bg-[#071329]/45 border border-white/60 dark:border-white/10 backdrop-blur-2xl backdrop-saturate-150 shadow-[0_8px_32px_0_rgba(0,0,0,0.08),inset_0_1px_0_0_rgba(255,255,255,0.7)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.08)] grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 divide-y sm:divide-y-0 sm:divide-x divide-slate-200/50 dark:divide-white/10">
-              
-              {/* Stat 1: Students */}
-              <div className="flex items-center gap-3.5 sm:px-4 pt-3 sm:pt-0">
-                <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-purple-100/80 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 border border-purple-200/50 dark:border-purple-500/30">
-                  <Users className="w-5 h-5 sm:w-6 sm:h-6" />
-                </div>
-                <div>
-                  <div className="text-xl sm:text-2xl font-black text-black dark:text-white tracking-tight">
-                    {data?.stats?.totalRegisteredStudents ? `${data.stats.totalRegisteredStudents}+` : '500+'}
-                  </div>
-                  <div className="text-xs sm:text-sm text-slate-800 dark:text-slate-300 font-bold sm:font-semibold">
-                    Students
-                  </div>
-                </div>
-              </div>
-
-              {/* Stat 2: Problems Tracked */}
-              <div className="flex items-center gap-3.5 sm:px-4 pt-3 sm:pt-0">
-                <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-emerald-100/80 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-200/50 dark:border-emerald-500/30">
-                  <Code2 className="w-5 h-5 sm:w-6 sm:h-6" />
-                </div>
-                <div>
-                  <div className="text-xl sm:text-2xl font-black text-black dark:text-white tracking-tight">
-                    {data?.stats?.totalProblemsSolved
-                      ? `${(data.stats.totalProblemsSolved >= 1000 ? (data.stats.totalProblemsSolved / 1000).toFixed(0) : data.stats.totalProblemsSolved)}K+`
-                      : '3K+'}
-                  </div>
-                  <div className="text-xs sm:text-sm text-slate-800 dark:text-slate-300 font-bold sm:font-semibold">
-                    Problems Tracked
-                  </div>
-                </div>
-              </div>
-
-              {/* Stat 3: Real-Time Rankings */}
-              <div className="flex items-center gap-3.5 sm:px-4 pt-3 sm:pt-0">
-                <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-amber-100/80 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-200/50 dark:border-amber-500/30">
-                  <Trophy className="w-5 h-5 sm:w-6 sm:h-6" />
-                </div>
-                <div>
-                  <div className="text-xl sm:text-2xl font-black text-black dark:text-white tracking-tight">
-                    Live
-                  </div>
-                  <div className="text-xs sm:text-sm text-slate-800 dark:text-slate-300 font-bold sm:font-semibold">
-                    Real-Time Rankings
-                  </div>
-                </div>
-              </div>
-
-              {/* Stat 4: Coding Platforms */}
-              <div className="flex items-center gap-3.5 sm:px-4 pt-3 sm:pt-0">
-                <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-pink-100/80 dark:bg-pink-500/20 text-pink-600 dark:text-pink-400 flex items-center justify-center shrink-0 border border-pink-200/50 dark:border-pink-500/30">
-                  <BarChart2 className="w-5 h-5 sm:w-6 sm:h-6" />
-                </div>
-                <div>
-                  <div className="text-xl sm:text-2xl font-black text-black dark:text-white tracking-tight">
-                    {data?.stats?.codingPlatforms ?? TOTAL_CONFIGURED_PLATFORMS ?? 5}
-                  </div>
-                  <div className="text-xs sm:text-sm text-slate-800 dark:text-slate-300 font-bold sm:font-semibold">
-                    Coding Platforms
-                  </div>
-                </div>
-              </div>
-
-            </div>
+            <HomeStatisticsStrip
+              stats={stats}
+              loading={statsLoading}
+              error={statsError}
+              isLive={isLive}
+              realtimeStatus={realtimeStatus}
+              onRetry={handleRetryStats}
+            />
           </ScrollReveal>
 
         </div>

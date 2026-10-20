@@ -71,7 +71,7 @@ const getAllStudentsCached = async ({ forceRefresh = false } = {}) => {
  */
 const getActiveStudentsCount = async () => {
   const students = await getAllStudentsCached();
-  return (students || []).filter((s) => s.accountStatus === 'ACTIVE').length || 1;
+  return (students || []).filter((s) => s.accountStatus === 'ACTIVE').length;
 };
 
 /**

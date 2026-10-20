@@ -22,167 +22,216 @@ const sanitizeProfilePhoto = (photo) => {
  * Public leaderboard endpoint returning sanitized college rankings for registered students.
  * Optimized with in-memory ranked memoization, payload sanitization, and pagination support.
  */
+/**
+ * Computes or retrieves memoized base leaderboard rankings, podium, and statistics.
+ * Ensures consistent filtering of disabled accounts and accurate problem totals.
+ */
+const computeBaseLeaderboardData = async (collegeId, { forceRefresh = false } = {}) => {
+  if (!forceRefresh) {
+    const memoized = getMemoizedLeaderboard();
+    if (memoized) {
+      return {
+        rankedLeaderboard: memoized.rankedLeaderboard,
+        podium: memoized.podium,
+        stats: memoized.stats,
+      };
+    }
+  }
+
+  // Retrieve students using single-flight cache
+  const rawStudents = await getAllStudentsCached({ forceRefresh });
+
+  if (!rawStudents || rawStudents.length === 0) {
+    const emptyStats = {
+      totalRegisteredStudents: 0,
+      totalProblemsSolved: 0,
+      codingPlatforms: getActivePlatformsCount(),
+      lastUpdated: new Date().toISOString(),
+    };
+    return {
+      rankedLeaderboard: [],
+      podium: [],
+      stats: emptyStats,
+    };
+  }
+
+  const allStudents = [];
+  let totalProblemsSolved = 0;
+  let latestUpdate = null;
+
+  rawStudents.forEach((data) => {
+    // Exclude disabled accounts
+    if (data.accountStatus === 'DISABLED') {
+      return;
+    }
+
+    // Filter by college if specified on both sides
+    if (collegeId && data.collegeId && data.collegeId !== collegeId) {
+      return;
+    }
+
+    const lcSolved = Math.max(0, Number(data.platformStats?.leetcode?.totalSolved) || 0);
+    const gfgSolved = Math.max(0, Number(data.platformStats?.gfg?.totalSolved) || 0);
+    const cfSolved = Math.max(0, Number(data.platformStats?.codeforces?.totalSolved) || 0);
+    const ccSolved = Math.max(0, Number(data.platformStats?.codechef?.totalSolved) || 0);
+    const hrSolved = Math.max(0, Number(data.platformStats?.hackerrank?.totalSolved) || 0);
+    const studentTotalSolved = lcSolved + gfgSolved + cfSolved + ccSolved + hrSolved;
+
+    totalProblemsSolved += studentTotalSolved;
+
+    if (data.lastDataUpdatedAt) {
+      if (!latestUpdate || new Date(data.lastDataUpdatedAt) > new Date(latestUpdate)) {
+        latestUpdate = data.lastDataUpdatedAt;
+      }
+    }
+
+    allStudents.push({
+      id: data.id,
+      name: data.name || 'Anonymous Student',
+      rollNumber: data.rollNumber || '—',
+      department: data.department || 'General',
+      year: data.year || 1,
+      profilePhoto: sanitizeProfilePhoto(data.profilePhoto),
+      finalScore: data.finalScore || 0,
+      overallScore: data.finalScore || 0,
+      platforms: {
+        leetcode: {
+          problemsSolved: data.platformStats?.leetcode?.totalSolved ?? null,
+          rating: data.platformStats?.leetcode?.rating ?? null,
+          status: data.platforms?.leetcode?.status || 'NOT_CONNECTED',
+        },
+        gfg: {
+          problemsSolved: data.platformStats?.gfg?.totalSolved ?? null,
+          rating: data.platformStats?.gfg?.rating ?? null,
+          status: data.platforms?.gfg?.status || 'NOT_CONNECTED',
+        },
+        codeforces: {
+          problemsSolved: data.platformStats?.codeforces?.totalSolved ?? null,
+          rating: data.platformStats?.codeforces?.rating ?? null,
+          status: data.platforms?.codeforces?.status || 'NOT_CONNECTED',
+        },
+        codechef: {
+          problemsSolved: data.platformStats?.codechef?.totalSolved ?? null,
+          rating: data.platformStats?.codechef?.rating ?? null,
+          status: data.platforms?.codechef?.status || 'NOT_CONNECTED',
+        },
+        hackerrank: {
+          problemsSolved: data.platformStats?.hackerrank?.totalSolved ?? null,
+          rating: data.platformStats?.hackerrank?.stars
+            ? `${data.platformStats.hackerrank.stars}★`
+            : (data.platformStats?.hackerrank?.badgesCount ? `${data.platformStats.hackerrank.badgesCount} badges` : null),
+          status: data.platforms?.hackerrank?.status || 'NOT_CONNECTED',
+        },
+      },
+    });
+  });
+
+  // Sort strictly by Overall Score descending, then total problems solved, then alphabetical
+  allStudents.sort((a, b) => {
+    const scoreA = typeof a.finalScore === 'number' ? a.finalScore : Number(a.finalScore) || 0;
+    const scoreB = typeof b.finalScore === 'number' ? b.finalScore : Number(b.finalScore) || 0;
+
+    if (scoreB !== scoreA) {
+      return scoreB - scoreA;
+    }
+
+    const solvedA =
+      (Number(a.platforms?.leetcode?.problemsSolved) || 0) +
+      (Number(a.platforms?.gfg?.problemsSolved) || 0) +
+      (Number(a.platforms?.codeforces?.problemsSolved) || 0) +
+      (Number(a.platforms?.codechef?.problemsSolved) || 0) +
+      (Number(a.platforms?.hackerrank?.problemsSolved) || 0);
+
+    const solvedB =
+      (Number(b.platforms?.leetcode?.problemsSolved) || 0) +
+      (Number(b.platforms?.gfg?.problemsSolved) || 0) +
+      (Number(b.platforms?.codeforces?.problemsSolved) || 0) +
+      (Number(b.platforms?.codechef?.problemsSolved) || 0) +
+      (Number(b.platforms?.hackerrank?.problemsSolved) || 0);
+
+    if (solvedB !== solvedA) {
+      return solvedB - solvedA;
+    }
+
+    return (a.name || '').localeCompare(b.name || '');
+  });
+
+  // Assign strictly sequential, true official College Rank positions: 1, 2, 3, 4, 5... N
+  const baseRankedLeaderboard = allStudents.map((item, idx) => ({
+    ...item,
+    rank: idx + 1,
+  }));
+
+  // Top 3 Podium (Always from the true top 3 college rankers)
+  const basePodium = baseRankedLeaderboard.slice(0, 3).map((item, idx) => ({
+    id: item.id,
+    name: item.name,
+    department: item.department,
+    year: item.year,
+    rank: idx + 1,
+    finalScore: item.finalScore,
+    profilePhoto: item.profilePhoto,
+  }));
+
+  const baseStats = {
+    totalRegisteredStudents: baseRankedLeaderboard.length,
+    totalProblemsSolved,
+    codingPlatforms: getActivePlatformsCount(),
+    lastUpdated: latestUpdate || new Date().toISOString(),
+  };
+
+  // Store in memory for immediate re-use
+  setMemoizedLeaderboard(baseRankedLeaderboard, basePodium, baseStats);
+
+  return {
+    rankedLeaderboard: baseRankedLeaderboard,
+    podium: basePodium,
+    stats: baseStats,
+  };
+};
+
+/**
+ * Public lightweight aggregate statistics endpoint returning real-time RankBoard metrics.
+ */
+const getLeaderboardStats = async (req, res, next) => {
+  try {
+    const collegeId = req.query.collegeId || config.COLLEGE_ID;
+    const forceRefresh = req.query.fresh === 'true' || req.query.fresh === '1';
+
+    const { stats } = await computeBaseLeaderboardData(collegeId, { forceRefresh });
+
+    return res.json({
+      success: true,
+      stats,
+      platforms: getPlatformRegistryWithStatus(),
+    });
+  } catch (error) {
+    console.error('[Leaderboard Stats Error]:', error);
+    next(error);
+  }
+};
+
+/**
+ * Public leaderboard endpoint returning sanitized college rankings for registered students.
+ * Optimized with in-memory ranked memoization, payload sanitization, and pagination support.
+ */
 const getLeaderboard = async (req, res, next) => {
   try {
     const collegeId = req.query.collegeId || config.COLLEGE_ID;
     const { department, year, search, page, limit } = req.query;
+    const forceRefresh = req.query.fresh === 'true' || req.query.fresh === '1';
 
-    let baseRankedLeaderboard = null;
-    let basePodium = null;
-    let baseStats = null;
+    const { rankedLeaderboard: baseRankedLeaderboard, podium: basePodium, stats: baseStats } =
+      await computeBaseLeaderboardData(collegeId, { forceRefresh });
 
-    // Check memoized base rankings first for instantaneous sub-5ms response
-    const memoized = getMemoizedLeaderboard();
-    if (memoized) {
-      baseRankedLeaderboard = memoized.rankedLeaderboard;
-      basePodium = memoized.podium;
-      baseStats = memoized.stats;
-    } else {
-      // Retrieve students using single-flight cache
-      const rawStudents = await getAllStudentsCached();
-
-      if (!rawStudents || rawStudents.length === 0) {
-        return res.json({
-          success: true,
-          stats: {
-            totalRegisteredStudents: 0,
-            totalProblemsSolved: 0,
-            codingPlatforms: getActivePlatformsCount(),
-            lastUpdated: new Date().toISOString(),
-          },
-          platforms: getPlatformRegistryWithStatus(),
-          podium: [],
-          leaderboard: [],
-        });
-      }
-
-      const allStudents = [];
-      let totalProblemsSolved = 0;
-      let latestUpdate = null;
-
-      rawStudents.forEach((data) => {
-        // Exclude disabled accounts
-        if (data.accountStatus === 'DISABLED') {
-          return;
-        }
-
-        // Filter by college if specified on both sides
-        if (collegeId && data.collegeId && data.collegeId !== collegeId) {
-          return;
-        }
-
-        const lcSolved = data.platformStats?.leetcode?.totalSolved || 0;
-        const gfgSolved = data.platformStats?.gfg?.totalSolved || 0;
-        const cfSolved = data.platformStats?.codeforces?.totalSolved || 0;
-        const ccSolved = data.platformStats?.codechef?.totalSolved || 0;
-        const hrSolved = data.platformStats?.hackerrank?.totalSolved || 0;
-        const studentTotalSolved = lcSolved + gfgSolved + cfSolved + ccSolved + hrSolved;
-
-        totalProblemsSolved += studentTotalSolved;
-
-        if (data.lastDataUpdatedAt) {
-          if (!latestUpdate || new Date(data.lastDataUpdatedAt) > new Date(latestUpdate)) {
-            latestUpdate = data.lastDataUpdatedAt;
-          }
-        }
-
-        allStudents.push({
-          id: data.id,
-          name: data.name || 'Anonymous Student',
-          rollNumber: data.rollNumber || '—',
-          department: data.department || 'General',
-          year: data.year || 1,
-          profilePhoto: sanitizeProfilePhoto(data.profilePhoto),
-          finalScore: data.finalScore || 0,
-          overallScore: data.finalScore || 0,
-          platforms: {
-            leetcode: {
-              problemsSolved: data.platformStats?.leetcode?.totalSolved ?? null,
-              rating: data.platformStats?.leetcode?.rating ?? null,
-              status: data.platforms?.leetcode?.status || 'NOT_CONNECTED',
-            },
-            gfg: {
-              problemsSolved: data.platformStats?.gfg?.totalSolved ?? null,
-              rating: data.platformStats?.gfg?.rating ?? null,
-              status: data.platforms?.gfg?.status || 'NOT_CONNECTED',
-            },
-            codeforces: {
-              problemsSolved: data.platformStats?.codeforces?.totalSolved ?? null,
-              rating: data.platformStats?.codeforces?.rating ?? null,
-              status: data.platforms?.codeforces?.status || 'NOT_CONNECTED',
-            },
-            codechef: {
-              problemsSolved: data.platformStats?.codechef?.totalSolved ?? null,
-              rating: data.platformStats?.codechef?.rating ?? null,
-              status: data.platforms?.codechef?.status || 'NOT_CONNECTED',
-            },
-            hackerrank: {
-              problemsSolved: data.platformStats?.hackerrank?.totalSolved ?? null,
-              rating: data.platformStats?.hackerrank?.stars
-                ? `${data.platformStats.hackerrank.stars}★`
-                : (data.platformStats?.hackerrank?.badgesCount ? `${data.platformStats.hackerrank.badgesCount} badges` : null),
-              status: data.platforms?.hackerrank?.status || 'NOT_CONNECTED',
-            },
-          },
-        });
+    if (!baseRankedLeaderboard || baseRankedLeaderboard.length === 0) {
+      return res.json({
+        success: true,
+        stats: baseStats,
+        platforms: getPlatformRegistryWithStatus(),
+        podium: [],
+        leaderboard: [],
       });
-
-      // Sort strictly by Overall Score descending, then total problems solved, then alphabetical
-      allStudents.sort((a, b) => {
-        const scoreA = typeof a.finalScore === 'number' ? a.finalScore : Number(a.finalScore) || 0;
-        const scoreB = typeof b.finalScore === 'number' ? b.finalScore : Number(b.finalScore) || 0;
-
-        if (scoreB !== scoreA) {
-          return scoreB - scoreA;
-        }
-
-        const solvedA =
-          (Number(a.platforms?.leetcode?.problemsSolved) || 0) +
-          (Number(a.platforms?.gfg?.problemsSolved) || 0) +
-          (Number(a.platforms?.codeforces?.problemsSolved) || 0) +
-          (Number(a.platforms?.codechef?.problemsSolved) || 0) +
-          (Number(a.platforms?.hackerrank?.problemsSolved) || 0);
-
-        const solvedB =
-          (Number(b.platforms?.leetcode?.problemsSolved) || 0) +
-          (Number(b.platforms?.gfg?.problemsSolved) || 0) +
-          (Number(b.platforms?.codeforces?.problemsSolved) || 0) +
-          (Number(b.platforms?.codechef?.problemsSolved) || 0) +
-          (Number(b.platforms?.hackerrank?.problemsSolved) || 0);
-
-        if (solvedB !== solvedA) {
-          return solvedB - solvedA;
-        }
-
-        return (a.name || '').localeCompare(b.name || '');
-      });
-
-      // Assign strictly sequential, true official College Rank positions: 1, 2, 3, 4, 5... N
-      baseRankedLeaderboard = allStudents.map((item, idx) => ({
-        ...item,
-        rank: idx + 1,
-      }));
-
-      // Top 3 Podium (Always from the true top 3 college rankers)
-      basePodium = baseRankedLeaderboard.slice(0, 3).map((item, idx) => ({
-        id: item.id,
-        name: item.name,
-        department: item.department,
-        year: item.year,
-        rank: idx + 1,
-        finalScore: item.finalScore,
-        profilePhoto: item.profilePhoto,
-      }));
-
-      baseStats = {
-        totalRegisteredStudents: baseRankedLeaderboard.length,
-        totalProblemsSolved,
-        codingPlatforms: getActivePlatformsCount(),
-        lastUpdated: latestUpdate || new Date().toISOString(),
-      };
-
-      // Store in memory for immediate re-use
-      setMemoizedLeaderboard(baseRankedLeaderboard, basePodium, baseStats);
     }
 
     // Apply filters (department, year, search) on the ranked leaderboard while PRESERVING actual rank
@@ -244,4 +293,6 @@ const getLeaderboard = async (req, res, next) => {
 
 module.exports = {
   getLeaderboard,
+  getLeaderboardStats,
+  computeBaseLeaderboardData,
 };

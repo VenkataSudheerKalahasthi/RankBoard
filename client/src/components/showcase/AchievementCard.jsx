@@ -24,7 +24,7 @@ const PlatformIcon = ({ platform }) => {
   switch (platform) {
     case 'leetcode':
       return (
-        <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center p-0.5 shrink-0 shadow-sm overflow-hidden">
+        <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center p-0.5 shrink-0 shadow-sm overflow-hidden">
           <img
             src={leetcodeLogo}
             alt="LeetCode"
@@ -46,7 +46,7 @@ const PlatformIcon = ({ platform }) => {
       );
     case 'hackerrank':
       return (
-        <div className="w-8 h-8 rounded-lg bg-[#0e141e] flex items-center justify-center p-0.5 shrink-0 shadow-sm overflow-hidden">
+        <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center p-0.5 shrink-0 shadow-sm overflow-hidden">
           <img
             src={hackerrankLogo}
             alt="HackerRank"
