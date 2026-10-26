@@ -213,10 +213,20 @@ async function getActivitySnapshots({ studentId, platform = null, startDate = nu
   return filtered;
 }
 
+// Short-lived in-memory cache for aggregate range queries to prevent repeated heavy Supabase Egress
+const snapshotsRangeCache = new Map();
+const RANGE_CACHE_TTL_MS = 60 * 1000;
+
 /**
  * Returns all snapshots across all students in a date range
  */
 async function getAllSnapshotsInDateRange(startDate, endDate) {
+  const cacheKey = `${startDate || 'all'}_${endDate || 'all'}`;
+  const cached = snapshotsRangeCache.get(cacheKey);
+  if (cached && (Date.now() - cached.timestamp < RANGE_CACHE_TTL_MS)) {
+    return cached.data;
+  }
+
   const supabase = getSupabase();
 
   if (supabase && isSupabaseSnapshotsTableAvailable !== false) {
@@ -226,10 +236,13 @@ async function getAllSnapshotsInDateRange(startDate, endDate) {
       const pageSize = 1000;
       let hasMore = true;
 
+      // Projection: explicitly exclude massive raw_stats JSONB to save 90%+ egress bandwidth
+      const selectFields = 'id, student_id, platform, snapshot_timestamp, activity_date, total_solved, easy_solved, medium_solved, hard_solved, school_solved, basic_solved, rating, status, error_message';
+
       while (hasMore) {
         let query = supabase
           .from('student_activity_snapshots')
-          .select('*')
+          .select(selectFields)
           .order('snapshot_timestamp', { ascending: true })
           .range(page * pageSize, (page + 1) * pageSize - 1);
 
@@ -260,7 +273,7 @@ async function getAllSnapshotsInDateRange(startDate, endDate) {
 
       if (allRecords.length > 0 || isSupabaseSnapshotsTableAvailable !== false) {
         if (allRecords.length > 0) isSupabaseSnapshotsTableAvailable = true;
-        return allRecords.map((d) => ({
+        const mapped = allRecords.map((d) => ({
           id: d.id,
           studentId: d.student_id,
           platform: d.platform,
@@ -275,8 +288,10 @@ async function getAllSnapshotsInDateRange(startDate, endDate) {
           rating: d.rating,
           status: d.status,
           errorMessage: d.error_message,
-          rawStats: d.raw_stats,
         }));
+
+        snapshotsRangeCache.set(cacheKey, { timestamp: Date.now(), data: mapped });
+        return mapped;
       }
     } catch (e) {
       console.warn('[getAllSnapshotsInDateRange Supabase exception]:', e.message);

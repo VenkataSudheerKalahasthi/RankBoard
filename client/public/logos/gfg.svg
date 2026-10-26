@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 70" fill="none">
+  <!-- Official GeeksforGeeks GG Double-G Emblem -->
+  <path
+    fill="#2F8D46"
+    fill-rule="evenodd"
+    clip-rule="evenodd"
+    d="M35 10 C18 10 5 22 5 35 C5 48 18 60 35 60 C47 60 57 52 60 41 L47 41 C44 47 39 50 35 50 C25 50 17 43 16 35 L60 35 L60 30 C59 19 48 10 35 10 Z M35 20 C42 20 48 24 49 30 L16 30 C18 24 25 20 35 20 Z"
+  />
+  <path
+    fill="#2F8D46"
+    fill-rule="evenodd"
+    clip-rule="evenodd"
+    d="M85 10 C72 10 61 19 60 30 L60 35 L104 35 C103 43 95 50 85 50 C81 50 76 47 73 41 L60 41 C63 52 73 60 85 60 C102 60 115 48 115 35 C115 22 102 10 85 10 Z M85 20 C95 20 102 24 104 30 L71 30 C72 24 78 20 85 20 Z"
+  />
+</svg>

@@ -582,10 +582,97 @@ async function upsertAdmin(adminData) {
   const supabase = getSupabase();
   if (!supabase) throw new Error('Supabase client not initialized');
 
-  const payload = {
-    id: adminData.userId || adminData.id,
-    user_id: adminData.userId || adminData.id,
-    email: (adminData.email || '').toLowerCase().trim(),
+  const cleanEmail = (adminData.email || '').toLowerCase().trim();
+  const incomingId = adminData.userId || adminData.id;
+
+  // 1. Check if an admin record already exists by ID, user_id, or email
+  let existingAdmin = null;
+
+  if (incomingId) {
+    const { data: byId } = await supabase
+      .from('admins')
+      .select('*')
+      .or(`id.eq.${incomingId},user_id.eq.${incomingId}`)
+      .maybeSingle();
+    if (byId) {
+      existingAdmin = byId;
+    }
+  }
+
+  if (!existingAdmin && cleanEmail) {
+    const { data: byEmail } = await supabase
+      .from('admins')
+      .select('*')
+      .eq('email', cleanEmail)
+      .maybeSingle();
+    if (byEmail) {
+      existingAdmin = byEmail;
+    }
+  }
+
+  // 2. If an existing admin record is found, UPDATE it without violating unique constraints
+  if (existingAdmin) {
+    const targetId = existingAdmin.id;
+    const newId = incomingId || existingAdmin.id;
+    const newUserId = incomingId || existingAdmin.user_id;
+
+    const updatePayload = {
+      user_id: newUserId,
+      email: cleanEmail || existingAdmin.email,
+      name:
+        adminData.name && adminData.name !== 'Administrator'
+          ? adminData.name
+          : existingAdmin.name || adminData.name || 'Administrator',
+      role: adminData.role || existingAdmin.role || 'ADMIN',
+      status: adminData.status || existingAdmin.status || 'ACTIVE',
+      photo: adminData.photo !== undefined ? (adminData.photo || null) : existingAdmin.photo,
+      last_login_at: adminData.lastLoginAt || new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    // If incomingId is provided and differs from existing.id (e.g. transitioning from placeholder admin_... to user_...),
+    // update primary key id as well so it matches the Clerk identity.
+    if (newId && newId !== targetId) {
+      updatePayload.id = newId;
+    }
+
+    const { data: updatedData, error: updateError } = await supabase
+      .from('admins')
+      .update(updatePayload)
+      .eq('id', targetId)
+      .select()
+      .maybeSingle();
+
+    if (updateError) {
+      // If updating primary key id was rejected by Postgres, retry updating with just user_id
+      if (updatePayload.id && updatePayload.id !== targetId) {
+        delete updatePayload.id;
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('admins')
+          .update(updatePayload)
+          .eq('id', targetId)
+          .select()
+          .maybeSingle();
+
+        if (fallbackError) {
+          console.error('[Supabase upsertAdmin Fallback Update Error]:', fallbackError.message);
+          throw fallbackError;
+        }
+        return fallbackData;
+      }
+      console.error('[Supabase upsertAdmin Update Error]:', updateError.message);
+      throw updateError;
+    }
+
+    return updatedData;
+  }
+
+  // 3. If no existing admin record exists, insert a brand new row
+  const assignedId = incomingId || `admin_${Date.now()}`;
+  const insertPayload = {
+    id: assignedId,
+    user_id: assignedId,
+    email: cleanEmail,
     name: adminData.name || 'Administrator',
     role: adminData.role || 'ADMIN',
     status: adminData.status || 'ACTIVE',
@@ -594,14 +681,78 @@ async function upsertAdmin(adminData) {
     updated_at: new Date().toISOString(),
   };
 
-  const { data, error } = await supabase
+  const { data: insertedData, error: insertError } = await supabase
     .from('admins')
-    .upsert(payload, { onConflict: 'id' })
+    .insert(insertPayload)
     .select()
     .single();
 
+  if (insertError) {
+    // If concurrent insert occurred causing duplicate key violation, recover via update
+    if (insertError.code === '23505' || insertError.message?.includes('duplicate key')) {
+      const { data: recoveredDoc } = await supabase
+        .from('admins')
+        .select('*')
+        .or(`email.eq.${cleanEmail},id.eq.${assignedId},user_id.eq.${assignedId}`)
+        .maybeSingle();
+
+      if (recoveredDoc) {
+        const { data: finalData, error: finalError } = await supabase
+          .from('admins')
+          .update({
+            user_id: assignedId,
+            last_login_at: adminData.lastLoginAt || new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', recoveredDoc.id)
+          .select()
+          .maybeSingle();
+
+        if (!finalError && finalData) return finalData;
+      }
+    }
+
+    console.error('[Supabase upsertAdmin Insert Error]:', insertError.message);
+    throw insertError;
+  }
+
+  return insertedData;
+}
+
+async function deleteAdmin(adminId) {
+  if (!adminId) return false;
+  const supabase = getSupabase();
+  if (!supabase) throw new Error('Supabase client not initialized');
+
+  const { error } = await supabase
+    .from('admins')
+    .delete()
+    .or(`id.eq.${adminId},user_id.eq.${adminId}`);
+
   if (error) {
-    console.error('[Supabase upsertAdmin Error]:', error.message);
+    console.error('[Supabase deleteAdmin Error]:', error.message);
+    throw error;
+  }
+  return true;
+}
+
+async function updateAdminStatus(adminId, status) {
+  if (!adminId) return null;
+  const supabase = getSupabase();
+  if (!supabase) throw new Error('Supabase client not initialized');
+
+  const { data, error } = await supabase
+    .from('admins')
+    .update({
+      status: status === 'DISABLED' ? 'DISABLED' : 'ACTIVE',
+      updated_at: new Date().toISOString(),
+    })
+    .or(`id.eq.${adminId},user_id.eq.${adminId}`)
+    .select()
+    .maybeSingle();
+
+  if (error) {
+    console.error('[Supabase updateAdminStatus Error]:', error.message);
     throw error;
   }
   return data;
@@ -1223,6 +1374,8 @@ module.exports = {
   getAdminsCount,
   getAllAdmins,
   upsertAdmin,
+  deleteAdmin,
+  updateAdminStatus,
   insertAuditLog,
   getAuditLogs,
   insertNotification,

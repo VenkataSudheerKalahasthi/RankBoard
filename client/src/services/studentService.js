@@ -30,6 +30,29 @@ export const getStudentRank = async () => {
   return res.data;
 };
 
+export const verifyRegistration = async (receipt) => {
+  if (!receipt) return { success: true, isRegistered: false };
+  try {
+    const res = await api.get('/student/verify-registration', {
+      headers: {
+        'x-registration-receipt': receipt,
+      },
+      params: {
+        receipt,
+      },
+      timeout: 10000,
+    });
+    return res.data;
+  } catch (error) {
+    // If the server explicitly responded with an HTTP status code
+    if (error.response && error.response.data) {
+      return error.response.data;
+    }
+    // Network error, offline, or request timeout
+    return { success: false, isRegistered: false, networkError: true, error: error.message };
+  }
+};
+
 export const studentService = {
   getProfile: getStudentProfile,
   updateProfile: updateStudentProfile,
@@ -37,6 +60,7 @@ export const studentService = {
   syncPlatforms: syncStudentPlatforms,
   getScore: getStudentScore,
   getRank: getStudentRank,
+  verifyRegistration,
 };
 
 export default studentService;

@@ -1,6 +1,9 @@
 import React, { forwardRef } from 'react';
-import leetcodeLogo from '../../assets/logos/leetcode.png';
-import gfgLogo from '../../assets/logos/gfg.png';
+import leetcodeLogo from '../../assets/logos/leetcode.jpg';
+import gfgLogo from '../../assets/logos/gfg.jpg';
+import hackerrankLogo from '../../assets/logos/hackerrank.jpg';
+import codeforcesLogo from '../../assets/logos/codeforces.jpg';
+import codechefLogo from '../../assets/logos/codechef.jpg';
 import {
   Trophy,
   CheckCircle2,
@@ -16,12 +19,12 @@ import {
   Star,
 } from 'lucide-react';
 
-// Platform Brand SVGs & Exact User-Provided Logos
+// Platform Brand Logos (Exact User-Provided Logos)
 const PlatformIcon = ({ platform }) => {
   switch (platform) {
     case 'leetcode':
       return (
-        <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center p-0.5 shrink-0 shadow-sm overflow-hidden">
+        <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center p-0.5 shrink-0 shadow-sm overflow-hidden">
           <img
             src={leetcodeLogo}
             alt="LeetCode"
@@ -32,7 +35,7 @@ const PlatformIcon = ({ platform }) => {
       );
     case 'gfg':
       return (
-        <div className="w-8 h-8 rounded-lg bg-[#2f8d46] flex items-center justify-center p-0.5 shrink-0 shadow-sm overflow-hidden">
+        <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center p-0.5 shrink-0 shadow-sm overflow-hidden">
           <img
             src={gfgLogo}
             alt="GeeksforGeeks"
@@ -43,50 +46,35 @@ const PlatformIcon = ({ platform }) => {
       );
     case 'hackerrank':
       return (
-        <div className="w-8 h-8 rounded-lg bg-[#0e141e] flex items-center justify-center p-1.5 shrink-0 shadow-sm">
-          <svg viewBox="0 0 32 32" className="w-full h-full">
-            <path d="M6 7h4v6.5h6V7h4v18h-4v-7.5h-6V25H6V7z" fill="#FFFFFF" />
-            <rect x="21" y="7" width="5" height="18" rx="0.5" fill="#00EA64" />
-          </svg>
+        <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center p-0.5 shrink-0 shadow-sm overflow-hidden">
+          <img
+            src={hackerrankLogo}
+            alt="HackerRank"
+            crossOrigin="anonymous"
+            className="w-full h-full object-contain rounded-md"
+          />
         </div>
       );
     case 'codeforces':
       return (
-        <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center p-1.5 shrink-0 shadow-sm">
-          <svg viewBox="0 0 24 24" className="w-full h-full">
-            <rect x="2.5" y="10.5" width="5" height="11" rx="1.2" fill="#F0AF00" />
-            <rect x="9.5" y="3.5" width="5" height="18" rx="1.2" fill="#1F8ACB" />
-            <rect x="16.5" y="7" width="5" height="14.5" rx="1.2" fill="#AF1414" />
-          </svg>
+        <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center p-0.5 shrink-0 shadow-sm overflow-hidden">
+          <img
+            src={codeforcesLogo}
+            alt="Codeforces"
+            crossOrigin="anonymous"
+            className="w-full h-full object-contain rounded-md"
+          />
         </div>
       );
     case 'codechef':
       return (
         <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center p-0.5 shrink-0 shadow-sm overflow-hidden">
-          <svg viewBox="0 0 100 100" className="w-full h-full">
-            <path
-              d="M30 38 C18 38 16 16 30 12 C36 6 64 6 70 12 C84 16 82 38 70 38 Z"
-              fill="#F8FAFC"
-              stroke="#CBD5E1"
-              strokeWidth="2"
-            />
-            <path
-              d="M35 36 C30 26 36 16 50 14 C64 16 70 26 65 36 Z"
-              fill="#FFFFFF"
-            />
-            <path d="M42 18 C40 26 41 33 41 36" stroke="#E2E8F0" strokeWidth="2" strokeLinecap="round" fill="none" />
-            <path d="M58 18 C60 26 59 33 59 36" stroke="#E2E8F0" strokeWidth="2" strokeLinecap="round" fill="none" />
-            <rect x="28" y="36" width="44" height="8" rx="2" fill="#E11D48" />
-            <circle cx="50" cy="60" r="22" fill="#FFFFFF" stroke="#F1F5F9" strokeWidth="1" />
-            <path d="M36 48 Q40 44 44 47" stroke="#334155" strokeWidth="2" strokeLinecap="round" fill="none" />
-            <path d="M41 54 L35 57 L41 60" stroke="#334155" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-            <path d="M59 54 L65 57 L59 60" stroke="#334155" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-            <path d="M48 65 Q50 68 52 65" stroke="#334155" strokeWidth="2" strokeLinecap="round" fill="none" />
-            <path
-              d="M30 72 C37 68 44 71 50 74 C56 71 63 68 70 72 C65 80 56 76 50 79 C44 76 35 80 30 72 Z"
-              fill="#4A2810"
-            />
-          </svg>
+          <img
+            src={codechefLogo}
+            alt="CodeChef"
+            crossOrigin="anonymous"
+            className="w-full h-full object-contain rounded-md"
+          />
         </div>
       );
     default:

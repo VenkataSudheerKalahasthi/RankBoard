@@ -1,5 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { AuthenticateWithRedirectCallback } from '@clerk/clerk-react';
 import { useAdminAuth } from './context/AdminAuthContext';
 import { AdminLayout } from './layouts/AdminLayout';
 import { LoadingState } from './components/common/LoadingState';
@@ -67,13 +68,14 @@ export function App() {
 
   return (
     <Routes>
-      {/* Public Route */}
+      {/* Public Routes */}
       <Route
-        path="/login"
+        path="/login/*"
         element={
           !loading && isSignedIn ? <Navigate to="/dashboard" replace /> : <Login />
         }
       />
+      <Route path="/sso-callback" element={<AuthenticateWithRedirectCallback />} />
 
       {/* Protected Admin Routes */}
       <Route

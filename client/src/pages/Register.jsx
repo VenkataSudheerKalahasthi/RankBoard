@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useSignUp } from '@clerk/clerk-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useSignUp, useAuth } from '@clerk/clerk-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   Sparkles, 
@@ -12,13 +12,27 @@ import {
   User, 
   ArrowRight,
   ShieldCheck,
-  CheckCircle2
+  CheckCircle2,
+  RefreshCw
 } from 'lucide-react';
 import { validatePassword, VALIDATION_MESSAGES } from '../utils/passwordValidator';
+import { useStudent } from '../context/StudentContext';
 
 const Register = () => {
   const { isLoaded, signUp, setActive } = useSignUp();
+  const { isSignedIn } = useAuth();
+  const { isRegistered, isRegistrationChecking, recordRegistration } = useStudent();
   const navigate = useNavigate();
+
+  // Guard against rapid duplicate clicks and in-flight submissions
+  const isSubmittingRef = useRef(false);
+
+  // If already authenticated, redirect to student dashboard
+  useEffect(() => {
+    if (isSignedIn) {
+      navigate('/student/dashboard', { replace: true });
+    }
+  }, [isSignedIn, navigate]);
 
   // Form states
   const [firstName, setFirstName] = useState('');
@@ -32,10 +46,40 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
 
-  // Email verification flow (if required by Clerk instance)
+  // Email verification flow
   const [verifying, setVerifying] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
   const [verificationLoading, setVerificationLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState('');
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    let timer;
+    if (cooldown > 0) {
+      timer = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [cooldown]);
+
+  const handleResendCode = async () => {
+    if (!isLoaded || resendLoading || cooldown > 0 || isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    setResendLoading(true);
+    setError('');
+    setResendSuccess('');
+    try {
+      await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+      setCooldown(60);
+      setResendSuccess('A fresh verification code has been dispatched to your email.');
+    } catch (err) {
+      const msg = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || 'Failed to resend code.';
+      setError(msg);
+    } finally {
+      setResendLoading(false);
+      isSubmittingRef.current = false;
+    }
+  };
 
   // Dynamic password criteria evaluation (real-time checklist)
   const passwordEvaluation = validatePassword(password);
@@ -43,7 +87,7 @@ const Register = () => {
 
   // Handle Google OAuth Sign-Up
   const handleGoogleSignUp = async () => {
-    if (!isLoaded || oauthLoading || loading) return;
+    if (!isLoaded || oauthLoading || loading || isSubmittingRef.current) return;
     setOauthLoading(true);
     setError('');
     try {
@@ -63,7 +107,7 @@ const Register = () => {
   // Handle Form Submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!isLoaded || loading) return;
+    if (!isLoaded || loading || isSubmittingRef.current) return;
 
     setError('');
 
@@ -74,22 +118,45 @@ const Register = () => {
       return;
     }
 
+    isSubmittingRef.current = true;
     setLoading(true);
 
     try {
-      // Create user with Clerk
-      const result = await signUp.create({
-        emailAddress: email,
-        password: password, // Raw password with preserved whitespace
-        firstName: firstName.trim() || undefined,
-        lastName: lastName.trim() || undefined,
-      });
+      const cleanEmail = email.trim().toLowerCase();
+
+      // If a sign-up attempt already exists for this exact email and is awaiting verification, reuse it
+      let result;
+      if (
+        signUp?.status === 'missing_requirements' &&
+        signUp?.emailAddress?.toLowerCase() === cleanEmail
+      ) {
+        result = signUp;
+      } else {
+        result = await signUp.create({
+          emailAddress: cleanEmail,
+          password: password, // Raw password with preserved whitespace
+          firstName: firstName.trim() || undefined,
+          lastName: lastName.trim() || undefined,
+        });
+      }
 
       // Handle email verification if required
       if (result.status === 'missing_requirements') {
-        await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+        const emailVerification = result.verifications?.emailAddress;
+        // In Clerk, when email verification is required, signUp.create() automatically initiates
+        // and prepares the verification code email (status: 'unverified', strategy: 'email_code').
+        // Calling prepareEmailAddressVerification again triggers a second email with a different code
+        // and invalidates the first code. Only call prepare if not already prepared.
+        const isAlreadyPrepared =
+          emailVerification?.status === 'unverified' &&
+          emailVerification?.strategy === 'email_code';
+
+        if (!isAlreadyPrepared) {
+          await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+        }
         setVerifying(true);
       } else if (result.status === 'complete') {
+        recordRegistration();
         await setActive({ session: result.createdSessionId });
         navigate('/student/profile');
       } else {
@@ -103,29 +170,41 @@ const Register = () => {
         err.errors?.[0]?.message || 
         'Registration could not be completed. Please check your credentials.';
       
-      if (err.errors?.[0]?.code === 'form_password_length_too_short' || clerkMsg.includes('15')) {
+      const errorCode = err.errors?.[0]?.code;
+      if (errorCode === 'form_identifier_exists') {
+        clerkMsg = 'An account with this email address already exists. Please Sign In.';
+      } else if (errorCode === 'form_password_length_too_short' || clerkMsg.includes('15')) {
         clerkMsg = `${clerkMsg} (Action Required: In your Clerk Dashboard under User & Authentication > Password settings, change 'Minimum password length' from 15 to 8).`;
       }
       setError(clerkMsg);
     } finally {
       setLoading(false);
+      isSubmittingRef.current = false;
     }
   };
 
   // Handle Email Verification Code
   const handleVerify = async (e) => {
     e.preventDefault();
-    if (!isLoaded || verificationLoading) return;
+    if (!isLoaded || verificationLoading || isSubmittingRef.current) return;
 
+    const trimmedCode = verificationCode.trim();
+    if (!trimmedCode) {
+      setError('Please enter the 6-digit verification code.');
+      return;
+    }
+
+    isSubmittingRef.current = true;
     setVerificationLoading(true);
     setError('');
 
     try {
       const completeSignUp = await signUp.attemptEmailAddressVerification({
-        code: verificationCode.trim(),
+        code: trimmedCode,
       });
 
       if (completeSignUp.status === 'complete') {
+        recordRegistration();
         await setActive({ session: completeSignUp.createdSessionId });
         navigate('/student/profile');
       } else {
@@ -133,10 +212,17 @@ const Register = () => {
       }
     } catch (err) {
       console.error('Verification code error:', err);
-      const msg = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || 'Invalid verification code.';
+      const firstErr = err.errors?.[0];
+      let msg = firstErr?.longMessage || firstErr?.message || 'Invalid verification code.';
+      if (firstErr?.code === 'form_code_incorrect') {
+        msg = 'The verification code entered is incorrect. Please check the code and try again.';
+      } else if (firstErr?.code === 'verification_expired') {
+        msg = 'The verification code has expired. Please click Resend Code to request a new one.';
+      }
       setError(msg);
     } finally {
       setVerificationLoading(false);
+      isSubmittingRef.current = false;
     }
   };
 
@@ -148,10 +234,10 @@ const Register = () => {
           <Sparkles className="w-3.5 h-3.5" />
           Join College DSA Rankboard
         </div>
-        <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+        <h1 className="text-2xl font-black theme-text-primary tracking-tight">
           Student Registration
         </h1>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs theme-text-secondary">
           Create your student account to submit coding handles and compete
         </p>
       </div>
@@ -200,7 +286,20 @@ const Register = () => {
             {error && (
               <div className="mb-5 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2.5 animate-shake">
                 <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-                <div className="flex-1 font-medium leading-relaxed">{error}</div>
+                <div className="flex-1 font-medium leading-relaxed">
+                  <div>{error}</div>
+                  {error.includes('already exists') && (
+                    <div className="mt-2.5">
+                      <Link
+                        to="/login"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs shadow-sm transition"
+                      >
+                        <span>Sign In Now</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </Link>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -390,6 +489,13 @@ const Register = () => {
               </div>
             )}
 
+            {resendSuccess && (
+              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <div className="flex-1 font-medium">{resendSuccess}</div>
+              </div>
+            )}
+
             <form onSubmit={handleVerify} className="space-y-4">
               <div>
                 <label htmlFor="reg-verification-code" className="block text-xs font-semibold text-slate-700 mb-1">
@@ -408,7 +514,7 @@ const Register = () => {
 
               <button
                 type="submit"
-                disabled={verificationLoading}
+                disabled={verificationLoading || !verificationCode.trim()}
                 className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-md transition-all disabled:opacity-60"
               >
                 {verificationLoading ? (
@@ -421,13 +527,35 @@ const Register = () => {
                 )}
               </button>
 
-              <button
-                type="button"
-                onClick={() => setVerifying(false)}
-                className="w-full text-center text-xs text-slate-500 hover:text-slate-800 transition py-1"
-              >
-                Back to registration details
-              </button>
+              <div className="flex items-center justify-between text-xs pt-1">
+                <button
+                  type="button"
+                  onClick={handleResendCode}
+                  disabled={resendLoading || cooldown > 0 || verificationLoading}
+                  className="inline-flex items-center gap-1.5 text-brand-600 font-semibold disabled:text-slate-400 disabled:cursor-not-allowed hover:underline transition"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${resendLoading ? 'animate-spin' : ''}`} />
+                  {cooldown > 0 ? (
+                    <span>Resend code in {cooldown}s</span>
+                  ) : resendLoading ? (
+                    <span>Sending code...</span>
+                  ) : (
+                    <span>Resend Code</span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setVerifying(false);
+                    setError('');
+                    setResendSuccess('');
+                  }}
+                  className="text-slate-500 hover:text-slate-800 transition font-medium"
+                >
+                  Back to details
+                </button>
+              </div>
             </form>
           </div>
         )}

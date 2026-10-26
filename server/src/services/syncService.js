@@ -31,6 +31,12 @@ const platformCooldowns = {
  * @returns {boolean}
  */
 const isPlatformInCooldown = (platform) => {
+  if (platform === 'codechef') {
+    try {
+      const { isCodeChefInCooldown } = require('./platforms/codechefService');
+      if (isCodeChefInCooldown()) return true;
+    } catch (e) {}
+  }
   const expiry = platformCooldowns[platform] || 0;
   return Date.now() < expiry;
 };
@@ -41,6 +47,14 @@ const isPlatformInCooldown = (platform) => {
  * @param {number} durationMs 
  */
 const triggerPlatformCooldown = (platform, durationMs = config.SYNC_CONFIG?.RATE_LIMIT_COOLDOWN_MS || 60000) => {
+  if (platform === 'codechef') {
+    try {
+      const { triggerCodeChefCooldown } = require('./platforms/codechefService');
+      triggerCodeChefCooldown(durationMs);
+      return;
+    } catch (e) {}
+  }
+
   const currentExpiry = platformCooldowns[platform] || 0;
   if (Date.now() < currentExpiry) {
     return;
@@ -209,7 +223,7 @@ const syncStudentPlatforms = async (studentIdOrClerkId, newPlatformUrls = null, 
     leetcode: (config.SYNC_CONFIG?.LEETCODE_INTERVAL_SECONDS || 60) * 1000,
     gfg: (config.SYNC_CONFIG?.GFG_INTERVAL_SECONDS || 120) * 1000,
     codeforces: (config.SYNC_CONFIG?.CODEFORCES_INTERVAL_SECONDS || 120) * 1000,
-    codechef: (config.SYNC_CONFIG?.CODECHEF_INTERVAL_SECONDS || 300) * 1000,
+    codechef: (config.SYNC_CONFIG?.CODECHEF_INTERVAL_SECONDS || 900) * 1000,
     hackerrank: (config.SYNC_CONFIG?.HACKERRANK_INTERVAL_SECONDS || 120) * 1000,
   };
 
@@ -236,8 +250,8 @@ const syncStudentPlatforms = async (studentIdOrClerkId, newPlatformUrls = null, 
       const lastFetchedMs = pConfig.lastFetchedAt ? new Date(pConfig.lastFetchedAt).getTime() : 0;
       const isFresh = lastFetchedMs > 0 && (Date.now() - lastFetchedMs < intervalMs);
 
-      if (isFresh && !options.forceSync && !newPlatformUrls && pConfig.status === 'SUCCESS') {
-        // Platform is still fresh within its configured sync window; skip fetching
+      if (isFresh && !options.forceSync && !newPlatformUrls && pConfig.status !== 'PENDING') {
+        // Platform was recently attempted within its configured sync window; skip fetching to respect rate limits
         continue;
       }
 
@@ -280,19 +294,24 @@ const syncStudentPlatforms = async (studentIdOrClerkId, newPlatformUrls = null, 
         platforms[key].lastFetchedAt = stats.fetchedAt || new Date().toISOString();
         platforms[key].errorMessage = null;
 
-        // Persist historical activity snapshot for daily/weekly/monthly tracking
+        // Persist historical activity snapshot for daily/weekly/monthly tracking (deduplicated)
         try {
-          await recordPlatformSnapshot(studentData.id, key, stats);
+          await recordPlatformSnapshot(studentData.id, key, stats, {
+            hasChanged: changeResult.hasChanged,
+            force: options.forceSync,
+          });
         } catch (snapErr) {
           console.warn(`[Snapshot Record Warning] ${studentData.id} on ${key}:`, snapErr.message);
         }
       } else if (stats && stats.status === 'RATE_LIMITED') {
         platforms[key].status = 'RATE_LIMITED';
         platforms[key].errorMessage = stats.errorMessage || 'Rate limit reached on platform';
+        platforms[key].lastFetchedAt = stats.fetchedAt || new Date().toISOString();
         // PRESERVE previous valid stats - NEVER reset to zero or null
       } else {
         platforms[key].status = 'FAILED';
         platforms[key].errorMessage = stats?.errorMessage || 'Failed to fetch platform data';
+        platforms[key].lastFetchedAt = stats?.fetchedAt || new Date().toISOString();
         // PRESERVE previous valid stats - NEVER reset to zero or null
       }
 

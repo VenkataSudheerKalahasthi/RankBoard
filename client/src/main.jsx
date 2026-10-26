@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { ClerkProvider } from '@clerk/clerk-react';
 import App from './App';
 import { StudentProvider } from './context/StudentContext';
+import { ThemeProvider } from './context/ThemeContext';
 import './index.css';
 
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -42,12 +43,15 @@ if (!clerkPublishableKey) {
   ReactDOM.createRoot(rootElement).render(
     <React.StrictMode>
       <ClerkProvider publishableKey={clerkPublishableKey}>
-        <BrowserRouter>
-          <StudentProvider>
-            <App />
-          </StudentProvider>
-        </BrowserRouter>
+        <ThemeProvider>
+          <BrowserRouter>
+            <StudentProvider>
+              <App />
+            </StudentProvider>
+          </BrowserRouter>
+        </ThemeProvider>
       </ClerkProvider>
     </React.StrictMode>
   );
 }
+

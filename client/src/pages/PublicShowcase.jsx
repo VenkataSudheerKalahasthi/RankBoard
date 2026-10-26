@@ -4,6 +4,7 @@ import { showcaseService } from '../services/showcaseService';
 import AchievementCard from '../components/showcase/AchievementCard';
 import AchievementExportCard from '../components/showcase/AchievementExportCard';
 import Button from '../components/common/Button';
+import ScrollReveal from '../components/common/ScrollReveal';
 import LoadingState from '../components/common/LoadingState';
 import ErrorState from '../components/common/ErrorState';
 import {
@@ -263,14 +264,16 @@ const PublicShowcase = () => {
         </div>
 
         {/* Achievement Card Component Preview */}
-        <div className="flex justify-center overflow-x-auto py-2">
-          <AchievementCard
-            ref={cardRef}
-            showcase={showcase}
-            layout={selectedLayout}
-            forExport={false}
-          />
-        </div>
+        <ScrollReveal delay={60}>
+          <div className="flex justify-center overflow-x-auto py-2">
+            <AchievementCard
+              ref={cardRef}
+              showcase={showcase}
+              layout={selectedLayout}
+              forExport={false}
+            />
+          </div>
+        </ScrollReveal>
 
         {/* Dedicated Off-Screen Export Container - Unclipped and explicit export dimensions */}
         <div
@@ -294,61 +297,65 @@ const PublicShowcase = () => {
         </div>
 
         {/* Action Toolbar */}
-        <div className="max-w-2xl mx-auto flex flex-wrap items-center justify-center gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-          <Button
-            variant="primary"
-            size="md"
-            loading={downloading}
-            onClick={handleDownloadImage}
-            icon={Download}
-            className="text-xs bg-indigo-600 hover:bg-indigo-700 shadow-sm"
-          >
-            {downloading ? 'Exporting...' : `Download ${selectedLayout === 'mobile' ? 'Portrait' : 'Landscape'} Card`}
-          </Button>
+        <ScrollReveal delay={120}>
+          <div className="max-w-2xl mx-auto flex flex-wrap items-center justify-center gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+            <Button
+              variant="primary"
+              size="md"
+              loading={downloading}
+              onClick={handleDownloadImage}
+              icon={Download}
+              className="text-xs bg-indigo-600 hover:bg-indigo-700 shadow-sm"
+            >
+              {downloading ? 'Exporting...' : `Download ${selectedLayout === 'mobile' ? 'Portrait' : 'Landscape'} Card`}
+            </Button>
 
-          <Button
-            variant="secondary"
-            size="md"
-            onClick={handleCopyLink}
-            icon={copied ? Check : Copy}
-            className="text-xs bg-white border-slate-200 hover:bg-slate-50 text-slate-700"
-          >
-            {copied ? 'Copied!' : 'Copy Share Link'}
-          </Button>
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={handleCopyLink}
+              icon={copied ? Check : Copy}
+              className="text-xs bg-white border-slate-200 hover:bg-slate-50 text-slate-700"
+            >
+              {copied ? 'Copied!' : 'Copy Share Link'}
+            </Button>
 
-          <Button
-            variant="secondary"
-            size="md"
-            onClick={handleNativeShare}
-            icon={Share2}
-            className="text-xs bg-white border-slate-200 hover:bg-slate-50 text-slate-700"
-          >
-            Share
-          </Button>
-        </div>
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={handleNativeShare}
+              icon={Share2}
+              className="text-xs bg-white border-slate-200 hover:bg-slate-50 text-slate-700"
+            >
+              Share
+            </Button>
+          </div>
+        </ScrollReveal>
 
         {/* Public Platform Profiles Links */}
         {activeProfiles.length > 0 && (
-          <div className="max-w-2xl mx-auto space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 text-center">
-              Student Public Coding Profiles
-            </h3>
-            <div className="flex flex-wrap items-center justify-center gap-2.5">
-              {activeProfiles.map((p) => (
-                <a
-                  key={p.key}
-                  href={p.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:border-brand-500/50 hover:bg-slate-50 text-xs font-semibold text-slate-700 shadow-2xs transition"
-                >
-                  <span className={`w-2 h-2 rounded-full ${p.dot}`}></span>
-                  {p.name}
-                  <ExternalLink className="w-3.5 h-3.5 text-slate-400 ml-0.5" />
-                </a>
-              ))}
+          <ScrollReveal delay={180}>
+            <div className="max-w-2xl mx-auto space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 text-center">
+                Student Public Coding Profiles
+              </h3>
+              <div className="flex flex-wrap items-center justify-center gap-2.5">
+                {activeProfiles.map((p) => (
+                  <a
+                    key={p.key}
+                    href={p.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:border-brand-500/50 hover:bg-slate-50 text-xs font-semibold text-slate-700 shadow-2xs transition"
+                  >
+                    <span className={`w-2 h-2 rounded-full ${p.dot}`}></span>
+                    {p.name}
+                    <ExternalLink className="w-3.5 h-3.5 text-slate-400 ml-0.5" />
+                  </a>
+                ))}
+              </div>
             </div>
-          </div>
+          </ScrollReveal>
         )}
       </div>
     </div>

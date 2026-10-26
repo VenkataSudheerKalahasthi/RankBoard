@@ -81,4 +81,9 @@ export const adminService = {
   getSettings: () => api.get('/admin/settings'),
   updateSettings: (data) => api.put('/admin/settings', data),
   getSystemHealth: () => api.get('/admin/system/health'),
+
+  // 14. Administrator Management
+  createAdmin: (data) => api.post('/admin/admins', data),
+  toggleAdminStatus: (adminId, status) => api.patch(`/admin/admins/${adminId}/status`, { status }),
+  deleteAdmin: (adminId) => api.delete(`/admin/admins/${adminId}`),
 };

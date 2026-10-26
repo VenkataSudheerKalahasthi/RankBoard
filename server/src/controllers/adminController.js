@@ -43,6 +43,8 @@ const {
   batchUpdateStudentPlatformProfiles,
   upsertAdmin,
   getAllAdmins,
+  deleteAdmin: deleteAdminInRepo,
+  updateAdminStatus: updateAdminStatusInRepo,
   getAuditLogs: getAuditLogsFromRepo,
   getNotifications: getNotificationsFromRepo,
   markNotificationRead: markNotificationReadInRepo,
@@ -57,10 +59,20 @@ const {
   updateSystemSettings: updateSystemSettingsService,
   getSystemHealth,
 } = require('../services/settingsService');
-const { invalidateStudentCache } = require('../utils/studentCache');
+const { getAllStudentsCached, invalidateStudentCache } = require('../utils/studentCache');
 
 // Global in-memory sync job tracking
 let activeSyncJob = null;
+
+let clerkClient = null;
+if (config.CLERK_SECRET_KEY) {
+  try {
+    const { createClerkClient } = require('@clerk/backend');
+    clerkClient = createClerkClient({ secretKey: config.CLERK_SECRET_KEY });
+  } catch (err) {
+    console.warn('[Admin Controller Clerk Init Warning]:', err.message);
+  }
+}
 
 // ==============================================================================
 // 1. AUTHENTICATION & PROFILE
@@ -70,18 +82,23 @@ const getAdminProfile = async (req, res, next) => {
   try {
     const admin = req.admin;
 
-    // Update last login
+    // Update last login and ensure admin identity is linked to Supabase record
+    let persistedAdmin = null;
     if (admin.userId) {
-      await upsertAdmin({
-        id: admin.userId,
-        userId: admin.userId,
-        email: admin.email,
-        name: admin.name,
-        role: admin.role,
-        status: 'ACTIVE',
-        photo: admin.photo || '',
-        lastLoginAt: new Date().toISOString(),
-      });
+      try {
+        persistedAdmin = await upsertAdmin({
+          id: admin.userId,
+          userId: admin.userId,
+          email: admin.email,
+          name: admin.name,
+          role: admin.role,
+          status: 'ACTIVE',
+          photo: admin.photo || '',
+          lastLoginAt: new Date().toISOString(),
+        });
+      } catch (upsertError) {
+        console.warn('[Admin Profile Upsert Non-fatal Warning]:', upsertError.message);
+      }
     }
 
     return res.json({
@@ -89,9 +106,9 @@ const getAdminProfile = async (req, res, next) => {
       admin: {
         userId: admin.userId,
         email: admin.email,
-        name: admin.name,
-        photo: admin.photo,
-        role: admin.role,
+        name: persistedAdmin?.name || admin.name,
+        photo: admin.photo || persistedAdmin?.photo,
+        role: persistedAdmin?.role || admin.role,
         collegeId: config.COLLEGE_ID,
         collegeName: config.COLLEGE_NAME,
       },
@@ -167,7 +184,7 @@ const isStudentIncomplete = (student) => {
 
 const getDashboardStats = async (req, res, next) => {
   try {
-    const students = await getAllStudents();
+    const students = await getAllStudentsCached();
 
     let totalStudents = 0;
     let activeStudents = 0;
@@ -406,7 +423,7 @@ const getStudents = async (req, res, next) => {
       sortOrder = 'desc',
     } = req.query;
 
-    const rawStudents = await getAllStudents();
+    const rawStudents = await getAllStudentsCached();
 
     let filtered = rawStudents.filter((student) => {
       // Status filter
@@ -3471,6 +3488,117 @@ const getSystemHealthEndpoint = async (req, res, next) => {
   }
 };
 
+// ==============================================================================
+// 12. ADMINISTRATOR ACCOUNT MANAGEMENT
+// ==============================================================================
+
+const createAdminController = async (req, res, next) => {
+  try {
+    const { email, name, role } = req.body;
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({ success: false, message: 'A valid email address is required.' });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+    const adminName = (name || '').trim() || 'Administrator';
+    const adminRole = role === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : 'ADMIN';
+
+    // 1. Upsert into Supabase `admins` table
+    const placeholderId = `admin_${Date.now()}`;
+    const newAdmin = await upsertAdmin({
+      id: placeholderId,
+      userId: placeholderId,
+      email: cleanEmail,
+      name: adminName,
+      role: adminRole,
+      status: 'ACTIVE',
+      lastLoginAt: null,
+    });
+
+    // 2. Optionally trigger Clerk invitation if available
+    let invitationSent = false;
+    if (clerkClient && clerkClient.invitations) {
+      try {
+        const portalUrl = process.env.ADMIN_URL || 'http://localhost:5174';
+        await clerkClient.invitations.createInvitation({
+          emailAddress: cleanEmail,
+          redirectUrl: `${portalUrl}/login`,
+        });
+        invitationSent = true;
+      } catch (invErr) {
+        console.warn('[Clerk Invitation Optional Warning]:', invErr.message);
+      }
+    }
+
+    // 3. Log audit
+    await logAudit({
+      admin: req.admin,
+      action: AUDIT_ACTIONS.SETTINGS_CHANGED,
+      target: 'ADMIN_USER',
+      targetId: newAdmin.id,
+      details: { email: cleanEmail, name: adminName, role: adminRole, invitationSent },
+      req,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: `Administrator ${cleanEmail} added successfully!`,
+      admin: newAdmin,
+      invitationSent,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const toggleAdminStatusController = async (req, res, next) => {
+  try {
+    const { adminId } = req.params;
+    const { status } = req.body;
+    const updated = await updateAdminStatusInRepo(adminId, status);
+    if (!updated) {
+      return res.status(404).json({ success: false, message: 'Administrator not found.' });
+    }
+
+    await logAudit({
+      admin: req.admin,
+      action: AUDIT_ACTIONS.SETTINGS_CHANGED,
+      target: 'ADMIN_USER',
+      targetId: adminId,
+      details: { status },
+      req,
+    });
+
+    return res.json({ success: true, admin: updated });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteAdminController = async (req, res, next) => {
+  try {
+    const { adminId } = req.params;
+    if (adminId === req.admin.userId) {
+      return res.status(400).json({ success: false, message: 'You cannot remove your own administrator account.' });
+    }
+
+    await deleteAdminInRepo(adminId);
+
+    await logAudit({
+      admin: req.admin,
+      action: AUDIT_ACTIONS.SETTINGS_CHANGED,
+      target: 'ADMIN_USER',
+      targetId: adminId,
+      details: { deleted: true },
+      req,
+    });
+
+    return res.json({ success: true, message: 'Administrator removed successfully.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getAdminProfile,
   getDashboardStats,
@@ -3511,5 +3639,8 @@ module.exports = {
   clearNotifications,
   getSettings,
   updateSettings,
+  createAdmin: createAdminController,
+  toggleAdminStatus: toggleAdminStatusController,
+  deleteAdmin: deleteAdminController,
   getSystemHealth: getSystemHealthEndpoint,
 };

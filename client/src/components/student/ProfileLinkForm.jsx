@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Card from '../common/Card';
 import Input from '../common/Input';
 import Button from '../common/Button';
-import { Save, CheckCircle2, AlertCircle, Sparkles, RefreshCw } from 'lucide-react';
+import { Save, CheckCircle2, AlertCircle, Sparkles } from 'lucide-react';
 import { useStudent } from '../../context/StudentContext';
 
 const ProfileLinkForm = ({ onSaved }) => {
@@ -66,15 +66,15 @@ const ProfileLinkForm = ({ onSaved }) => {
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {successMessage && (
-          <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-xs flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+          <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 rounded-lg text-xs flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
             <span>{successMessage}</span>
           </div>
         )}
 
         {errorMessage && (
-          <div className="p-3 bg-red-50 border border-red-200 text-red-800 rounded-lg text-xs flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+          <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 rounded-lg text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 text-red-600 dark:text-red-400" />
             <span>{errorMessage}</span>
           </div>
         )}
@@ -82,17 +82,19 @@ const ProfileLinkForm = ({ onSaved }) => {
         {/* Scoring Platforms Group */}
         <div className="space-y-3">
           <div className="flex items-center gap-2 pt-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-brand-700">Official Scoring Platforms</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-sky-400">Official Scoring Platforms</span>
           </div>
 
           {/* LeetCode */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+          <div className="bg-slate-50 dark:bg-[#0D1830] p-4 rounded-xl border border-[#D9E4F2] dark:border-blue-500/20">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-                <span className="font-bold text-xs text-slate-900">LeetCode Profile</span>
+                <div className="w-5 h-5 rounded-md bg-white border border-slate-200/90 dark:border-slate-700 overflow-hidden flex items-center justify-center shrink-0 p-0.5 shadow-2xs">
+                  <img src="/logos/leetcode.jpg" alt="LeetCode" className="w-full h-full object-contain" />
+                </div>
+                <span className="font-bold text-xs text-[#0F172A] dark:text-white">LeetCode Profile</span>
               </div>
-              <span className="text-[10px] text-slate-400 font-mono">leetcode.com/u/[username]</span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">leetcode.com/u/[username]</span>
             </div>
             <Input
               name="leetcodeUrl"
@@ -104,13 +106,15 @@ const ProfileLinkForm = ({ onSaved }) => {
           </div>
 
           {/* GeeksforGeeks */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+          <div className="bg-slate-50 dark:bg-[#0D1830] p-4 rounded-xl border border-[#D9E4F2] dark:border-blue-500/20">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
-                <span className="font-bold text-xs text-slate-900">GeeksforGeeks Profile</span>
+                <div className="w-5 h-5 rounded-md bg-white border border-slate-200/90 dark:border-slate-700 overflow-hidden flex items-center justify-center shrink-0 p-0.5 shadow-2xs">
+                  <img src="/logos/gfg.jpg" alt="GeeksforGeeks" className="w-full h-full object-contain" />
+                </div>
+                <span className="font-bold text-xs text-[#0F172A] dark:text-white">GeeksforGeeks Profile</span>
               </div>
-              <span className="text-[10px] text-slate-400 font-mono">geeksforgeeks.org/user/[username]/</span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">geeksforgeeks.org/user/[username]/</span>
             </div>
             <Input
               name="gfgUrl"
@@ -122,13 +126,15 @@ const ProfileLinkForm = ({ onSaved }) => {
           </div>
 
           {/* HackerRank */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+          <div className="bg-slate-50 dark:bg-[#0D1830] p-4 rounded-xl border border-[#D9E4F2] dark:border-blue-500/20">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                <span className="font-bold text-xs text-slate-900">HackerRank Profile</span>
+                <div className="w-5 h-5 rounded-md bg-white border border-slate-200/90 dark:border-slate-700 overflow-hidden flex items-center justify-center shrink-0 p-0.5 shadow-2xs">
+                  <img src="/logos/hackerrank.jpg" alt="HackerRank" className="w-full h-full object-contain" />
+                </div>
+                <span className="font-bold text-xs text-[#0F172A] dark:text-white">HackerRank Profile</span>
               </div>
-              <span className="text-[10px] text-slate-400 font-mono">hackerrank.com/profile/[username]</span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">hackerrank.com/profile/[username]</span>
             </div>
             <Input
               name="hackerrankUrl"
@@ -143,18 +149,20 @@ const ProfileLinkForm = ({ onSaved }) => {
         {/* Statistics-Only Platforms Group */}
         <div className="space-y-3 pt-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Other Platforms</span>
-            <span className="text-[10px] text-slate-400 font-medium">Activity tracked for analytics</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-[#475569] dark:text-slate-300">Other Platforms</span>
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Activity tracked for analytics</span>
           </div>
 
           {/* Codeforces */}
-          <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-200/80">
+          <div className="bg-slate-50 dark:bg-[#0D1830] p-4 rounded-xl border border-[#D9E4F2] dark:border-blue-500/20">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
-                <span className="font-bold text-xs text-slate-900">Codeforces Profile</span>
+                <div className="w-5 h-5 rounded-md bg-white border border-slate-200/90 dark:border-slate-700 overflow-hidden flex items-center justify-center shrink-0 p-0.5 shadow-2xs">
+                  <img src="/logos/codeforces.jpg" alt="Codeforces" className="w-full h-full object-contain" />
+                </div>
+                <span className="font-bold text-xs text-[#0F172A] dark:text-white">Codeforces Profile</span>
               </div>
-              <span className="text-[10px] text-slate-400 font-mono">codeforces.com/profile/[handle]</span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">codeforces.com/profile/[handle]</span>
             </div>
             <Input
               name="codeforcesUrl"
@@ -166,13 +174,15 @@ const ProfileLinkForm = ({ onSaved }) => {
           </div>
 
           {/* CodeChef */}
-          <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-200/80">
+          <div className="bg-slate-50 dark:bg-[#0D1830] p-4 rounded-xl border border-[#D9E4F2] dark:border-blue-500/20">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-orange-700"></span>
-                <span className="font-bold text-xs text-slate-900">CodeChef Profile</span>
+                <div className="w-5 h-5 rounded-md bg-white border border-slate-200/90 dark:border-slate-700 overflow-hidden flex items-center justify-center shrink-0 p-0.5 shadow-2xs">
+                  <img src="/logos/codechef.jpg" alt="CodeChef" className="w-full h-full object-contain" />
+                </div>
+                <span className="font-bold text-xs text-[#0F172A] dark:text-white">CodeChef Profile</span>
               </div>
-              <span className="text-[10px] text-slate-400 font-mono">codechef.com/users/[handle]</span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">codechef.com/users/[handle]</span>
             </div>
             <Input
               name="codechefUrl"
@@ -184,9 +194,9 @@ const ProfileLinkForm = ({ onSaved }) => {
           </div>
         </div>
 
-        <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <span className="text-xs text-slate-500 flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-brand-600" />
+        <div className="pt-3 border-t border-[#D9E4F2] dark:border-blue-900/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <span className="text-xs text-[#64748B] dark:text-slate-400 flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-sky-400" />
             Backend automatically parses handles, fetches problem statistics, and recalculates college rank.
           </span>
 

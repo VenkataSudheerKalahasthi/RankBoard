@@ -1,6 +1,6 @@
 import React from 'react';
-import { SignIn } from '@clerk/clerk-react';
-import { Shield, Lock } from 'lucide-react';
+import { Lock } from 'lucide-react';
+import LoginForm from '../components/auth/LoginForm';
 
 export const Login = () => {
   return (
@@ -18,29 +18,11 @@ export const Login = () => {
         </p>
       </div>
 
-      {/* Clerk Sign In Component */}
-      <div className="w-full max-w-md bg-slate-900/90 border border-slate-800 p-2 rounded-2xl shadow-2xl backdrop-blur-md">
-        <SignIn
-          routing="hash"
-          appearance={{
-            elements: {
-              rootBox: 'w-full',
-              card: 'bg-transparent shadow-none p-4',
-              headerTitle: 'text-slate-100 font-bold text-lg',
-              headerSubtitle: 'text-slate-400 text-xs',
-              formButtonPrimary: 'bg-brand-600 hover:bg-brand-500 text-xs font-semibold py-2.5 rounded-lg shadow-sm',
-              formFieldInput: 'bg-slate-950 border-slate-800 text-slate-200 text-xs rounded-lg focus:border-brand-500',
-              formFieldLabel: 'text-slate-300 text-xs font-medium',
-              footerActionLink: 'text-brand-400 hover:text-brand-300 text-xs',
-              identityPreviewText: 'text-slate-300 text-xs',
-              identityPreviewEditButton: 'text-brand-400',
-              socialButtonsBlockButton: 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700 text-xs',
-              dividerLine: 'bg-slate-800',
-              dividerText: 'text-slate-500 text-xs',
-            },
-          }}
-        />
-      </div>
+      {/* Admin Login Component */}
+      <LoginForm
+        portal="admin"
+        destinationUrl="/dashboard"
+      />
 
       {/* Security Note */}
       <div className="mt-8 flex items-center gap-2 text-xs text-slate-500">

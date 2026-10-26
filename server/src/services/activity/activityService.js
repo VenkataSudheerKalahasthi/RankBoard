@@ -36,6 +36,9 @@ const {
 
 const PLATFORMS = ['leetcode', 'gfg', 'hackerrank', 'codeforces', 'codechef'];
 
+// In-memory cache of snapshots recorded today: Map<"studentId:platform:activityDate", Object>
+const recordedSnapshotsMemoryCache = new Map();
+
 /**
  * Persists a verified observation from the synchronization workflow into the snapshots store
  * 
@@ -61,6 +64,30 @@ async function recordPlatformSnapshot(studentId, platform, stats, options = {}) 
 
   const timestamp = stats.fetchedAt || new Date().toISOString();
   const activityDate = getKolkataDateString(timestamp) || getKolkataTodayString();
+  const memoryKey = `${studentId}:${platKey}:${activityDate}`;
+
+  // In-memory fast guard: if this student+platform snapshot was already recorded for today and no solve changes occurred, return immediately
+  if (!options.hasChanged && !options.force) {
+    if (recordedSnapshotsMemoryCache.has(memoryKey)) {
+      return recordedSnapshotsMemoryCache.get(memoryKey);
+    }
+
+    try {
+      const existingToday = await getActivitySnapshots({
+        studentId,
+        platform: platKey,
+        startDate: activityDate,
+        endDate: activityDate,
+        limit: 1,
+      });
+      if (existingToday && existingToday.length > 0) {
+        recordedSnapshotsMemoryCache.set(memoryKey, existingToday[0]);
+        return existingToday[0];
+      }
+    } catch (e) {
+      // Fall through to record snapshot
+    }
+  }
 
   // Extract difficulty breakdown
   let easySolved = 0;
@@ -113,7 +140,11 @@ async function recordPlatformSnapshot(studentId, platform, stats, options = {}) 
   };
 
   try {
-    return await insertActivitySnapshot(snapshotPayload);
+    const res = await insertActivitySnapshot(snapshotPayload);
+    if (res) {
+      recordedSnapshotsMemoryCache.set(memoryKey, res);
+    }
+    return res;
   } catch (err) {
     console.warn(`[Snapshot Record Warning] ${studentId} on ${platKey}:`, err.message);
     return null;

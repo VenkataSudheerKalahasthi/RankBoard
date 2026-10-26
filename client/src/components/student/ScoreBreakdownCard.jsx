@@ -1,7 +1,8 @@
 import React from 'react';
 import Card from '../common/Card';
 import RankBadge from '../common/RankBadge';
-import { Trophy, CheckCircle2, Layers, ExternalLink } from 'lucide-react';
+import AnimatedCounter from '../common/AnimatedCounter';
+import { Trophy, CheckCircle2, Layers, ExternalLink, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const ScoreBreakdownCard = ({ student }) => {
@@ -31,7 +32,7 @@ const ScoreBreakdownCard = ({ student }) => {
     {
       key: 'hackerrank',
       name: 'HackerRank',
-      dotColor: 'bg-emerald-400',
+      dotColor: 'bg-sky-400',
       isScoring: true,
       connected: !!platforms.hackerrank?.username,
       username: platforms.hackerrank?.username,
@@ -40,7 +41,7 @@ const ScoreBreakdownCard = ({ student }) => {
     {
       key: 'codeforces',
       name: 'Codeforces',
-      dotColor: 'bg-blue-500',
+      dotColor: 'bg-blue-400',
       isScoring: false,
       connected: !!platforms.codeforces?.username,
       username: platforms.codeforces?.username,
@@ -58,21 +59,22 @@ const ScoreBreakdownCard = ({ student }) => {
   ];
 
   return (
-    <Card className="bg-[#0b0f19] text-white border-slate-800 shadow-xl overflow-hidden relative">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
+    <Card hoverable className="bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white border border-blue-900/60 shadow-xl overflow-hidden relative rounded-2xl card-hover-interactive">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-blue-900/50 pb-5">
         <div>
-          <span className="text-[11px] font-bold uppercase tracking-wider text-brand-400 block">
-            Competitive Standing
+          <span className="text-[11px] font-extrabold uppercase tracking-wider text-sky-400 flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5" />
+            Competitive Standing Overview
           </span>
-          <h2 className="text-2xl font-black mt-0.5 text-white">
+          <h2 className="text-2xl font-black mt-1 text-white tracking-tight">
             {student?.name || 'Student Score Overview'}
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
-            Roll: <span className="font-mono text-slate-200 font-semibold">{student?.rollNumber || '—'}</span> • {student?.department || 'Department'} • Year {student?.year || 1}
+          <p className="text-xs text-slate-300 mt-1 font-medium">
+            Roll: <span className="font-mono text-white font-bold bg-white/10 px-2 py-0.5 rounded">{student?.rollNumber || '—'}</span> • {student?.department || 'Department'} • Year {student?.year || 1}
           </p>
         </div>
 
-        <div className="flex items-center gap-4 bg-[#070a12] px-4 py-3 rounded-xl border border-slate-800">
+        <div className="flex items-center gap-4 bg-slate-950/80 backdrop-blur-md px-5 py-3 rounded-2xl border border-blue-500/30 shadow-inner">
           <div className="text-right">
             <span className="text-[10px] uppercase font-bold text-slate-400 block">
               College Rank
@@ -82,14 +84,14 @@ const ScoreBreakdownCard = ({ student }) => {
             </div>
           </div>
 
-          <div className="h-10 w-[1px] bg-slate-700"></div>
+          <div className="h-10 w-[1px] bg-slate-700/60"></div>
 
           <div className="text-right">
             <span className="text-[10px] uppercase font-bold text-slate-400 block">
               Overall Score
             </span>
-            <span className="text-3xl font-black text-brand-400 font-mono">
-              {finalScore}
+            <span className="text-3xl font-black text-sky-400 font-mono">
+              <AnimatedCounter value={finalScore} />
             </span>
           </div>
         </div>
@@ -99,10 +101,10 @@ const ScoreBreakdownCard = ({ student }) => {
       <div className="mt-6 space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-            <Layers className="w-3.5 h-3.5 text-brand-400" />
+            <Layers className="w-3.5 h-3.5 text-sky-400" />
             Connected Coding Profiles
           </h3>
-          <Link to="/student/platforms" className="text-[11px] text-brand-400 hover:text-brand-300 font-semibold">
+          <Link to="/student/platforms" className="text-[11px] text-sky-400 hover:text-sky-300 font-bold">
             Manage Profiles &rarr;
           </Link>
         </div>
@@ -113,32 +115,34 @@ const ScoreBreakdownCard = ({ student }) => {
               key={p.key}
               className={`p-3.5 rounded-xl border transition-all ${
                 p.connected
-                  ? 'bg-[#0b0f19] border-slate-800'
-                  : 'bg-[#0b0f19]/70 border-slate-800/60 opacity-60'
+                  ? 'bg-slate-950/60 border-blue-900/80 shadow-xs'
+                  : 'bg-slate-950/30 border-slate-800/60 opacity-50'
               }`}
             >
               <div className="flex items-center justify-between text-xs mb-1">
-                <div className="flex items-center gap-1.5 font-bold text-slate-200">
-                  <span className={`w-2 h-2 rounded-full ${p.dotColor}`}></span>
+                <div className="flex items-center gap-2 font-bold text-slate-200">
+                  <div className="w-5 h-5 rounded-md bg-white border border-slate-700/80 overflow-hidden flex items-center justify-center shrink-0 p-0.5 shadow-2xs">
+                    <img src={`/logos/${p.key}.jpg`} alt={p.name} className="w-full h-full object-contain" />
+                  </div>
                   {p.name}
                 </div>
               </div>
 
               {p.connected ? (
                 <div className="space-y-1 mt-2">
-                  <div className="text-xs text-slate-400 font-mono flex items-center justify-between gap-1.5">
-                    <span className="truncate min-w-0">@{p.username}</span>
-                    <span className="text-[10px] text-emerald-400 font-semibold shrink-0">Active</span>
+                  <div className="text-xs text-slate-300 font-mono flex items-center justify-between gap-1.5">
+                    <span className="truncate min-w-0 font-bold">@{p.username}</span>
+                    <span className="text-[10px] text-emerald-400 font-extrabold shrink-0">Active</span>
                   </div>
                   {p.problemsSolved !== null && p.problemsSolved !== undefined && (
-                    <div className="text-sm font-bold font-mono text-white pt-1 border-t border-slate-700/50">
-                      {p.problemsSolved} <span className="text-[10px] font-normal text-slate-400">problems solved</span>
+                    <div className="text-sm font-extrabold font-mono text-white pt-1.5 border-t border-slate-800">
+                      <AnimatedCounter value={p.problemsSolved} /> <span className="text-[10px] font-normal text-slate-400">solved</span>
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="text-[11px] text-slate-500 py-1.5">
-                  {p.isScoring ? 'Connect to earn rank score' : 'Connect for profile stats'}
+                <div className="text-[11px] text-slate-400 py-1.5 font-medium">
+                  {p.isScoring ? 'Connect for score' : 'Connect for stats'}
                 </div>
               )}
             </div>
@@ -150,3 +154,4 @@ const ScoreBreakdownCard = ({ student }) => {
 };
 
 export default ScoreBreakdownCard;
+

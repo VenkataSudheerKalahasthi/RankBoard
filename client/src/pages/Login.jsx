@@ -1,6 +1,7 @@
 import React from 'react';
-import { SignIn } from '@clerk/clerk-react';
+import { Link } from 'react-router-dom';
 import { Code2 } from 'lucide-react';
+import LoginForm from '../components/auth/LoginForm';
 
 const Login = () => {
   return (
@@ -9,27 +10,25 @@ const Login = () => {
         <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-slate-900 text-brand-400 font-bold shadow-subtle mb-2">
           <Code2 className="w-5 h-5" />
         </div>
-        <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+        <h1 className="text-2xl font-black theme-text-primary tracking-tight">
           Student Portal Sign In
         </h1>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs theme-text-secondary">
           Sign in via Clerk to access your DSA Rankboard student dashboard
         </p>
       </div>
 
-      <div className="shadow-lg rounded-2xl overflow-hidden">
-        <SignIn
-          routing="path"
-          path="/login"
-          signUpUrl="/register"
-          afterSignInUrl="/student/dashboard"
-          appearance={{
-            elements: {
-              formButtonPrimary: 'bg-brand-600 hover:bg-brand-700 text-sm font-semibold',
-              card: 'border border-slate-200 shadow-none',
-            },
-          }}
-        />
+      <LoginForm
+        portal="student"
+        destinationUrl="/student/dashboard"
+        signUpUrl="/register"
+      />
+
+      <div className="mt-5 text-center text-xs text-slate-500 dark:text-slate-400">
+        <span>Need to register a new student account on this computer? </span>
+        <Link to="/register" className="text-blue-600 dark:text-sky-400 font-semibold hover:underline">
+          Register here
+        </Link>
       </div>
     </div>
   );

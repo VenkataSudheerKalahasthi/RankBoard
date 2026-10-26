@@ -1,6 +1,49 @@
+const crypto = require('crypto');
 const { config } = require('../config/env');
-const { getStudentByIdCached, getAllStudentsCached, invalidateStudentCache } = require('../utils/studentCache');
+const {
+  getStudentByIdCached,
+  getAllStudentsCached,
+  getActiveStudentsCount,
+  invalidateStudentCache,
+} = require('../utils/studentCache');
 const { getStudentById, getStudentByRollNumber, updateStudent } = require('../supabase/supabaseRepository');
+
+const getReceiptSecret = () => {
+  return config.CLERK_SECRET_KEY || config.SUPABASE_SERVICE_ROLE_KEY || 'college-dsa-rankboard-sec';
+};
+
+const createRegistrationReceipt = (studentId) => {
+  if (!studentId) return null;
+  const payload = {
+    sub: studentId,
+    iat: Date.now(),
+    exp: Date.now() + 180 * 24 * 60 * 60 * 1000, // 180 days validity
+  };
+  const data = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const sig = crypto.createHmac('sha256', getReceiptSecret()).update(data).digest('base64url');
+  return `${data}.${sig}`;
+};
+
+const verifyRegistrationReceipt = (receipt) => {
+  if (!receipt || typeof receipt !== 'string' || !receipt.includes('.')) return null;
+  const [data, sig] = receipt.split('.');
+  if (!data || !sig) return null;
+  const expectedSig = crypto.createHmac('sha256', getReceiptSecret()).update(data).digest('base64url');
+  if (sig !== expectedSig) return null;
+  try {
+    const payload = JSON.parse(Buffer.from(data, 'base64url').toString('utf8'));
+    if (!payload.sub || (payload.exp && Date.now() > payload.exp)) return null;
+    return payload;
+  } catch (e) {
+    return null;
+  }
+};
+
+const parseCookie = (cookieHeader, name) => {
+  if (!cookieHeader) return null;
+  const match = cookieHeader.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]*)'));
+  return match ? decodeURIComponent(match[1]) : null;
+};
 
 /**
  * Get current authenticated student profile with scores and platform stats
@@ -21,20 +64,29 @@ const getMe = async (req, res, next) => {
       });
     }
 
-    const allStudents = await getAllStudentsCached();
-    const totalStudents = allStudents.filter((s) => s.accountStatus === 'ACTIVE').length || 1;
+    const totalStudents = await getActiveStudentsCount();
 
     // Sanitize to remove internal scoring breakdown
     const { scores, ...sanitizedStudent } = student;
+    const effectiveId = student.id || student.clerkUserId;
+    const registrationReceipt = createRegistrationReceipt(effectiveId);
+
+    if (registrationReceipt) {
+      res.setHeader(
+        'Set-Cookie',
+        `rankboard_reg_receipt=${registrationReceipt}; Path=/; Max-Age=${180 * 24 * 60 * 60}; SameSite=Lax`
+      );
+    }
 
     return res.json({
       success: true,
       student: {
-        id: student.id || clerkUserId,
+        id: effectiveId,
         ...sanitizedStudent,
         overallScore: student.finalScore || 0,
         totalCollegeStudents: totalStudents,
       },
+      registrationReceipt,
     });
   } catch (error) {
     next(error);
@@ -54,6 +106,13 @@ const updateProfile = async (req, res, next) => {
       return res.status(404).json({
         success: false,
         message: 'Student profile not found.',
+      });
+    }
+
+    if (profilePhoto && (profilePhoto.startsWith('data:') || profilePhoto.length > 2048)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Base64 image strings cannot be saved directly. Please use the /api/showcase/profile-image upload service.',
       });
     }
 
@@ -126,8 +185,7 @@ const getStudentScore = async (req, res, next) => {
       });
     }
 
-    const allStudents = await getAllStudentsCached();
-    const totalStudents = allStudents.filter((s) => s.accountStatus === 'ACTIVE').length || 1;
+    const totalStudents = await getActiveStudentsCount();
 
     return res.json({
       success: true,
@@ -161,8 +219,7 @@ const getStudentRank = async (req, res, next) => {
       });
     }
 
-    const allStudents = await getAllStudentsCached();
-    const totalStudents = allStudents.filter((s) => s.accountStatus === 'ACTIVE').length || 1;
+    const totalStudents = await getActiveStudentsCount();
 
     return res.json({
       success: true,
@@ -181,9 +238,61 @@ const getStudentRank = async (req, res, next) => {
   }
 };
 
+/**
+ * Verify whether a visitor's registration receipt corresponds to a valid, active student
+ * Public endpoint: does NOT expose any sensitive student data or personal identifiers
+ */
+const verifyRegistration = async (req, res, next) => {
+  try {
+    const cookieReceipt = parseCookie(req.headers.cookie, 'rankboard_reg_receipt');
+    const receipt =
+      req.headers['x-registration-receipt'] ||
+      req.query?.receipt ||
+      req.body?.receipt ||
+      cookieReceipt;
+
+    if (!receipt) {
+      return res.json({ success: true, isRegistered: false });
+    }
+
+    const payload = verifyRegistrationReceipt(receipt);
+    if (!payload || !payload.sub) {
+      res.setHeader('Set-Cookie', 'rankboard_reg_receipt=; Path=/; Max-Age=0; SameSite=Lax');
+      return res.json({ success: true, isRegistered: false });
+    }
+
+    // Check database as the authoritative source of truth
+    let student = await getStudentByIdCached(payload.sub);
+    if (!student) {
+      student = await getStudentById(payload.sub);
+    }
+
+    if (!student || student.accountStatus !== 'ACTIVE') {
+      res.setHeader('Set-Cookie', 'rankboard_reg_receipt=; Path=/; Max-Age=0; SameSite=Lax');
+      return res.json({ success: true, isRegistered: false });
+    }
+
+    // Refresh cookie header so it stays active
+    res.setHeader(
+      'Set-Cookie',
+      `rankboard_reg_receipt=${receipt}; Path=/; Max-Age=${180 * 24 * 60 * 60}; SameSite=Lax`
+    );
+
+    // Only return the registration boolean status - no sensitive fields exposed!
+    return res.json({
+      success: true,
+      isRegistered: true,
+    });
+  } catch (error) {
+    // If status verification fails, handle safely without falsely claiming registration succeeded
+    return res.json({ success: true, isRegistered: false });
+  }
+};
+
 module.exports = {
   getMe,
   updateProfile,
   getStudentScore,
   getStudentRank,
+  verifyRegistration,
 };
