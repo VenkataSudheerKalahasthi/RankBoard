@@ -20,13 +20,24 @@ import {
   ExternalLink 
 } from 'lucide-react';
 
-export default function StudentRank() {
-  const { student, loading: studentLoading } = useStudent();
-  const [rankData, setRankData] = useState(null);
-  const [loading, setLoading] = useState(true);
+export default function StudentRank({ previewStudent = null }) {
+  const { student: contextStudent, loading: studentLoading } = useStudent();
+  const student = previewStudent || contextStudent;
+  const [rankData, setRankData] = useState(
+    previewStudent
+      ? {
+          rank: previewStudent.rank,
+          finalScore: previewStudent.finalScore,
+          totalStudents: 148,
+          collegeName: 'National Engineering College',
+        }
+      : null
+  );
+  const [loading, setLoading] = useState(!previewStudent);
   const [error, setError] = useState(null);
 
   const fetchRankInfo = async () => {
+    if (previewStudent) return;
     try {
       setLoading(true);
       setError(null);
@@ -46,17 +57,17 @@ export default function StudentRank() {
     fetchRankInfo();
   }, []);
 
-  if (studentLoading || loading) {
+  if ((studentLoading || loading) && !previewStudent) {
     return <LoadingState message="Calculating college standings and rank percentile..." />;
   }
 
-  if (error) {
+  if (error && !previewStudent) {
     return <ErrorState message={error} onRetry={fetchRankInfo} />;
   }
 
   const rank = rankData?.rank || student?.rank || null;
   const finalScore = rankData?.finalScore ?? student?.finalScore ?? 0;
-  const totalStudents = rankData?.totalStudents ?? 0;
+  const totalStudents = rankData?.totalStudents ?? (previewStudent ? 148 : 0);
   const collegeName = rankData?.collegeName || 'Your College';
 
   // Calculate dynamic percentile
@@ -89,7 +100,7 @@ export default function StudentRank() {
               Dynamic competitive programming rank calculated across all registered students in {collegeName}.
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
             <Link to="/leaderboard">
               <Button variant="secondary" icon={ExternalLink}>
                 View Full Leaderboard
@@ -106,11 +117,11 @@ export default function StudentRank() {
 
       {/* Main Hero Rank Showcase */}
       <ScrollReveal delay={60}>
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-900 via-slate-900 to-slate-950 dark:from-slate-900 dark:via-slate-900/90 dark:to-slate-950 border border-slate-700/50 dark:border-slate-800 p-8 sm:p-10 shadow-xl text-white card-hover-interactive">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-900 via-slate-900 to-slate-950 dark:from-slate-900 dark:via-slate-900/90 dark:to-slate-950 border border-slate-700/50 dark:border-slate-800 p-5 sm:p-8 lg:p-10 shadow-xl text-white card-hover-interactive">
           <div className="absolute top-0 right-0 -mt-8 -mr-8 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute bottom-0 left-0 -mb-8 -ml-8 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+          <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-center">
             {/* Rank Big Number */}
             <div className="md:col-span-2 space-y-4">
               {badge && (
@@ -124,11 +135,11 @@ export default function StudentRank() {
                 <div className="text-xs uppercase tracking-widest text-slate-300 font-semibold mb-1">
                   Your Current Official Rank
                 </div>
-                <div className="flex items-baseline gap-4">
-                  <span className="text-6xl sm:text-7xl font-extrabold tracking-tight text-white font-mono">
+                <div className="flex items-baseline gap-2 sm:gap-4 flex-wrap">
+                  <span className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white font-mono">
                     <AnimatedCounter value={rank ? `#${rank}` : 'Unranked'} />
                   </span>
-                  <span className="text-xl sm:text-2xl text-slate-300 font-medium">
+                  <span className="text-lg sm:text-2xl text-slate-300 font-medium">
                     / <AnimatedCounter value={totalStudents} /> {totalStudents === 1 ? 'Student' : 'Students'}
                   </span>
                 </div>

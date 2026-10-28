@@ -22,15 +22,15 @@ const Card = ({
       {...props}
     >
       {(title || subtitle || action) && (
-        <div className="px-6 py-4 border-b border-[#D9E4F2] dark:border-blue-900/30 flex items-center justify-between gap-4">
-          <div>
-            {title && <h3 className="text-base font-extrabold text-[#0F172A] dark:text-white">{title}</h3>}
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[#D9E4F2] dark:border-blue-900/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="min-w-0">
+            {title && <h3 className="text-base font-extrabold text-[#0F172A] dark:text-white truncate">{title}</h3>}
             {subtitle && <p className="text-xs text-[#475569] dark:text-slate-300 mt-0.5 font-medium">{subtitle}</p>}
           </div>
           {action && <div className="shrink-0">{action}</div>}
         </div>
       )}
-      <div className={`${noPadding ? 'h-full flex flex-col flex-1' : 'p-6'} ${bodyClassName}`}>{children}</div>
+      <div className={`${noPadding ? 'h-full flex flex-col flex-1' : 'p-4 sm:p-6'} ${bodyClassName}`}>{children}</div>
     </div>
   );
 };

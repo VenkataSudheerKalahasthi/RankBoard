@@ -312,13 +312,13 @@ export const AuditLogs = () => {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-between md:justify-end">
-          <div className="flex items-center gap-2">
-            <Sliders className="w-3.5 h-3.5 text-slate-400" />
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Sliders className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             <select
               value={actionFilter}
               onChange={(e) => setActionFilter(e.target.value)}
-              className="text-xs bg-slate-950 border border-slate-800 text-slate-200 rounded-lg px-3 py-2 focus:ring-1 focus:ring-brand-500 focus:border-brand-500"
+              className="w-full sm:w-auto text-xs bg-slate-950 border border-slate-800 text-slate-200 rounded-lg px-3 py-2 focus:ring-1 focus:ring-brand-500 focus:border-brand-500 truncate"
             >
               {ACTIONS.map((act) => (
                 <option key={act.value} value={act.value}>
@@ -328,7 +328,7 @@ export const AuditLogs = () => {
             </select>
           </div>
 
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-semibold text-emerald-400">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-semibold text-emerald-400 self-start sm:self-auto shrink-0">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
             <span>Realtime Sync Active</span>
           </div>

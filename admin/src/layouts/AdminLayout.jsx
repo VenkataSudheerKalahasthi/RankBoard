@@ -50,31 +50,72 @@ export const AdminLayout = () => {
     location.pathname === item.path || (item.path !== '/dashboard' && location.pathname.startsWith(item.path))
   );
 
+  // Close sidebar on Escape or on window resize >= 1024px
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && sidebarOpen) {
+        setSidebarOpen(false);
+      }
+    };
+    const handleResize = () => {
+      if (window.innerWidth >= 1024 && sidebarOpen) {
+        setSidebarOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [sidebarOpen]);
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col lg:flex-row">
       {/* Mobile Top Bar */}
-      <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center font-black text-sm text-white shadow-sm">
+      <div className="lg:hidden flex items-center justify-between px-3.5 sm:px-4 py-3 bg-slate-900 border-b border-slate-800 sticky top-0 z-40">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center font-black text-sm text-white shadow-sm shrink-0">
             DSA
           </div>
-          <div>
-            <span className="text-xs font-bold text-slate-100 tracking-wider">ADMIN CONSOLE</span>
-            <span className="block text-[10px] text-slate-400">Rankboard Management</span>
+          <div className="min-w-0">
+            <span className="text-xs font-bold text-slate-100 tracking-wider truncate block">
+              {currentNav?.name || 'ADMIN CONSOLE'}
+            </span>
+            <span className="block text-[10px] text-slate-400 truncate">
+              {admin?.collegeName || 'Rankboard Management'}
+            </span>
           </div>
         </div>
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-white"
-        >
-          {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <NavLink
+            to="/notifications"
+            aria-label="View notifications"
+            className="relative p-2 rounded-lg bg-slate-800/80 text-slate-300 hover:text-white transition-colors"
+          >
+            <Bell className="w-4 h-4" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-[9px] font-extrabold flex items-center justify-center text-white">
+                {unreadCount}
+              </span>
+            )}
+          </NavLink>
+
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            aria-label={sidebarOpen ? 'Close admin navigation' : 'Open admin navigation'}
+            className="p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+          >
+            {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
       </div>
 
       {/* Sidebar Overlay on mobile */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-slate-950/80 z-40 lg:hidden"
+          className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -82,15 +123,15 @@ export const AdminLayout = () => {
       {/* Sidebar */}
       <aside
         className={clsx(
-          'fixed inset-y-0 left-0 z-50 w-64 bg-slate-900/95 border-r border-slate-800 flex flex-col justify-between transition-transform duration-200 ease-in-out lg:static lg:translate-x-0',
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          'fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 h-full max-h-screen',
+          sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
         )}
       >
-        {/* Brand Header */}
-        <div>
-          <div className="p-5 border-b border-slate-800/80 flex items-center justify-between">
+        {/* Brand Header & Scrollable Nav */}
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="p-4 sm:p-5 border-b border-slate-800/80 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center font-extrabold text-sm text-white shadow-md shadow-brand-900/40">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center font-extrabold text-sm text-white shadow-md shadow-brand-900/40 shrink-0">
                 DSA
               </div>
               <div>
@@ -105,10 +146,18 @@ export const AdminLayout = () => {
                 </div>
               </div>
             </div>
+
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+              aria-label="Close sidebar"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
 
-          {/* Navigation Links */}
-          <nav className="p-3 space-y-1">
+          {/* Navigation Links - Scrollable container */}
+          <nav className="p-3 space-y-1 overflow-y-auto flex-1 overscroll-contain">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               const isActive =
@@ -121,7 +170,7 @@ export const AdminLayout = () => {
                   to={item.path}
                   onClick={() => setSidebarOpen(false)}
                   className={clsx(
-                    'flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all group',
+                    'flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all group min-h-[38px]',
                     isActive
                       ? 'bg-brand-600/15 text-brand-400 border border-brand-500/30 font-semibold'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
@@ -130,7 +179,7 @@ export const AdminLayout = () => {
                   <div className="flex items-center gap-2.5">
                     <Icon
                       className={clsx(
-                        'w-4 h-4 transition-colors',
+                        'w-4 h-4 transition-colors shrink-0',
                         isActive ? 'text-brand-400' : 'text-slate-400 group-hover:text-slate-200'
                       )}
                     />

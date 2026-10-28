@@ -61,21 +61,26 @@ const ScoreBreakdownCard = ({ student }) => {
   return (
     <Card hoverable className="bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white border border-blue-900/60 shadow-xl overflow-hidden relative rounded-2xl card-hover-interactive">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-blue-900/50 pb-5">
-        <div>
+        <div className="min-w-0">
           <span className="text-[11px] font-extrabold uppercase tracking-wider text-sky-400 flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5" />
             Competitive Standing Overview
           </span>
-          <h2 className="text-2xl font-black mt-1 text-white tracking-tight">
+          <h2 className="text-xl sm:text-2xl font-black mt-1 text-white tracking-tight break-words">
             {student?.name || 'Student Score Overview'}
           </h2>
-          <p className="text-xs text-slate-300 mt-1 font-medium">
-            Roll: <span className="font-mono text-white font-bold bg-white/10 px-2 py-0.5 rounded">{student?.rollNumber || '—'}</span> • {student?.department || 'Department'} • Year {student?.year || 1}
-          </p>
+          <div className="text-xs text-slate-300 mt-1 font-medium flex flex-wrap items-center gap-1.5">
+            <span>Roll:</span>
+            <span className="font-mono text-white font-bold bg-white/10 px-2 py-0.5 rounded">{student?.rollNumber || '—'}</span>
+            <span>•</span>
+            <span className="truncate max-w-[200px]" title={student?.department}>{student?.department || 'Department'}</span>
+            <span>•</span>
+            <span>Year {student?.year || 1}</span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-4 bg-slate-950/80 backdrop-blur-md px-5 py-3 rounded-2xl border border-blue-500/30 shadow-inner">
-          <div className="text-right">
+        <div className="flex items-center justify-between sm:justify-end gap-4 bg-slate-950/80 backdrop-blur-md px-4 sm:px-5 py-3 rounded-2xl border border-blue-500/30 shadow-inner w-full sm:w-auto shrink-0">
+          <div className="text-left sm:text-right">
             <span className="text-[10px] uppercase font-bold text-slate-400 block">
               College Rank
             </span>
@@ -90,7 +95,7 @@ const ScoreBreakdownCard = ({ student }) => {
             <span className="text-[10px] uppercase font-bold text-slate-400 block">
               Overall Score
             </span>
-            <span className="text-3xl font-black text-sky-400 font-mono">
+            <span className="text-2xl sm:text-3xl font-black text-sky-400 font-mono">
               <AnimatedCounter value={finalScore} />
             </span>
           </div>

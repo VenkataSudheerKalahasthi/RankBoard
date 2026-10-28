@@ -539,12 +539,12 @@ export const Dashboard = () => {
             title="Department Distribution"
             subtitle="Ranked student distribution across branches & academic years"
             action={
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                 {/* Branch Dropdown */}
                 <select
                   value={selectedBranch}
                   onChange={(e) => setSelectedBranch(e.target.value)}
-                  className="text-xs bg-slate-950 border border-slate-800 text-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-brand-500 cursor-pointer"
+                  className="w-full sm:w-auto text-xs bg-slate-950 border border-slate-800 text-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-brand-500 cursor-pointer"
                 >
                   {BRANCH_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value} className="bg-slate-900 text-slate-300">
@@ -557,7 +557,7 @@ export const Dashboard = () => {
                 <select
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(e.target.value)}
-                  className="text-xs bg-slate-950 border border-slate-800 text-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-brand-500 cursor-pointer"
+                  className="w-full sm:w-auto text-xs bg-slate-950 border border-slate-800 text-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-brand-500 cursor-pointer"
                 >
                   {YEAR_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value} className="bg-slate-900 text-slate-300">

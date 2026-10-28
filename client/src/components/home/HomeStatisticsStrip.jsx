@@ -20,25 +20,25 @@ const StatItem = ({
   tooltip,
 }) => {
   return (
-    <div className="flex items-center gap-3.5 sm:px-4 pt-3 sm:pt-0" title={tooltip || ''}>
+    <div className="flex items-center gap-2.5 sm:gap-3.5 p-2 sm:px-4 sm:py-0 min-w-0" title={tooltip || ''}>
       <div
-        className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full ${iconBgClass} flex items-center justify-center shrink-0 border`}
+        className={`w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full ${iconBgClass} flex items-center justify-center shrink-0 border`}
       >
-        <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
+        <Icon className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
       </div>
       <div className="min-w-0 flex-1">
         {loading ? (
-          <div className="h-7 sm:h-8 w-16 sm:w-20 bg-slate-200/80 dark:bg-slate-700/60 rounded-md animate-pulse my-0.5" />
+          <div className="h-6 sm:h-8 w-14 sm:w-20 bg-slate-200/80 dark:bg-slate-700/60 rounded-md animate-pulse my-0.5" />
         ) : customContent ? (
           customContent
         ) : error && (value === null || value === undefined) ? (
           <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
-            <span className="text-xl sm:text-2xl font-black tracking-tight">—</span>
+            <span className="text-lg sm:text-2xl font-black tracking-tight">—</span>
             <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" title={error} />
           </div>
         ) : (
-          <div className="flex items-center gap-1.5">
-            <span className="text-xl sm:text-2xl font-black text-black dark:text-white tracking-tight">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="text-base sm:text-xl lg:text-2xl font-black text-black dark:text-white tracking-tight truncate">
               {formattedValue ?? '0'}
             </span>
             {isStale && (
@@ -49,7 +49,7 @@ const StatItem = ({
             )}
           </div>
         )}
-        <div className="text-xs sm:text-sm text-slate-800 dark:text-slate-300 font-bold sm:font-semibold truncate">
+        <div className="text-[11px] sm:text-xs md:text-sm text-slate-800 dark:text-slate-300 font-bold sm:font-semibold truncate">
           {label}
         </div>
       </div>
@@ -89,18 +89,18 @@ export const HomeStatisticsStrip = ({
   const renderLiveStatusContent = () => {
     if (isInitialLoading) {
       return (
-        <div className="h-7 sm:h-8 w-16 sm:w-20 bg-slate-200/80 dark:bg-slate-700/60 rounded-md animate-pulse my-0.5" />
+        <div className="h-6 sm:h-8 w-14 sm:w-20 bg-slate-200/80 dark:bg-slate-700/60 rounded-md animate-pulse my-0.5" />
       );
     }
 
     if (isLive) {
       return (
-        <div className="flex items-center gap-2">
-          <span className="relative flex h-2.5 w-2.5">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <span className="relative flex h-2 sm:h-2.5 w-2 sm:w-2.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            <span className="relative inline-flex rounded-full h-2 sm:h-2.5 w-2 sm:w-2.5 bg-emerald-500"></span>
           </span>
-          <span className="text-xl sm:text-2xl font-black text-black dark:text-white tracking-tight">
+          <span className="text-base sm:text-xl lg:text-2xl font-black text-black dark:text-white tracking-tight">
             Live
           </span>
         </div>
@@ -109,9 +109,9 @@ export const HomeStatisticsStrip = ({
 
     if (realtimeStatus === 'CONNECTING') {
       return (
-        <div className="flex items-center gap-2">
-          <span className="inline-flex rounded-full h-2.5 w-2.5 bg-amber-400 animate-pulse"></span>
-          <span className="text-xl sm:text-2xl font-black text-slate-700 dark:text-slate-300 tracking-tight">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <span className="inline-flex rounded-full h-2 sm:h-2.5 w-2 sm:w-2.5 bg-amber-400 animate-pulse"></span>
+          <span className="text-base sm:text-xl lg:text-2xl font-black text-slate-700 dark:text-slate-300 tracking-tight">
             Syncing
           </span>
         </div>
@@ -119,9 +119,9 @@ export const HomeStatisticsStrip = ({
     }
 
     return (
-      <div className="flex items-center gap-2">
-        <span className="inline-flex rounded-full h-2.5 w-2.5 bg-slate-400"></span>
-        <span className="text-xl sm:text-2xl font-black text-slate-600 dark:text-slate-400 tracking-tight">
+      <div className="flex items-center gap-1.5 sm:gap-2">
+        <span className="inline-flex rounded-full h-2 sm:h-2.5 w-2 sm:w-2.5 bg-slate-400"></span>
+        <span className="text-base sm:text-xl lg:text-2xl font-black text-slate-600 dark:text-slate-400 tracking-tight">
           Offline
         </span>
       </div>
@@ -140,7 +140,7 @@ export const HomeStatisticsStrip = ({
 
   return (
     <div className="relative">
-      <div className="mt-12 sm:mt-14 w-full p-4 sm:p-5 lg:p-6 rounded-2xl sm:rounded-3xl bg-white/45 dark:bg-[#071329]/45 border border-white/60 dark:border-white/10 backdrop-blur-2xl backdrop-saturate-150 shadow-[0_8px_32px_0_rgba(0,0,0,0.08),inset_0_1px_0_0_rgba(255,255,255,0.7)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.08)] grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 divide-y sm:divide-y-0 sm:divide-x divide-slate-200/50 dark:divide-white/10">
+      <div className="mt-8 sm:mt-12 lg:mt-14 w-full p-2.5 sm:p-5 lg:p-6 rounded-2xl sm:rounded-3xl bg-white/45 dark:bg-[#071329]/45 border border-white/60 dark:border-white/10 backdrop-blur-2xl backdrop-saturate-150 shadow-[0_8px_32px_0_rgba(0,0,0,0.08),inset_0_1px_0_0_rgba(255,255,255,0.7)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.08)] grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 lg:gap-6 divide-y-0 lg:divide-x divide-slate-200/50 dark:divide-white/10">
         {/* Stat 1: Students */}
         <StatItem
           icon={Users}

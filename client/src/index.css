@@ -54,15 +54,36 @@
     overflow-x: clip;
     width: 100%;
     min-height: 100vh;
+    min-height: 100dvh;
     min-width: 320px;
     margin: 0;
     padding: 0;
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply tracking-tight;
     color: var(--text-main);
+    overflow-wrap: break-word;
   }
+}
+
+/* Fluid Typography and Responsive Utilities */
+.hero-fluid-heading {
+  font-size: clamp(2.25rem, 5.5vw + 1rem, 4.5rem);
+  line-height: 1.08;
+}
+
+.text-break-anywhere {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.table-responsive-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Theme helper classes */

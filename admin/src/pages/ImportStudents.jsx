@@ -401,7 +401,7 @@ export const ImportStudents = () => {
       </div>
 
       {/* Mode Selector Tabs */}
-      <div className="flex border-b border-slate-800 gap-2 sm:gap-6">
+      <div className="flex border-b border-slate-800 gap-3 sm:gap-6 overflow-x-auto no-scrollbar whitespace-nowrap">
         <button
           type="button"
           onClick={() => setActiveMode('FULL_IMPORT')}

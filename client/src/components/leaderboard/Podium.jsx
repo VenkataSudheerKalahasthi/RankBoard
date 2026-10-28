@@ -27,7 +27,7 @@ export const PodiumSkeleton = () => {
         </div>
 
         {/* Gold Champion Rank 1 Skeleton */}
-        <div className="order-1 md:order-2 flex flex-col items-center -mt-6">
+        <div className="order-1 md:order-2 flex flex-col items-center mt-0 md:-mt-6">
           <div className="w-20 h-20 rounded-2xl bg-amber-100 dark:bg-amber-900/30 mb-3 border-4 border-amber-300 dark:border-amber-600/50"></div>
           <div className="w-full h-52 bg-white dark:bg-[#111E3D] rounded-2xl p-6 border-2 border-amber-300 dark:border-amber-500/40 shadow-lg flex flex-col items-center justify-between">
             <div className="h-6 w-28 bg-amber-100 dark:bg-amber-900/40 rounded-full"></div>
@@ -129,7 +129,7 @@ const Podium = ({ topStudents = [], loading = false }) => {
 
         {/* Rank 1 (Gold / Champion) */}
         {first ? (
-          <div className="order-1 md:order-2 flex flex-col items-center -mt-6 group">
+          <div className="order-1 md:order-2 flex flex-col items-center mt-0 md:-mt-6 group">
             <div className="relative mb-3 flex flex-col items-center">
               <div className="absolute -top-4 right-0 bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 p-2.5 rounded-full shadow-lg border border-amber-300 z-10 animate-bounce">
                 <Trophy className="w-5 h-5 text-amber-950" />

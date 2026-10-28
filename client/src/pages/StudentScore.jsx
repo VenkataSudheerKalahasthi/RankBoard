@@ -7,8 +7,9 @@ import { useStudent } from '../context/StudentContext';
 import { Award, CheckCircle2, ShieldCheck, Sparkles, Trophy } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const StudentScore = () => {
-  const { student } = useStudent();
+const StudentScore = ({ previewStudent = null }) => {
+  const { student: contextStudent } = useStudent();
+  const student = previewStudent || contextStudent;
   const stats = student?.platformStats || {};
   const platforms = student?.platforms || {};
   const overallScore = student?.overallScore ?? student?.finalScore ?? 0;

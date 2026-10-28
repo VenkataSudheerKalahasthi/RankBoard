@@ -350,7 +350,7 @@ const Home = () => {
 
             {/* 2. Main Heading: College DSA / Rankboard */}
             <ScrollReveal delay={70} distance={16}>
-              <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.08] text-black dark:text-white">
+              <h1 className="hero-fluid-heading font-black tracking-tight leading-[1.08] text-black dark:text-white">
                 College DSA <br />
                 <span className="bg-gradient-to-r from-[#1D4ED8] via-[#2563EB] to-[#1E40AF] dark:from-[#3B82F6] dark:via-[#6366F1] dark:to-[#8B5CF6] bg-clip-text text-transparent">
                   Rankboard
@@ -367,7 +367,7 @@ const Home = () => {
 
             {/* 4. Action Buttons (Side by Side matching Image 3 & 4) */}
             <ScrollReveal delay={190} distance={16}>
-              <div className="mt-7 flex flex-wrap items-center gap-4">
+              <div className="mt-7 flex flex-wrap items-center gap-3 sm:gap-4">
                 <SignedOut>
                   {isRegistrationChecking ? (
                     <div className="flex items-center gap-3">
@@ -435,7 +435,7 @@ const Home = () => {
                 <span className="text-[11px] font-black uppercase tracking-widest text-slate-900 dark:text-slate-400 block mb-3.5">
                   Integrated Platforms
                 </span>
-                <div className="flex items-center gap-5 sm:gap-6">
+                <div className="flex items-center flex-wrap gap-4 sm:gap-6">
                   {PLATFORMS.map((platform) => (
                     <div
                       key={platform.name}
@@ -491,11 +491,11 @@ const Home = () => {
             </div>
 
             {/* Filter and Search */}
-            <form onSubmit={handleSearchSubmit} className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+            <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full md:w-auto">
               <select
                 value={department}
                 onChange={(e) => setDepartment(e.target.value)}
-                className="text-xs bg-slate-50 dark:bg-[#0D1830] border border-slate-200 dark:border-blue-500/30 text-slate-800 dark:text-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
+                className="w-full sm:w-auto text-xs bg-slate-50 dark:bg-[#0D1830] border border-slate-200 dark:border-blue-500/30 text-slate-800 dark:text-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
               >
                 <option value="ALL">All Departments</option>
                 {DEPARTMENTS.filter((d) => d !== 'ALL').map((dept) => (
@@ -506,7 +506,7 @@ const Home = () => {
               <select
                 value={year}
                 onChange={(e) => setYear(e.target.value)}
-                className="text-xs bg-slate-50 dark:bg-[#0D1830] border border-slate-200 dark:border-blue-500/30 text-slate-800 dark:text-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
+                className="w-full sm:w-auto text-xs bg-slate-50 dark:bg-[#0D1830] border border-slate-200 dark:border-blue-500/30 text-slate-800 dark:text-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
               >
                 <option value="ALL">All Years</option>
                 <option value="1">Year 1</option>
@@ -515,7 +515,7 @@ const Home = () => {
                 <option value="4">Year 4</option>
               </select>
 
-              <div className="relative flex-1 md:w-60">
+              <div className="relative w-full sm:w-auto sm:flex-1 md:w-60">
                 <input
                   type="text"
                   placeholder="Search name or roll..."

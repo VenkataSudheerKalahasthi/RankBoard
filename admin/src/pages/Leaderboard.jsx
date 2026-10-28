@@ -318,7 +318,7 @@ export const Leaderboard = () => {
           <select
             value={department}
             onChange={(e) => setDepartment(e.target.value)}
-            className="text-xs bg-slate-950 border border-slate-800 text-slate-300 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-brand-500 max-w-[170px] truncate"
+            className="w-full sm:w-auto text-xs bg-slate-950 border border-slate-800 text-slate-300 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-brand-500 sm:max-w-[170px] truncate"
           >
             <option value="ALL">All Departments</option>
             {DEPARTMENTS.filter((d) => d !== 'ALL').map((d) => (
@@ -329,7 +329,7 @@ export const Leaderboard = () => {
           <select
             value={year}
             onChange={(e) => setYear(e.target.value)}
-            className="text-xs bg-slate-950 border border-slate-800 text-slate-300 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="w-full sm:w-auto text-xs bg-slate-950 border border-slate-800 text-slate-300 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-brand-500"
           >
             <option value="ALL">All Years</option>
             <option value="1">Year 1</option>
@@ -339,7 +339,7 @@ export const Leaderboard = () => {
           </select>
 
           {/* Top N input control */}
-          <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-300">
+          <div className="flex items-center justify-between sm:justify-start gap-1.5 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-300 w-full sm:w-auto">
             <span className="text-slate-400 font-medium text-[11px] whitespace-nowrap">Top N:</span>
             <input
               type="number"
@@ -357,7 +357,7 @@ export const Leaderboard = () => {
             size="sm"
             onClick={handleExportExcel}
             icon={Download}
-            className="whitespace-nowrap"
+            className="w-full sm:w-auto whitespace-nowrap"
           >
             Export Excel
           </Button>

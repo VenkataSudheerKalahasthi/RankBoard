@@ -515,7 +515,7 @@ export const Settings = () => {
           </div>
 
           {/* Save Button Bar */}
-          <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-slate-800">
             <div className="text-[11px] text-slate-500">
               {settingsData?.updatedAt && (
                 <span>Last saved: {new Date(settingsData.updatedAt).toLocaleString()}</span>

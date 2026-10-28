@@ -37,6 +37,25 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && mobileOpen) {
+        setMobileOpen(false);
+      }
+    };
+    const handleResize = () => {
+      if (window.innerWidth >= 768 && mobileOpen) {
+        setMobileOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [mobileOpen]);
+
   const isActive = (path, previewPath) => {
     const currentPath =
       location.pathname.length > 1 && location.pathname.endsWith('/')
@@ -178,18 +197,18 @@ const Navbar = () => {
         isScrolled ? 'student-navbar-scrolled' : 'student-navbar-top'
       }`}
     >
-      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10">
-        <div className="flex items-center justify-between h-16">
+      <div className="w-full px-3 sm:px-6 lg:px-8 xl:px-10">
+        <div className="flex items-center justify-between h-16 gap-2">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-extrabold shadow-md shadow-blue-500/20 group-hover:scale-105 transition-all duration-300">
-              <Code2 className="w-5 h-5 stroke-[2.5]" />
+          <Link to="/" className="flex items-center gap-2.5 sm:gap-3 group shrink-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-extrabold shadow-md shadow-blue-500/20 group-hover:scale-105 transition-all duration-300">
+              <Code2 className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
             </div>
             <div>
-              <span className="font-black text-base text-black dark:text-white leading-tight tracking-tight block">
+              <span className="font-black text-sm sm:text-base text-black dark:text-white leading-tight tracking-tight block">
                 COLLEGE DSA
               </span>
-              <span className="text-[10px] font-black text-blue-700 dark:text-sky-400 uppercase tracking-widest block -mt-0.5">
+              <span className="text-[9px] sm:text-[10px] font-black text-blue-700 dark:text-sky-400 uppercase tracking-widest block -mt-0.5">
                 RANKBOARD
               </span>
             </div>
@@ -197,7 +216,7 @@ const Navbar = () => {
 
           {/* Desktop Navigation - Clean, unboxed surface layout */}
           <nav
-            className="hidden md:flex items-center gap-6 lg:gap-8"
+            className="hidden md:flex items-center gap-4 lg:gap-6 xl:gap-8 shrink-0"
             aria-label="Student portal navigation"
           >
             {publicNavLinks.map(renderNavLink)}
@@ -319,7 +338,7 @@ const Navbar = () => {
 
       {/* Mobile Drawer */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-slate-200/80 dark:border-blue-900/40 bg-white/80 dark:bg-[#081225]/80 backdrop-blur-2xl px-4 pt-3 pb-6 space-y-2 text-sm shadow-2xl transition-all">
+        <div className="md:hidden border-t border-slate-200/80 dark:border-blue-900/40 bg-white/90 dark:bg-[#081225]/95 backdrop-blur-2xl px-4 pt-3 pb-6 space-y-2 text-sm shadow-2xl transition-all max-h-[calc(100dvh-4rem)] overflow-y-auto">
           <div className="flex flex-col gap-1 py-1">
             {publicNavLinks.map(renderMobileLink)}
 

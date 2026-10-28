@@ -186,6 +186,30 @@ export default function App() {
           </div>
         }
       />
+      <Route
+        path="/student/score-preview"
+        element={
+          <div className="min-h-screen flex flex-col bg-[#F8FAFC] dark:bg-[#071226] text-[#0F172A] dark:text-white transition-colors duration-300">
+            <Navbar />
+            <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-8">
+              <StudentScore previewStudent={SAMPLE_STUDENT_PREVIEW} />
+            </main>
+            <Footer />
+          </div>
+        }
+      />
+      <Route
+        path="/student/rank-preview"
+        element={
+          <div className="min-h-screen flex flex-col bg-[#F8FAFC] dark:bg-[#071226] text-[#0F172A] dark:text-white transition-colors duration-300">
+            <Navbar />
+            <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 xl:px-10 py-8">
+              <StudentRank previewStudent={SAMPLE_STUDENT_PREVIEW} />
+            </main>
+            <Footer />
+          </div>
+        }
+      />
 
       {/* Protected Student Portal Routes */}
       <Route

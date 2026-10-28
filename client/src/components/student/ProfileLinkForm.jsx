@@ -87,14 +87,14 @@ const ProfileLinkForm = ({ onSaved }) => {
 
           {/* LeetCode */}
           <div className="bg-slate-50 dark:bg-[#0D1830] p-4 rounded-xl border border-[#D9E4F2] dark:border-blue-500/20">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2">
               <div className="flex items-center gap-2">
                 <div className="w-5 h-5 rounded-md bg-white border border-slate-200/90 dark:border-slate-700 overflow-hidden flex items-center justify-center shrink-0 p-0.5 shadow-2xs">
                   <img src="/logos/leetcode.jpg" alt="LeetCode" className="w-full h-full object-contain" />
                 </div>
                 <span className="font-bold text-xs text-[#0F172A] dark:text-white">LeetCode Profile</span>
               </div>
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">leetcode.com/u/[username]</span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono truncate max-w-full">leetcode.com/u/[username]</span>
             </div>
             <Input
               name="leetcodeUrl"
@@ -107,14 +107,14 @@ const ProfileLinkForm = ({ onSaved }) => {
 
           {/* GeeksforGeeks */}
           <div className="bg-slate-50 dark:bg-[#0D1830] p-4 rounded-xl border border-[#D9E4F2] dark:border-blue-500/20">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2">
               <div className="flex items-center gap-2">
                 <div className="w-5 h-5 rounded-md bg-white border border-slate-200/90 dark:border-slate-700 overflow-hidden flex items-center justify-center shrink-0 p-0.5 shadow-2xs">
                   <img src="/logos/gfg.jpg" alt="GeeksforGeeks" className="w-full h-full object-contain" />
                 </div>
                 <span className="font-bold text-xs text-[#0F172A] dark:text-white">GeeksforGeeks Profile</span>
               </div>
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">geeksforgeeks.org/user/[username]/</span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono truncate max-w-full">geeksforgeeks.org/user/[username]/</span>
             </div>
             <Input
               name="gfgUrl"
@@ -127,14 +127,14 @@ const ProfileLinkForm = ({ onSaved }) => {
 
           {/* HackerRank */}
           <div className="bg-slate-50 dark:bg-[#0D1830] p-4 rounded-xl border border-[#D9E4F2] dark:border-blue-500/20">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2">
               <div className="flex items-center gap-2">
                 <div className="w-5 h-5 rounded-md bg-white border border-slate-200/90 dark:border-slate-700 overflow-hidden flex items-center justify-center shrink-0 p-0.5 shadow-2xs">
                   <img src="/logos/hackerrank.jpg" alt="HackerRank" className="w-full h-full object-contain" />
                 </div>
                 <span className="font-bold text-xs text-[#0F172A] dark:text-white">HackerRank Profile</span>
               </div>
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">hackerrank.com/profile/[username]</span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono truncate max-w-full">hackerrank.com/profile/[username]</span>
             </div>
             <Input
               name="hackerrankUrl"
@@ -148,21 +148,21 @@ const ProfileLinkForm = ({ onSaved }) => {
 
         {/* Statistics-Only Platforms Group */}
         <div className="space-y-3 pt-2">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
             <span className="text-xs font-bold uppercase tracking-wider text-[#475569] dark:text-slate-300">Other Platforms</span>
             <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Activity tracked for analytics</span>
           </div>
 
           {/* Codeforces */}
           <div className="bg-slate-50 dark:bg-[#0D1830] p-4 rounded-xl border border-[#D9E4F2] dark:border-blue-500/20">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2">
               <div className="flex items-center gap-2">
                 <div className="w-5 h-5 rounded-md bg-white border border-slate-200/90 dark:border-slate-700 overflow-hidden flex items-center justify-center shrink-0 p-0.5 shadow-2xs">
                   <img src="/logos/codeforces.jpg" alt="Codeforces" className="w-full h-full object-contain" />
                 </div>
                 <span className="font-bold text-xs text-[#0F172A] dark:text-white">Codeforces Profile</span>
               </div>
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">codeforces.com/profile/[handle]</span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono truncate max-w-full">codeforces.com/profile/[handle]</span>
             </div>
             <Input
               name="codeforcesUrl"
@@ -175,14 +175,14 @@ const ProfileLinkForm = ({ onSaved }) => {
 
           {/* CodeChef */}
           <div className="bg-slate-50 dark:bg-[#0D1830] p-4 rounded-xl border border-[#D9E4F2] dark:border-blue-500/20">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2">
               <div className="flex items-center gap-2">
                 <div className="w-5 h-5 rounded-md bg-white border border-slate-200/90 dark:border-slate-700 overflow-hidden flex items-center justify-center shrink-0 p-0.5 shadow-2xs">
                   <img src="/logos/codechef.jpg" alt="CodeChef" className="w-full h-full object-contain" />
                 </div>
                 <span className="font-bold text-xs text-[#0F172A] dark:text-white">CodeChef Profile</span>
               </div>
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">codechef.com/users/[handle]</span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono truncate max-w-full">codechef.com/users/[handle]</span>
             </div>
             <Input
               name="codechefUrl"

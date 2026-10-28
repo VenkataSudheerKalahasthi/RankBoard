@@ -117,11 +117,11 @@ export const Notifications = () => {
             {notifications.map((n) => (
               <div
                 key={n.id}
-                className={`p-4 flex items-start justify-between gap-4 transition-colors ${
+                className={`p-4 flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4 transition-colors ${
                   !n.read ? 'bg-slate-900/90' : 'hover:bg-slate-800/30'
                 }`}
               >
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-3 min-w-0">
                   <div
                     className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 ${
                       n.severity === 'ERROR'
@@ -140,8 +140,8 @@ export const Notifications = () => {
                     )}
                   </div>
 
-                  <div>
-                    <div className="flex items-center gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs font-bold text-slate-100">{n.title}</span>
                       {!n.read && <span className="w-2 h-2 rounded-full bg-brand-500"></span>}
                       <Badge variant={n.severity === 'ERROR' ? 'danger' : n.severity === 'WARNING' ? 'warning' : 'primary'}>
@@ -149,7 +149,7 @@ export const Notifications = () => {
                       </Badge>
                     </div>
 
-                    <p className="text-xs text-slate-300 mt-1">{n.message}</p>
+                    <p className="text-xs text-slate-300 mt-1 break-words">{n.message}</p>
 
                     <div className="text-[11px] text-slate-500 font-mono mt-1.5">
                       {new Date(n.createdAt).toLocaleString()}
@@ -162,7 +162,7 @@ export const Notifications = () => {
                     variant="ghost"
                     size="xs"
                     onClick={() => handleMarkRead(n.id)}
-                    className="text-slate-400 hover:text-slate-200"
+                    className="text-slate-400 hover:text-slate-200 self-end sm:self-start shrink-0"
                   >
                     Mark as Read
                   </Button>

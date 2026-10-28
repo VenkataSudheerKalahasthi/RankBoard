@@ -227,23 +227,23 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-10rem)] flex flex-col items-center justify-center px-4 py-12">
+    <div className="min-h-[calc(100vh-10rem)] flex flex-col items-center justify-center px-4 py-8 sm:py-12">
       {/* Brand Header */}
       <div className="text-center mb-6 space-y-1">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-semibold uppercase tracking-wider mb-2">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-400/20 text-blue-700 dark:text-sky-300 text-xs font-semibold uppercase tracking-wider mb-2">
           <Sparkles className="w-3.5 h-3.5" />
           Join College DSA Rankboard
         </div>
-        <h1 className="text-2xl font-black theme-text-primary tracking-tight">
+        <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
           Student Registration
         </h1>
-        <p className="text-xs theme-text-secondary">
+        <p className="text-xs text-slate-600 dark:text-slate-400">
           Create your student account to submit coding handles and compete
         </p>
       </div>
 
       {/* Main Registration Card */}
-      <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-xl p-6 sm:p-8">
+      <div className="w-full max-w-md bg-white dark:bg-[#111E3D] rounded-2xl border border-slate-200 dark:border-blue-900/40 shadow-xl p-5 sm:p-8 transition-colors">
         {!verifying ? (
           <div>
             {/* Google OAuth Button */}
@@ -251,7 +251,7 @@ const Register = () => {
               type="button"
               onClick={handleGoogleSignUp}
               disabled={oauthLoading || loading}
-              className="w-full flex items-center justify-center gap-3 py-2.5 px-4 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 hover:border-slate-400 transition-all shadow-2xs disabled:opacity-60 disabled:cursor-not-allowed mb-5"
+              className="w-full flex items-center justify-center gap-3 py-2.5 px-4 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-[#0D1830] hover:bg-slate-50 dark:hover:bg-[#162653] hover:border-slate-400 dark:hover:border-slate-600 transition-all shadow-2xs disabled:opacity-60 disabled:cursor-not-allowed mb-5"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
                 <path
@@ -276,15 +276,15 @@ const Register = () => {
 
             {/* Divider */}
             <div className="relative flex items-center justify-center mb-5">
-              <div className="border-t border-slate-200 w-full" />
-              <span className="bg-white px-3 text-[11px] uppercase tracking-wider font-semibold text-slate-400 absolute">
+              <div className="border-t border-slate-200 dark:border-slate-700 w-full" />
+              <span className="bg-white dark:bg-[#111E3D] px-3 text-[11px] uppercase tracking-wider font-semibold text-slate-400 dark:text-slate-500 absolute">
                 or
               </span>
             </div>
 
             {/* Error Alert Box */}
             {error && (
-              <div className="mb-5 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2.5 animate-shake">
+              <div className="mb-5 p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/40 text-red-700 dark:text-red-300 text-xs flex items-start gap-2.5 animate-shake">
                 <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
                 <div className="flex-1 font-medium leading-relaxed">
                   <div>{error}</div>
@@ -306,9 +306,9 @@ const Register = () => {
             {/* Registration Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* First Name & Last Name */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label htmlFor="reg-first-name" className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label htmlFor="reg-first-name" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     First name <span className="text-slate-400 text-[10px] font-normal">(Optional)</span>
                   </label>
                   <div className="relative">
@@ -319,13 +319,13 @@ const Register = () => {
                       placeholder="First name"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-slate-900 bg-white"
+                      className="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 dark:border-blue-500/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-white bg-white dark:bg-[#0D1830] placeholder:text-slate-400 dark:placeholder:text-slate-500"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="reg-last-name" className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label htmlFor="reg-last-name" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     Last name <span className="text-slate-400 text-[10px] font-normal">(Optional)</span>
                   </label>
                   <div className="relative">
@@ -336,7 +336,7 @@ const Register = () => {
                       placeholder="Last name"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-slate-900 bg-white"
+                      className="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 dark:border-blue-500/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-white bg-white dark:bg-[#0D1830] placeholder:text-slate-400 dark:placeholder:text-slate-500"
                     />
                   </div>
                 </div>
@@ -344,7 +344,7 @@ const Register = () => {
 
               {/* Email Address */}
               <div>
-                <label htmlFor="reg-email" className="block text-xs font-semibold text-slate-700 mb-1">
+                <label htmlFor="reg-email" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Email address <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -356,7 +356,7 @@ const Register = () => {
                     placeholder="student@college.edu"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-slate-900 bg-white"
+                    className="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 dark:border-blue-500/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-white bg-white dark:bg-[#0D1830] placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
               </div>
@@ -364,10 +364,10 @@ const Register = () => {
               {/* Password Input with Visibility Toggle */}
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label htmlFor="reg-password" className="block text-xs font-semibold text-slate-700">
+                  <label htmlFor="reg-password" className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                     Password <span className="text-red-500">*</span>
                   </label>
-                  <span className="text-[10px] text-slate-400 font-medium">
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
                     Min. 8 characters
                   </span>
                 </div>
@@ -385,13 +385,13 @@ const Register = () => {
                       setPassword(e.target.value);
                       if (error) setError('');
                     }}
-                    className="w-full pl-9 pr-10 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-slate-900 bg-white font-sans"
+                    className="w-full pl-9 pr-10 py-2 text-xs border border-slate-300 dark:border-blue-500/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-white bg-white dark:bg-[#0D1830] placeholder:text-slate-400 dark:placeholder:text-slate-500 font-sans"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     tabIndex={-1}
-                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 transition-colors"
+                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? (
@@ -403,43 +403,43 @@ const Register = () => {
                 </div>
 
                 {/* Real-time Requirement Checklist */}
-                <div className="mt-2.5 bg-slate-50 p-2.5 rounded-xl border border-slate-200/80 space-y-1.5">
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                <div className="mt-2.5 bg-slate-50 dark:bg-[#0D1830]/80 p-2.5 rounded-xl border border-slate-200/80 dark:border-blue-900/30 space-y-1.5">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     Password Security Requirements:
                   </div>
-                  <div className="grid grid-cols-2 gap-1.5 text-[11px]">
-                    <div className={`flex items-center gap-1.5 ${criteria.minLength ? 'text-emerald-700 font-semibold' : 'text-slate-500'}`}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[11px]">
+                    <div className={`flex items-center gap-1.5 ${criteria.minLength ? 'text-emerald-700 dark:text-emerald-400 font-semibold' : 'text-slate-500 dark:text-slate-400'}`}>
                       {criteria.minLength ? (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                       ) : (
-                        <div className="w-3.5 h-3.5 rounded-full border border-slate-300 shrink-0" />
+                        <div className="w-3.5 h-3.5 rounded-full border border-slate-300 dark:border-slate-600 shrink-0" />
                       )}
                       <span>8+ characters</span>
                     </div>
 
-                    <div className={`flex items-center gap-1.5 ${criteria.hasUppercase ? 'text-emerald-700 font-semibold' : 'text-slate-500'}`}>
+                    <div className={`flex items-center gap-1.5 ${criteria.hasUppercase ? 'text-emerald-700 dark:text-emerald-400 font-semibold' : 'text-slate-500 dark:text-slate-400'}`}>
                       {criteria.hasUppercase ? (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                       ) : (
-                        <div className="w-3.5 h-3.5 rounded-full border border-slate-300 shrink-0" />
+                        <div className="w-3.5 h-3.5 rounded-full border border-slate-300 dark:border-slate-600 shrink-0" />
                       )}
                       <span>Uppercase (A-Z)</span>
                     </div>
 
-                    <div className={`flex items-center gap-1.5 ${criteria.hasNumber ? 'text-emerald-700 font-semibold' : 'text-slate-500'}`}>
+                    <div className={`flex items-center gap-1.5 ${criteria.hasNumber ? 'text-emerald-700 dark:text-emerald-400 font-semibold' : 'text-slate-500 dark:text-slate-400'}`}>
                       {criteria.hasNumber ? (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                       ) : (
-                        <div className="w-3.5 h-3.5 rounded-full border border-slate-300 shrink-0" />
+                        <div className="w-3.5 h-3.5 rounded-full border border-slate-300 dark:border-slate-600 shrink-0" />
                       )}
                       <span>Number (0-9)</span>
                     </div>
 
-                    <div className={`flex items-center gap-1.5 ${criteria.hasSpecial ? 'text-emerald-700 font-semibold' : 'text-slate-500'}`}>
+                    <div className={`flex items-center gap-1.5 ${criteria.hasSpecial ? 'text-emerald-700 dark:text-emerald-400 font-semibold' : 'text-slate-500 dark:text-slate-400'}`}>
                       {criteria.hasSpecial ? (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                       ) : (
-                        <div className="w-3.5 h-3.5 rounded-full border border-slate-300 shrink-0" />
+                        <div className="w-3.5 h-3.5 rounded-full border border-slate-300 dark:border-slate-600 shrink-0" />
                       )}
                       <span>Special (@, #, $...)</span>
                     </div>
@@ -451,7 +451,7 @@ const Register = () => {
               <button
                 type="submit"
                 disabled={loading || oauthLoading}
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-md shadow-brand-600/20 transition-all focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-500/20 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed mt-2"
               >
                 {loading ? (
                   <>
@@ -471,34 +471,34 @@ const Register = () => {
           /* Email Verification Step */
           <div className="space-y-4">
             <div className="text-center space-y-1">
-              <div className="w-10 h-10 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center mx-auto mb-2 border border-brand-200">
+              <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-sky-300 flex items-center justify-center mx-auto mb-2 border border-blue-200 dark:border-blue-400/30">
                 <Mail className="w-5 h-5" />
               </div>
-              <h2 className="text-base font-bold text-slate-900">
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">
                 Verify your email
               </h2>
-              <p className="text-xs text-slate-500">
-                A 6-digit verification code was sent to <strong className="text-slate-800">{email}</strong>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                A 6-digit verification code was sent to <strong className="text-slate-800 dark:text-slate-200">{email}</strong>
               </p>
             </div>
 
             {error && (
-              <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2.5">
+              <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/40 text-red-700 dark:text-red-300 text-xs flex items-start gap-2.5">
                 <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
                 <div className="flex-1 font-medium">{error}</div>
               </div>
             )}
 
             {resendSuccess && (
-              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/40 text-emerald-800 dark:text-emerald-300 text-xs flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                 <div className="flex-1 font-medium">{resendSuccess}</div>
               </div>
             )}
 
             <form onSubmit={handleVerify} className="space-y-4">
               <div>
-                <label htmlFor="reg-verification-code" className="block text-xs font-semibold text-slate-700 mb-1">
+                <label htmlFor="reg-verification-code" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Verification Code
                 </label>
                 <input
@@ -508,14 +508,14 @@ const Register = () => {
                   placeholder="Enter 6-digit code"
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-center tracking-widest font-mono text-base font-bold border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-slate-900 bg-white"
+                  className="w-full px-3.5 py-2.5 text-center tracking-widest font-mono text-base font-bold border border-slate-300 dark:border-blue-500/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-white bg-white dark:bg-[#0D1830]"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={verificationLoading || !verificationCode.trim()}
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-md transition-all disabled:opacity-60"
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-md transition-all disabled:opacity-60"
               >
                 {verificationLoading ? (
                   <>
@@ -532,7 +532,7 @@ const Register = () => {
                   type="button"
                   onClick={handleResendCode}
                   disabled={resendLoading || cooldown > 0 || verificationLoading}
-                  className="inline-flex items-center gap-1.5 text-brand-600 font-semibold disabled:text-slate-400 disabled:cursor-not-allowed hover:underline transition"
+                  className="inline-flex items-center gap-1.5 text-blue-600 dark:text-sky-400 font-semibold disabled:text-slate-400 dark:disabled:text-slate-600 disabled:cursor-not-allowed hover:underline transition"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${resendLoading ? 'animate-spin' : ''}`} />
                   {cooldown > 0 ? (
@@ -551,7 +551,7 @@ const Register = () => {
                     setError('');
                     setResendSuccess('');
                   }}
-                  className="text-slate-500 hover:text-slate-800 transition font-medium"
+                  className="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition font-medium"
                 >
                   Back to details
                 </button>
@@ -561,16 +561,16 @@ const Register = () => {
         )}
 
         {/* Footer links */}
-        <div className="mt-6 pt-5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+        <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
           <span>Already have an account?</span>
-          <Link to="/login" className="font-bold text-brand-600 hover:text-brand-700 hover:underline">
+          <Link to="/login" className="font-bold text-blue-600 dark:text-sky-400 hover:underline">
             Sign In
           </Link>
         </div>
       </div>
 
       {/* Security badge */}
-      <div className="mt-6 flex items-center gap-1.5 text-xs text-slate-400">
+      <div className="mt-6 flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500">
         <ShieldCheck className="w-4 h-4 text-emerald-500" />
         <span>Protected with Clerk Authentication</span>
       </div>

@@ -320,7 +320,7 @@ export const Students = () => {
       </div>
 
       {/* Quick Filter Chips */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 sm:pb-0 sm:flex-wrap">
         <button
           onClick={() => {
             setProfileStatus('ALL');
