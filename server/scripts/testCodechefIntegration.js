@@ -38,8 +38,9 @@ async function runAcceptanceTests() {
 
   // Test 2: In-flight deduplication
   console.log('\n--- TEST 2: In-Flight Request Deduplication ---');
-  const promise1 = fetchCodeChefProfile('sravani2349');
-  const promise2 = fetchCodeChefProfile('sravani2349');
+  const dedupUser = `test_dedup_user_${Date.now()}`;
+  const promise1 = fetchCodeChefProfile(dedupUser);
+  const promise2 = fetchCodeChefProfile(dedupUser);
   console.log('Are promises identical/deduplicated?', promise1 === promise2 ? 'YES ✅' : 'NO ❌');
   await Promise.all([promise1, promise2]);
 

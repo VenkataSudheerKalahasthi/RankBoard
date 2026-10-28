@@ -1310,5 +1310,32 @@
       "submissionCalendar": null
     },
     "createdAt": "2026-10-27T19:48:34.849Z"
+  },
+  {
+    "id": "snap_1793199193585_m6kpo",
+    "studentId": "import_6c6f6b657377617279313740",
+    "platform": "gfg",
+    "snapshotTimestamp": "2026-10-28T14:53:10.251Z",
+    "activityDate": "2026-10-28",
+    "totalSolved": 7,
+    "easySolved": 4,
+    "mediumSolved": 2,
+    "hardSolved": 0,
+    "schoolSolved": 0,
+    "basicSolved": 1,
+    "rating": 17,
+    "status": "SUCCESS",
+    "errorMessage": null,
+    "rawStats": {
+      "username": "lokeswigw7",
+      "profileUrl": "https://www.geeksforgeeks.org/user/lokeswigw7/",
+      "badges": 0,
+      "stars": 0,
+      "certificates": 0,
+      "streak": 1,
+      "recentSubmissions": [],
+      "submissionCalendar": null
+    },
+    "createdAt": "2026-10-28T14:53:13.585Z"
   }
 ]

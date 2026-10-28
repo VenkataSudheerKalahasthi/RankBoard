@@ -1,3 +1,6 @@
+const dns = require('dns');
+dns.setDefaultResultOrder?.('ipv4first');
+
 const app = require('./app');
 const { config, validateEnv } = require('./config/env');
 const { getSupabase } = require('./supabase/supabaseClient');

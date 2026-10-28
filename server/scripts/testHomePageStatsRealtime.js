@@ -129,7 +129,7 @@ async function runTestSuite() {
           }
         });
 
-      setTimeout(resolve, 4000);
+      setTimeout(resolve, 8000);
     });
 
     assert(channelConnected === true, `Supabase Realtime channel successfully connected with status: SUBSCRIBED`);
