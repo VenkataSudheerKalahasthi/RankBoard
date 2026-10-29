@@ -36,6 +36,7 @@ export const AdminAuthProvider = ({ children }) => {
       if (response.success && response.admin) {
         setAdmin(response.admin);
       } else {
+        setAdmin(null);
         setAuthError('Unauthorized: Administrator privileges could not be confirmed.');
       }
     } catch (err) {
@@ -71,7 +72,7 @@ export const AdminAuthProvider = ({ children }) => {
     admin,
     user,
     isSignedIn,
-    loading: !authLoaded || loading,
+    loading: !authLoaded || loading || (isSignedIn && !admin && !authError),
     authError,
     isAuthenticated: isSignedIn && !!admin,
     refreshAdmin: verifyAdminStatus,
