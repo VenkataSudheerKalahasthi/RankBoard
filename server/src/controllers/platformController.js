@@ -1,4 +1,5 @@
 const { getStudentById } = require('../supabase/supabaseRepository');
+const { getAllStudentsCached } = require('../utils/studentCache');
 const { syncStudentPlatforms } = require('../services/syncService');
 const {
   parseLeetCodeUrl,
@@ -7,6 +8,7 @@ const {
   parseCodeChefUrl,
   parseHackerRankUrl,
 } = require('../utils/urlParsers');
+const { checkDuplicatePlatformIdentities } = require('../utils/platformIdentityUtils');
 
 /**
  * Get configured platform profile links and their synchronization statuses
@@ -73,6 +75,43 @@ const saveAndSyncPlatforms = async (req, res, next) => {
         success: false,
         message: 'Validation failed for platform profile links.',
         errors: validationErrors,
+      });
+    }
+
+    // FEATURE 4, 5, 6, 7: Cross-Account Global Duplicate Platform Detection
+    // Check against all active students in the database before saving or syncing
+    const allStudents = await getAllStudentsCached();
+    const currentClerkUserId = req.auth?.userId || req.student?.clerkUserId;
+    const currentEmail = req.auth?.email || req.student?.email;
+
+    const duplicateCheck = checkDuplicatePlatformIdentities({
+      currentStudentId: studentId,
+      currentClerkUserId,
+      currentEmail,
+      submittedLinks: {
+        leetcodeUrl,
+        gfgUrl,
+        codeforcesUrl,
+        codechefUrl,
+        hackerrankUrl: effectiveHrUrl,
+      },
+      allActiveStudents: allStudents || [],
+    });
+
+    if (duplicateCheck.hasConflict) {
+      const firstConflict = duplicateCheck.conflicts[0];
+      return res.status(409).json({
+        success: false,
+        code: 'DUPLICATE_PLATFORM_IDENTITY',
+        message: `⚠️ This ${firstConflict.platformLabel} profile is already registered with another account.`,
+        conflicts: duplicateCheck.conflicts,
+        conflictDetails: {
+          platform: firstConflict.platform,
+          platformLabel: firstConflict.platformLabel,
+          username: firstConflict.username,
+          maskedEmail: firstConflict.existingOwnerMaskedEmail,
+          instruction: 'To continue using this coding profile, please log in with the account associated with the existing registration.',
+        },
       });
     }
 

@@ -53,7 +53,11 @@ const {
   getImportHistory: getImportHistoryFromRepo,
   insertScoreAdjustment,
   getScoreAdjustments: getScoreAdjustmentsFromRepo,
+  insertDeletedStudentAudit,
+  getDeletedStudentsAudit,
+  purgeDeletedStudentAudit,
 } = require('../supabase/supabaseRepository');
+const { checkDuplicatePlatformIdentities } = require('../utils/platformIdentityUtils');
 const {
   getSystemSettings,
   updateSystemSettings: updateSystemSettingsService,
@@ -622,6 +626,30 @@ const createStudent = async (req, res, next) => {
       });
     }
 
+    // Check duplicate platform identities across all students
+    const allStudents = await getAllStudentsCached();
+    const dupCheck = checkDuplicatePlatformIdentities({
+      currentStudentId: null,
+      submittedLinks: {
+        leetcodeUrl,
+        gfgUrl,
+        codeforcesUrl,
+        codechefUrl,
+        hackerrankUrl: hackerrankUrl || hackerRankUrl,
+      },
+      allActiveStudents: allStudents || [],
+    });
+
+    if (dupCheck.hasConflict) {
+      const first = dupCheck.conflicts[0];
+      return res.status(409).json({
+        success: false,
+        code: 'DUPLICATE_PLATFORM_IDENTITY',
+        message: `Cannot create student: ${first.message}`,
+        conflicts: dupCheck.conflicts,
+      });
+    }
+
     // Parse handles
     const lcHandle = parseLeetCodeUrl(leetcodeUrl || '');
     const gfgHandle = parseGFGUrl(gfgUrl || '');
@@ -773,6 +801,32 @@ const updateStudent = async (req, res, next) => {
       return res.status(404).json({
         success: false,
         message: `Student not found with ID: ${id}`,
+      });
+    }
+
+    // Check duplicate platform identities across all other students
+    const allStudents = await getAllStudentsCached();
+    const dupCheck = checkDuplicatePlatformIdentities({
+      currentStudentId: existingStudent.id,
+      currentClerkUserId: existingStudent.clerkUserId,
+      currentEmail: existingStudent.email,
+      submittedLinks: {
+        leetcodeUrl,
+        gfgUrl,
+        codeforcesUrl,
+        codechefUrl,
+        hackerrankUrl: hackerrankUrl !== undefined ? hackerrankUrl : hackerRankUrl,
+      },
+      allActiveStudents: allStudents || [],
+    });
+
+    if (dupCheck.hasConflict) {
+      const first = dupCheck.conflicts[0];
+      return res.status(409).json({
+        success: false,
+        code: 'DUPLICATE_PLATFORM_IDENTITY',
+        message: `Cannot update student profile: ${first.message}`,
+        conflicts: dupCheck.conflicts,
       });
     }
 
@@ -1011,21 +1065,135 @@ const deleteStudent = async (req, res, next) => {
       });
     }
 
+    // 1. Capture minimal deletion audit details before permanent removal
+    const auditRecord = {
+      studentId: student.id,
+      studentName: student.name || 'Student',
+      studentEmail: student.email,
+      rollNumber: student.rollNumber || null,
+      department: student.department || null,
+      year: student.year || null,
+      deletedByAdminId: req.admin?.userId || req.admin?.id || 'admin_user',
+      deletedByAdminEmail: req.admin?.email || 'admin@rankboard.edu',
+      deletedByAdminName: req.admin?.name || 'Administrator',
+      deletionStatus: 'COMPLETED',
+      reason: req.body?.reason || 'Administrative student account deletion',
+      details: {
+        rollNumber: student.rollNumber,
+        department: student.department,
+        year: student.year,
+        finalScore: student.finalScore,
+        clerkUserId: student.clerkUserId,
+      },
+      deletedAt: new Date().toISOString(),
+    };
+
+    // 2. Insert into separated minimal deletion audit trail
+    await insertDeletedStudentAudit(auditRecord);
+
+    // 3. Remove or revoke Clerk authentication account if linked
+    const clerkIdToDelete = student.clerkUserId || (student.id && student.id.startsWith('user_') ? student.id : null);
+    if (clerkIdToDelete && clerkClient) {
+      try {
+        await clerkClient.users.deleteUser(clerkIdToDelete);
+        console.log(`[Admin Deletion]: Successfully revoked/deleted Clerk account ${clerkIdToDelete}`);
+      } catch (clerkErr) {
+        // Non-fatal, e.g. already deleted in Clerk or invalid user
+        console.warn(`[Admin Deletion Warning]: Could not delete Clerk user ${clerkIdToDelete}:`, clerkErr.message);
+      }
+    }
+
+    // 4. Handle Supabase Storage files associated with student, if any
+    try {
+      const { getSupabase } = require('../supabase/supabaseClient');
+      const supabase = getSupabase();
+      if (supabase && student.profilePhoto && student.profilePhoto.includes('supabase.co')) {
+        // If avatar file is in a Supabase storage bucket, remove it
+        const urlParts = student.profilePhoto.split('/storage/v1/object/public/');
+        if (urlParts[1]) {
+          const [bucketName, ...filePathParts] = urlParts[1].split('/');
+          const filePath = filePathParts.join('/');
+          await supabase.storage.from(bucketName).remove([filePath]);
+        }
+      }
+    } catch (storageErr) {
+      console.warn('[Admin Deletion Storage Warning]:', storageErr.message);
+    }
+
+    // 5. Permanently remove student and all operational records from database
     await deleteStudentInRepo(id);
+
+    // 6. Invalidate memory cache and recalculate college rankings immediately
+    invalidateStudentCache();
     await recalculateCollegeRankings(student.collegeId || 'COLLEGE_MAIN');
 
+    // 7. Write standard administrative audit log
     await logAudit({
       admin: req.admin,
       action: AUDIT_ACTIONS.STUDENT_DELETED,
       target: `${student.name} (${student.rollNumber || id})`,
       targetId: id,
-      details: { deletedEmail: student.email, rollNumber: student.rollNumber, studentId: id },
+      details: {
+        deletedEmail: student.email,
+        rollNumber: student.rollNumber,
+        studentId: id,
+        clerkRevoked: !!clerkIdToDelete,
+      },
       req,
     });
 
     return res.json({
       success: true,
-      message: `Student "${student.name}" was permanently removed.`,
+      message: `Student "${student.name}" and all associated operational records were permanently removed.`,
+      deletedStudent: {
+        id: student.id,
+        name: student.name,
+        email: student.email,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * FEATURE 2: Deleted Students Audit Trail Listing & Purging
+ * GET /api/admin/deleted-students
+ */
+const getDeletedStudents = async (req, res, next) => {
+  try {
+    const { search = '', sort = 'desc', page = 1, limit = 50 } = req.query;
+    const result = await getDeletedStudentsAudit({ search, sort, page, limit });
+    return res.json({
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Purge a deleted student audit record according to configured retention policy
+ * DELETE /api/admin/deleted-students/:recordId
+ */
+const purgeDeletedStudentRecord = async (req, res, next) => {
+  try {
+    const recordId = req.params.recordId || req.params.id;
+    await purgeDeletedStudentAudit(recordId);
+
+    await logAudit({
+      admin: req.admin,
+      action: 'DELETED_STUDENT_AUDIT_PURGED',
+      target: `Audit Record ${recordId}`,
+      targetId: recordId,
+      details: { recordId, reason: req.body?.reason || 'Retention policy manual purge' },
+      req,
+    });
+
+    return res.json({
+      success: true,
+      message: 'Deletion audit record permanently purged according to retention policy.',
     });
   } catch (error) {
     next(error);
@@ -3108,6 +3276,7 @@ const getAnomalies = async (req, res, next) => {
         if (u && u.trim()) {
           const lowerU = u.toLowerCase().trim();
           if (handleMap[plat][lowerU]) {
+            const existingOwner = handleMap[plat][lowerU];
             anomalies.push({
               id: `dup_handle_${plat}_${s.id}`,
               studentId: s.id,
@@ -3119,11 +3288,16 @@ const getAnomalies = async (req, res, next) => {
               type: 'DUPLICATE_HANDLE',
               severity: 'HIGH',
               title: `Duplicate ${plat.toUpperCase()} Handle`,
-              description: `Shared ${plat.toUpperCase()} username "${u}" with ${handleMap[plat][lowerU].name} (${handleMap[plat][lowerU].rollNumber}).`,
+              description: `Shared ${plat.toUpperCase()} username "${u}" with ${existingOwner.name} (${existingOwner.rollNumber || existingOwner.email}).`,
+              conflictingStudentId: existingOwner.id,
+              conflictingStudentName: existingOwner.name,
+              conflictingStudentEmail: existingOwner.email,
+              conflictingRollNumber: existingOwner.rollNumber,
+              sharedUsername: u,
               detectedAt: new Date().toISOString(),
             });
           } else {
-            handleMap[plat][lowerU] = { id: s.id, name: s.name, rollNumber: s.rollNumber };
+            handleMap[plat][lowerU] = { id: s.id, name: s.name, email: s.email, rollNumber: s.rollNumber };
           }
         }
 
@@ -3278,6 +3452,31 @@ const resolveAnomaly = async (req, res, next) => {
         success: true,
         message: 'Student synchronization executed successfully.',
         student: syncResult.student,
+      });
+    }
+
+    // FEATURE 8: Unlink duplicate platform profile from conflicting student
+    if (action === 'UNLINK_PLATFORM' && (studentId || id) && platform) {
+      const targetId = studentId || id;
+      const { updateStudentPlatformProfile } = require('../supabase/supabaseRepository');
+      await updateStudentPlatformProfile(targetId, platform.toLowerCase(), {
+        profileUrl: null,
+        username: null,
+      });
+      invalidateStudentCache();
+
+      await logAudit({
+        admin: req.admin,
+        action: 'DUPLICATE_PLATFORM_UNLINKED',
+        target: `Student ${targetId} (${platform})`,
+        targetId,
+        details: { action, platform, reason: req.body?.reason || 'Admin conflict resolution unlinking duplicate profile' },
+        req,
+      });
+
+      return res.json({
+        success: true,
+        message: `Successfully unlinked ${platform.toUpperCase()} profile from student.`,
       });
     }
 
@@ -3608,6 +3807,8 @@ module.exports = {
   updateStudent,
   toggleStudentStatus,
   deleteStudent,
+  getDeletedStudents,
+  purgeDeletedStudentRecord,
   syncStudent,
   syncAllStudents,
   getSyncStatus,

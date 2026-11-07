@@ -23,6 +23,7 @@ import {
   Database,
   Layers,
   Users,
+  Unlink,
 } from 'lucide-react';
 
 export const Anomalies = () => {
@@ -99,6 +100,29 @@ export const Anomalies = () => {
       }
     } catch (err) {
       notifyError(err.response?.data?.message || err.message || 'Failed to retry synchronization.');
+    } finally {
+      setResolvingId(null);
+    }
+  };
+
+  const handleUnlinkDuplicate = async (anomaly) => {
+    if (!window.confirm(`Are you sure you want to unlink the duplicate ${anomaly.platform?.toUpperCase()} profile from ${anomaly.studentName}?`)) {
+      return;
+    }
+    setResolvingId(anomaly.id);
+    try {
+      const res = await adminService.resolveAnomaly({
+        studentId: anomaly.studentId,
+        action: 'UNLINK_PLATFORM',
+        platform: anomaly.platform,
+        reason: `Admin unlinked duplicate handle "${anomaly.sharedUsername || anomaly.platform}"`,
+      });
+      if (res.success) {
+        notifySuccess(res.message || 'Duplicate platform profile unlinked successfully.');
+        fetchAnomalies(true);
+      }
+    } catch (err) {
+      notifyError(err.response?.data?.message || err.message || 'Failed to unlink duplicate profile.');
     } finally {
       setResolvingId(null);
     }
@@ -373,6 +397,19 @@ export const Anomalies = () => {
                       icon={RefreshCw}
                     >
                       Retry Sync
+                    </Button>
+                  )}
+
+                  {item.category === 'DUPLICATE_RECORD' && item.type === 'DUPLICATE_HANDLE' && (
+                    <Button
+                      variant="danger"
+                      size="xs"
+                      onClick={() => handleUnlinkDuplicate(item)}
+                      loading={resolvingId === item.id}
+                      disabled={resolvingId === item.id}
+                      icon={Unlink}
+                    >
+                      Unlink Duplicate
                     </Button>
                   )}
                 </div>

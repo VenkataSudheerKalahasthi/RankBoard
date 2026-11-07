@@ -20,12 +20,14 @@ import {
   X,
   Shield,
   Activity,
+  UserX,
 } from 'lucide-react';
 import clsx from 'clsx';
 
 const NAV_ITEMS = [
   { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   { name: 'Students', path: '/students', icon: Users },
+  { name: 'Deleted Students', path: '/deleted-students', icon: UserX },
   { name: 'Import Students', path: '/import', icon: FileSpreadsheet },
   { name: 'Leaderboard', path: '/leaderboard', icon: Trophy },
   { name: 'Activity Monitor', path: '/activity-monitor', icon: Activity },

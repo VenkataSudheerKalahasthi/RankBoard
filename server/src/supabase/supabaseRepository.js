@@ -1,4 +1,33 @@
+const fs = require('fs');
+const path = require('path');
 const { getSupabase } = require('./supabaseClient');
+
+const DATA_DIR = path.join(__dirname, '../../data');
+const DELETED_STUDENTS_FILE = path.join(DATA_DIR, 'deleted_students_audit.json');
+
+if (!fs.existsSync(DATA_DIR)) {
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  } catch (e) {}
+}
+
+function readLocalJson(filePath, defaultVal = []) {
+  try {
+    if (!fs.existsSync(filePath)) return defaultVal;
+    const content = fs.readFileSync(filePath, 'utf8');
+    return JSON.parse(content || '[]');
+  } catch (err) {
+    return defaultVal;
+  }
+}
+
+function writeLocalJson(filePath, data) {
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+  } catch (err) {
+    console.warn(`[Local JSON write warning]: Failed to write ${filePath}:`, err.message);
+  }
+}
 
 /**
  * Transforms relational Supabase rows into the standard student object format expected by the app
@@ -503,11 +532,201 @@ async function deleteStudent(studentId) {
   const supabase = getSupabase();
   if (!supabase) throw new Error('Supabase client not initialized');
 
+  // Explicitly remove dependent student records in case of cascade limitations
+  try {
+    await supabase.from('scores').delete().eq('student_id', studentId);
+  } catch (e) {}
+  try {
+    await supabase.from('student_platform_profiles').delete().eq('student_id', studentId);
+  } catch (e) {}
+  try {
+    await supabase.from('platform_statistics').delete().eq('student_id', studentId);
+  } catch (e) {}
+  try {
+    await supabase.from('student_activity_snapshots').delete().eq('student_id', studentId);
+  } catch (e) {}
+  try {
+    await supabase.from('activity_anomalies').delete().eq('student_id', studentId);
+  } catch (e) {}
+  try {
+    await supabase.from('score_adjustments').delete().eq('student_id', studentId);
+  } catch (e) {}
+
   const { error } = await supabase.from('students').delete().eq('id', studentId);
   if (error) {
     console.error('[Supabase deleteStudent Error]:', error.message);
     throw error;
   }
+  return true;
+}
+
+// -----------------------------------------------------------------------------
+// DELETED STUDENTS AUDIT REPOSITORY
+// -----------------------------------------------------------------------------
+
+async function insertDeletedStudentAudit(auditRecord) {
+  const supabase = getSupabase();
+  const record = {
+    student_id: String(auditRecord.studentId || auditRecord.id),
+    student_name: auditRecord.studentName || auditRecord.name || 'Student',
+    student_email: String(auditRecord.studentEmail || auditRecord.email || '').toLowerCase().trim(),
+    roll_number: auditRecord.rollNumber || null,
+    department: auditRecord.department || null,
+    year: auditRecord.year ? parseInt(auditRecord.year, 10) : null,
+    deleted_by_admin_id: String(auditRecord.deletedByAdminId || auditRecord.adminId || 'admin_user'),
+    deleted_by_admin_email: String(auditRecord.deletedByAdminEmail || auditRecord.adminEmail || 'admin@rankboard.edu'),
+    deleted_by_admin_name: String(auditRecord.deletedByAdminName || auditRecord.adminName || 'Administrator'),
+    deletion_status: auditRecord.deletionStatus || 'COMPLETED',
+    reason: auditRecord.reason || 'Administrative removal',
+    details: auditRecord.details || {},
+    deleted_at: auditRecord.deletedAt || new Date().toISOString(),
+    created_at: new Date().toISOString(),
+  };
+
+  // Try writing to Supabase table
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('deleted_students')
+        .insert(record)
+        .select()
+        .single();
+      if (!error && data) {
+        return {
+          id: data.id,
+          studentId: data.student_id,
+          studentName: data.student_name,
+          studentEmail: data.student_email,
+          rollNumber: data.roll_number,
+          department: data.department,
+          year: data.year,
+          deletedByAdminId: data.deleted_by_admin_id,
+          deletedByAdminEmail: data.deleted_by_admin_email,
+          deletedByAdminName: data.deleted_by_admin_name,
+          deletionStatus: data.deletion_status,
+          reason: data.reason,
+          details: data.details,
+          deletedAt: data.deleted_at,
+        };
+      }
+    } catch (e) {}
+  }
+
+  // Dual-write to reliable local JSON store
+  const localList = readLocalJson(DELETED_STUDENTS_FILE, []);
+  const localRecord = {
+    id: Date.now(),
+    studentId: record.student_id,
+    studentName: record.student_name,
+    studentEmail: record.student_email,
+    rollNumber: record.roll_number,
+    department: record.department,
+    year: record.year,
+    deletedByAdminId: record.deleted_by_admin_id,
+    deletedByAdminEmail: record.deleted_by_admin_email,
+    deletedByAdminName: record.deleted_by_admin_name,
+    deletionStatus: record.deletion_status,
+    reason: record.reason,
+    details: record.details,
+    deletedAt: record.deleted_at,
+  };
+  localList.unshift(localRecord);
+  writeLocalJson(DELETED_STUDENTS_FILE, localList);
+  return localRecord;
+}
+
+async function getDeletedStudentsAudit({ search = '', sort = 'desc', page = 1, limit = 50 } = {}) {
+  const supabase = getSupabase();
+  let records = [];
+
+  // 1. Try fetching from Supabase table
+  if (supabase) {
+    try {
+      let query = supabase.from('deleted_students').select('*');
+      if (search && search.trim()) {
+        const q = search.trim();
+        query = query.or(`student_name.ilike.%${q}%,student_email.ilike.%${q}%,roll_number.ilike.%${q}%`);
+      }
+      query = query.order('deleted_at', { ascending: sort === 'asc' });
+
+      const { data, error } = await query;
+      if (!error && Array.isArray(data)) {
+        records = data.map((d) => ({
+          id: d.id,
+          studentId: d.student_id,
+          studentName: d.student_name,
+          studentEmail: d.student_email,
+          rollNumber: d.roll_number,
+          department: d.department,
+          year: d.year,
+          deletedByAdminId: d.deleted_by_admin_id,
+          deletedByAdminEmail: d.deleted_by_admin_email,
+          deletedByAdminName: d.deleted_by_admin_name,
+          deletionStatus: d.deletion_status,
+          reason: d.reason,
+          details: d.details,
+          deletedAt: d.deleted_at,
+        }));
+      }
+    } catch (e) {}
+  }
+
+  // 2. Fallback / Merge with local store to ensure zero data loss
+  const localList = readLocalJson(DELETED_STUDENTS_FILE, []);
+  if (records.length === 0 && localList.length > 0) {
+    records = [...localList];
+  } else if (localList.length > 0) {
+    const existingIds = new Set(records.map((r) => String(r.studentId)));
+    for (const item of localList) {
+      if (!existingIds.has(String(item.studentId))) {
+        records.push(item);
+      }
+    }
+  }
+
+  // Filter in memory for local records
+  if (search && search.trim()) {
+    const q = search.trim().toLowerCase();
+    records = records.filter(
+      (r) =>
+        (r.studentName && r.studentName.toLowerCase().includes(q)) ||
+        (r.studentEmail && r.studentEmail.toLowerCase().includes(q)) ||
+        (r.rollNumber && r.rollNumber.toLowerCase().includes(q))
+    );
+  }
+
+  // Sort by deletedAt
+  records.sort((a, b) => {
+    const timeA = new Date(a.deletedAt || 0).getTime();
+    const timeB = new Date(b.deletedAt || 0).getTime();
+    return sort === 'asc' ? timeA - timeB : timeB - timeA;
+  });
+
+  const totalCount = records.length;
+  const parsedPage = Math.max(1, parseInt(page, 10) || 1);
+  const parsedLimit = Math.max(1, Math.min(parseInt(limit, 10) || 50, 200));
+  const offset = (parsedPage - 1) * parsedLimit;
+  const paginated = records.slice(offset, offset + parsedLimit);
+
+  return {
+    deletedStudents: paginated,
+    totalCount,
+    totalPages: Math.ceil(totalCount / parsedLimit) || 1,
+    currentPage: parsedPage,
+    limit: parsedLimit,
+  };
+}
+
+async function purgeDeletedStudentAudit(recordId) {
+  const supabase = getSupabase();
+  if (supabase) {
+    try {
+      await supabase.from('deleted_students').delete().or(`id.eq.${recordId},student_id.eq.${recordId}`);
+    } catch (e) {}
+  }
+  const localList = readLocalJson(DELETED_STUDENTS_FILE, []);
+  const filtered = localList.filter((r) => String(r.id) !== String(recordId) && String(r.studentId) !== String(recordId));
+  writeLocalJson(DELETED_STUDENTS_FILE, filtered);
   return true;
 }
 
@@ -1388,6 +1607,9 @@ module.exports = {
   getScoreAdjustments,
   getSystemSettings,
   updateSystemSettings,
+  insertDeletedStudentAudit,
+  getDeletedStudentsAudit,
+  purgeDeletedStudentAudit,
 
   // Student Activity Monitor & Anomaly Tracking
   ...require('./activityRepository'),

@@ -30,7 +30,23 @@ const { getKolkataTodayString } = require('../utils/timezoneUtils');
  */
 const getTodayTopSolversController = async (req, res) => {
   try {
-    const { period, date, startDate, endDate, branch, year, platform, limit, offset, search } = req.query;
+    const {
+      period,
+      date,
+      startDate,
+      endDate,
+      branch,
+      year,
+      platform,
+      cohort,
+      minSolves,
+      maxSolves,
+      limit,
+      offset,
+      search,
+      sortBy,
+      sortOrder,
+    } = req.query;
 
     const data = await getTodayTopSolvers({
       period,
@@ -40,9 +56,14 @@ const getTodayTopSolversController = async (req, res) => {
       branch,
       year,
       platform,
+      cohort,
+      minSolves,
+      maxSolves,
       limit,
       offset,
       search,
+      sortBy,
+      sortOrder,
     });
 
     res.json({
@@ -157,9 +178,11 @@ const reviewAnomalyController = async (req, res) => {
  */
 const getActivityTrendsController = async (req, res) => {
   try {
-    const { days } = req.query;
+    const { days, startDate, endDate } = req.query;
     const data = await getOverallActivityTrends({
-      days: parseInt(days, 10) || 30,
+      days: days ? parseInt(days, 10) : undefined,
+      startDate,
+      endDate,
     });
 
     res.json({
@@ -257,14 +280,30 @@ function escapeCsv(val) {
  */
 const exportActivityController = async (req, res) => {
   try {
-    const { type = 'today-top-solvers', period, date, startDate, endDate, branch, year, platform, reviewStatus, search } = req.query;
+    const {
+      type = 'today-top-solvers',
+      period,
+      date,
+      startDate,
+      endDate,
+      branch,
+      year,
+      platform,
+      cohort,
+      minSolves,
+      maxSolves,
+      reviewStatus,
+      search,
+      sortBy,
+      sortOrder,
+    } = req.query;
 
     if (type === 'anomalies') {
       const result = await getAnomaliesList({
         reviewStatus,
         platform,
         search,
-        limit: 2000,
+        limit: 5000,
       });
 
       const headers = [
@@ -319,8 +358,13 @@ const exportActivityController = async (req, res) => {
       branch,
       year,
       platform,
+      cohort,
+      minSolves,
+      maxSolves,
       search,
-      limit: 2000,
+      sortBy,
+      sortOrder,
+      limit: 5000,
     });
 
     const isToday = !period || period === 'today' || result.period === 'today';
@@ -344,7 +388,7 @@ const exportActivityController = async (req, res) => {
       'Hard Solves',
       'Activity Status',
       'RankBoard Overall Score',
-      'Last Data Updated',
+      'Last Synced',
     ];
 
     const rows = result.solvers.map((s) => [
@@ -365,7 +409,7 @@ const exportActivityController = async (req, res) => {
       escapeCsv(s.difficultyBreakdown?.hard || 0),
       escapeCsv(s.activityStatus),
       escapeCsv(s.finalScore ? Number(s.finalScore).toFixed(2) : '0.00'),
-      escapeCsv(s.lastDataUpdatedAt || ''),
+      escapeCsv(s.lastSynced ? new Date(s.lastSynced).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : (s.lastDataUpdatedAt || '—')),
     ]);
 
     const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');

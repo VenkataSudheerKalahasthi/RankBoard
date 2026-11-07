@@ -25,6 +25,8 @@ import {
   TrendingUp,
   Award,
   ChevronDown,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 
 const DEPARTMENTS = [
@@ -74,6 +76,11 @@ export const Students = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
+
+  // Modal state for Delete confirmation
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [studentToDelete, setStudentToDelete] = useState(null);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const [editFormData, setEditFormData] = useState({
     name: '',
     email: '',
@@ -279,6 +286,32 @@ export const Students = () => {
       notifyError(err.message || 'Failed to synchronize student stats.');
     } finally {
       setSyncingStudentId(null);
+    }
+  };
+
+  const openDeleteModal = (student, e) => {
+    if (e) e.stopPropagation();
+    setStudentToDelete(student);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!studentToDelete) return;
+    setDeleteSubmitting(true);
+    try {
+      const res = await adminService.deleteStudent(studentToDelete.id, {
+        reason: 'Permanent administrative student deletion',
+      });
+      if (res.success) {
+        notifySuccess(res.message || `Student "${studentToDelete.name}" permanently deleted.`);
+        setIsDeleteModalOpen(false);
+        setStudentToDelete(null);
+        fetchStudents(true);
+      }
+    } catch (err) {
+      notifyError(err.response?.data?.message || err.message || 'Failed to delete student.');
+    } finally {
+      setDeleteSubmitting(false);
     }
   };
 
@@ -716,6 +749,15 @@ export const Students = () => {
                           >
                             <Eye className="w-3.5 h-3.5" />
                           </button>
+
+                          {/* Delete Student */}
+                          <button
+                            onClick={(e) => openDeleteModal(student, e)}
+                            title="Permanently Delete Student"
+                            className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -1134,6 +1176,86 @@ export const Students = () => {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          if (!deleteSubmitting) {
+            setIsDeleteModalOpen(false);
+            setStudentToDelete(null);
+          }
+        }}
+        title="Permanently Delete Student Record"
+        subtitle="Irreversible action: This will permanently delete the student from all leaderboards and platform rankings."
+        maxWidth="max-w-lg"
+      >
+        <div className="space-y-4">
+          <div className="p-4 rounded-xl bg-rose-950/30 border border-rose-500/30 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+            <div className="text-xs text-rose-200 space-y-1">
+              <p className="font-semibold text-rose-100">
+                Are you sure you want to delete this student?
+              </p>
+              <p className="text-rose-300/90 leading-relaxed">
+                This operation will permanently remove the student's operational account, platform profile links, solved counts, scores, and leaderboard standing.
+              </p>
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
+            <div className="flex justify-between">
+              <span className="text-slate-400">Student Name:</span>
+              <span className="font-bold text-slate-100">{studentToDelete?.name || '—'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-400">Registered Email:</span>
+              <span className="font-mono text-slate-200">{studentToDelete?.email || '—'}</span>
+            </div>
+            {studentToDelete?.rollNumber && (
+              <div className="flex justify-between">
+                <span className="text-slate-400">Roll Number:</span>
+                <span className="font-mono text-slate-200">{studentToDelete.rollNumber}</span>
+              </div>
+            )}
+            {studentToDelete?.department && (
+              <div className="flex justify-between">
+                <span className="text-slate-400">Department:</span>
+                <span className="text-slate-200">{studentToDelete.department}</span>
+              </div>
+            )}
+          </div>
+
+          <p className="text-[11px] text-slate-400 leading-relaxed">
+            A minimal deletion audit entry (name, email, timestamp, and deleting admin) will be retained in the <strong>Deleted Students</strong> section for compliance.
+          </p>
+
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={deleteSubmitting}
+              onClick={() => {
+                setIsDeleteModalOpen(false);
+                setStudentToDelete(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              loading={deleteSubmitting}
+              onClick={handleConfirmDelete}
+              icon={Trash2}
+            >
+              Permanently Delete Student
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

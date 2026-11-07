@@ -1337,5 +1337,86 @@
       "submissionCalendar": null
     },
     "createdAt": "2026-10-28T14:53:13.585Z"
+  },
+  {
+    "id": "snap_1793243022300_htaid",
+    "studentId": "import_79656c6167616c6164686565",
+    "platform": "hackerrank",
+    "snapshotTimestamp": "2026-10-29T03:03:39.743Z",
+    "activityDate": "2026-10-29",
+    "totalSolved": 7,
+    "easySolved": 0,
+    "mediumSolved": 0,
+    "hardSolved": 0,
+    "schoolSolved": 0,
+    "basicSolved": 0,
+    "rating": 58,
+    "status": "SUCCESS",
+    "errorMessage": null,
+    "rawStats": {
+      "username": "yelagaladheeksh1",
+      "profileUrl": "https://www.hackerrank.com/profile/yelagaladheeksh1",
+      "badges": 1,
+      "stars": 2,
+      "certificates": 2,
+      "streak": null,
+      "recentSubmissions": [],
+      "submissionCalendar": null
+    },
+    "createdAt": "2026-10-29T03:03:42.300Z"
+  },
+  {
+    "id": "snap_1794022054119_ffv82",
+    "studentId": "user_3LPKHkt9wxOXI46ROWFrjtIk6mk",
+    "platform": "hackerrank",
+    "snapshotTimestamp": "2026-11-07T03:27:32.044Z",
+    "activityDate": "2026-11-07",
+    "totalSolved": 51,
+    "easySolved": 0,
+    "mediumSolved": 0,
+    "hardSolved": 0,
+    "schoolSolved": 0,
+    "basicSolved": 0,
+    "rating": 558,
+    "status": "SUCCESS",
+    "errorMessage": null,
+    "rawStats": {
+      "username": "jabhinaya1",
+      "profileUrl": "https://www.hackerrank.com/profile/jabhinaya1",
+      "badges": 4,
+      "stars": 10,
+      "certificates": 2,
+      "streak": null,
+      "recentSubmissions": [],
+      "submissionCalendar": null
+    },
+    "createdAt": "2026-11-07T03:27:34.119Z"
+  },
+  {
+    "id": "snap_1794026714906_f4xxy",
+    "studentId": "import_6d7572616c69736169737572",
+    "platform": "hackerrank",
+    "snapshotTimestamp": "2026-11-07T04:45:12.560Z",
+    "activityDate": "2026-11-07",
+    "totalSolved": 2,
+    "easySolved": 0,
+    "mediumSolved": 0,
+    "hardSolved": 0,
+    "schoolSolved": 0,
+    "basicSolved": 0,
+    "rating": 8,
+    "status": "SUCCESS",
+    "errorMessage": null,
+    "rawStats": {
+      "username": "muralisaisure9",
+      "profileUrl": "https://www.hackerrank.com/profile/muralisaisure9",
+      "badges": 1,
+      "stars": 0,
+      "certificates": 2,
+      "streak": null,
+      "recentSubmissions": [],
+      "submissionCalendar": null
+    },
+    "createdAt": "2026-11-07T04:45:14.906Z"
   }
 ]

@@ -11,6 +11,7 @@ import { ShieldAlert, LogOut } from 'lucide-react';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Students from './pages/Students';
+import DeletedStudents from './pages/DeletedStudents';
 import StudentDetails from './pages/StudentDetails';
 import ImportStudents from './pages/ImportStudents';
 import Leaderboard from './pages/Leaderboard';
@@ -89,6 +90,7 @@ export function App() {
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="students" element={<Students />} />
+        <Route path="deleted-students" element={<DeletedStudents />} />
         <Route path="students/:studentId" element={<StudentDetails />} />
         <Route path="import" element={<ImportStudents />} />
         <Route path="leaderboard" element={<Leaderboard />} />

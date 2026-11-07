@@ -13,7 +13,9 @@ export const adminService = {
   createStudent: (data) => api.post('/admin/students', data),
   updateStudent: (studentId, data) => api.put(`/admin/students/${studentId}`, data),
   toggleStudentStatus: (studentId, status) => api.patch(`/admin/students/${studentId}/status`, { status }),
-  deleteStudent: (studentId, permanent = false) => api.delete(`/admin/students/${studentId}`, { params: { permanent } }),
+  deleteStudent: (studentId, data = {}) => api.delete(`/admin/students/${studentId}`, { data }),
+  getDeletedStudents: (params = {}) => api.get('/admin/deleted-students', { params }),
+  purgeDeletedStudent: (recordId, data = {}) => api.delete(`/admin/deleted-students/${recordId}`, { data }),
 
   // 4. Synchronization Center
   syncStudent: (studentId) => api.post(`/admin/sync/student/${studentId}`),

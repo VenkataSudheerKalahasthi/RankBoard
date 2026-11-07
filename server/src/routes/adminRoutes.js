@@ -20,6 +20,8 @@ router.get('/students/:studentId', adminController.getStudentById);
 router.put('/students/:studentId', adminController.updateStudent);
 router.patch('/students/:studentId/status', adminController.toggleStudentStatus);
 router.delete('/students/:studentId', adminController.deleteStudent);
+router.get('/deleted-students', adminController.getDeletedStudents);
+router.delete('/deleted-students/:recordId', adminController.purgeDeletedStudentRecord);
 
 // 4. Synchronization
 router.post('/sync/student/:studentId', adminController.syncStudent);

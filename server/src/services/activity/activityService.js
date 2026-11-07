@@ -470,6 +470,13 @@ function matchesDepartment(studentDept, filter) {
  * @param {Object} options - { period, date, startDate, endDate, branch, year, platform, limit, offset, search }
  * @returns {Promise<Object>}
  */
+/**
+ * Returns Top Solvers for a given period with comprehensive filtering, deterministic ranking,
+ * and platform synchronization health metrics.
+ * 
+ * @param {Object} options - { period, date, startDate, endDate, branch, year, platform, cohort, minSolves, maxSolves, limit, offset, search, sortBy, sortOrder }
+ * @returns {Promise<Object>}
+ */
 async function getTodayTopSolvers(options = {}) {
   const periodConfig = resolvePeriodBounds({
     period: options.period,
@@ -488,12 +495,50 @@ async function getTodayTopSolvers(options = {}) {
   const platformFilter = options.platform && options.platform.toUpperCase() !== 'ALL'
     ? options.platform.toLowerCase()
     : 'ALL';
+  const cohortFilter = (options.cohort || 'ALL').toUpperCase();
   const searchQuery = options.search ? options.search.trim().toLowerCase() : '';
   const limit = options.limit !== undefined ? (options.limit === 'all' ? 1000 : parseInt(options.limit, 10) || 20) : 20;
   const offset = parseInt(options.offset, 10) || 0;
+  const sortBy = options.sortBy || 'solves'; // 'solves' | 'rank' | 'name' | 'rollNumber' | 'lastSynced'
+  const sortOrder = options.sortOrder || 'desc';
 
   // Fetch all active students
   const allStudents = await getAllStudents();
+
+  // Compute platform synchronization health metrics across the cohort
+  const platformSyncHealth = {
+    leetcode: { key: 'leetcode', label: 'LeetCode', success: 0, failed: 0, notConnected: 0, lastSynced: null, intervalSeconds: 14400 },
+    gfg: { key: 'gfg', label: 'GeeksforGeeks', success: 0, failed: 0, notConnected: 0, lastSynced: null, intervalSeconds: 14400 },
+    hackerrank: { key: 'hackerrank', label: 'HackerRank', success: 0, failed: 0, notConnected: 0, lastSynced: null, intervalSeconds: 14400 },
+    codeforces: { key: 'codeforces', label: 'Codeforces', success: 0, failed: 0, notConnected: 0, lastSynced: null, intervalSeconds: 43200 },
+    codechef: { key: 'codechef', label: 'CodeChef', success: 0, failed: 0, notConnected: 0, lastSynced: null, intervalSeconds: 43200 },
+  };
+
+  let studentsWithAtLeastOneSyncedPlatform = 0;
+  const activeStudentsTotal = allStudents.filter((s) => s.accountStatus !== 'DISABLED');
+
+  activeStudentsTotal.forEach((s) => {
+    const plats = s.platforms || {};
+    let hasSyncedPlatform = false;
+    for (const [pKey, pVal] of Object.entries(plats)) {
+      if (platformSyncHealth[pKey]) {
+        if (!pVal || !pVal.username) {
+          platformSyncHealth[pKey].notConnected++;
+        } else if (pVal.status === 'SUCCESS') {
+          platformSyncHealth[pKey].success++;
+          hasSyncedPlatform = true;
+          if (pVal.lastFetchedAt) {
+            if (!platformSyncHealth[pKey].lastSynced || new Date(pVal.lastFetchedAt) > new Date(platformSyncHealth[pKey].lastSynced)) {
+              platformSyncHealth[pKey].lastSynced = pVal.lastFetchedAt;
+            }
+          }
+        } else if (pVal.status === 'FAILED') {
+          platformSyncHealth[pKey].failed++;
+        }
+      }
+    }
+    if (hasSyncedPlatform) studentsWithAtLeastOneSyncedPlatform++;
+  });
 
   // Fetch snapshots covering baseline window and target period
   const rawTargetSnapshots = await getAllSnapshotsInDateRange(baselineStartDate, endDate);
@@ -520,6 +565,16 @@ async function getTodayTopSolvers(options = {}) {
 
   for (const student of allStudents) {
     if (student.accountStatus === 'DISABLED') continue;
+
+    // Filter by registration cohort if requested
+    if (cohortFilter === 'REGISTERED_IN_PERIOD') {
+      const regDate = student.createdAt || student.created_at;
+      if (!regDate) continue;
+      const regTime = new Date(regDate).getTime();
+      if (regTime < startUtcMs || regTime > endUtcMs) {
+        continue;
+      }
+    }
 
     // Filter by branch
     if (!matchesDepartment(student.department, branchFilter)) continue;
@@ -662,6 +717,16 @@ async function getTodayTopSolvers(options = {}) {
       periodVerifiedSolves = platformBreakdown[platformFilter] || 0;
     }
 
+    // Filter by minSolves and maxSolves if specified
+    if (options.minSolves !== undefined && options.minSolves !== null && options.minSolves !== '') {
+      const min = Number(options.minSolves);
+      if (!isNaN(min) && periodVerifiedSolves < min) continue;
+    }
+    if (options.maxSolves !== undefined && options.maxSolves !== null && options.maxSolves !== '') {
+      const max = Number(options.maxSolves);
+      if (!isNaN(max) && periodVerifiedSolves > max) continue;
+    }
+
     // Difficulty breakdown safety: if 0 verified solves in period, difficulties must be 0
     if (periodVerifiedSolves === 0) {
       easySolved = 0;
@@ -693,6 +758,16 @@ async function getTodayTopSolvers(options = {}) {
       activityStatus = 'No New Activity';
     }
 
+    // Determine student's most recent sync timestamp across all platforms
+    let studentLastSynced = student.lastDataUpdatedAt || null;
+    Object.values(platformsObj).forEach((p) => {
+      if (p && p.lastFetchedAt) {
+        if (!studentLastSynced || new Date(p.lastFetchedAt) > new Date(studentLastSynced)) {
+          studentLastSynced = p.lastFetchedAt;
+        }
+      }
+    });
+
     solverRows.push({
       studentId: student.id,
       name: student.name,
@@ -703,6 +778,8 @@ async function getTodayTopSolvers(options = {}) {
       finalScore: student.finalScore || 0,
       globalRank: student.rank || null,
       lastDataUpdatedAt: student.lastDataUpdatedAt,
+      lastSynced: studentLastSynced,
+      createdAt: student.createdAt || student.created_at,
       todayVerifiedSolves: periodVerifiedSolves, // backward compat name
       periodVerifiedSolves,
       hasVerifiedHistory: studentHasAnyVerifiedHistory,
@@ -723,9 +800,28 @@ async function getTodayTopSolvers(options = {}) {
     });
   }
 
-  // MANDATORY REQUIREMENT: Sort strictly in descending order by periodVerifiedSolves
-  // Highest problem solvers first for EVERY period!
+  // MANDATORY REQUIREMENT: Sort strictly by requested sort or descending by periodVerifiedSolves
   solverRows.sort((a, b) => {
+    if (sortBy === 'name') {
+      const cmp = (a.name || '').localeCompare(b.name || '');
+      return sortOrder === 'asc' ? cmp : -cmp;
+    }
+    if (sortBy === 'rollNumber') {
+      const cmp = (a.rollNumber || '').localeCompare(b.rollNumber || '');
+      return sortOrder === 'asc' ? cmp : -cmp;
+    }
+    if (sortBy === 'lastSynced') {
+      const timeA = a.lastSynced ? new Date(a.lastSynced).getTime() : 0;
+      const timeB = b.lastSynced ? new Date(b.lastSynced).getTime() : 0;
+      return sortOrder === 'asc' ? timeA - timeB : timeB - timeA;
+    }
+    if (sortBy === 'rank') {
+      const rA = a.globalRank || 999999;
+      const rB = b.globalRank || 999999;
+      return sortOrder === 'asc' ? rA - rB : rB - rA;
+    }
+
+    // Default: solves descending with strict deterministic tie-breakers
     // 1. Period verified solves descending
     if (b.periodVerifiedSolves !== a.periodVerifiedSolves) {
       return b.periodVerifiedSolves - a.periodVerifiedSolves;
@@ -762,13 +858,22 @@ async function getTodayTopSolvers(options = {}) {
     endDate,
     date: periodType === 'today' || periodType === 'single-date' ? startDate : `${startDate} to ${endDate}`,
     timezone: 'Asia/Kolkata',
-    totalStudentsEvaluated: allStudents.length,
+    totalStudentsEvaluated: activeStudentsTotal.length,
     totalMatching,
     activeSolversToday: activeSolversCount,
     totalSolvesToday: totalSolvesCount,
     activeSolversInPeriod: activeSolversCount,
     totalSolvesInPeriod: totalSolvesCount,
     totalRegisteredStudents: allStudents.length,
+    platformCoverage: {
+      syncedStudents: studentsWithAtLeastOneSyncedPlatform,
+      totalStudents: activeStudentsTotal.length,
+      percentage: Math.round((studentsWithAtLeastOneSyncedPlatform / Math.max(1, activeStudentsTotal.length)) * 100),
+    },
+    syncHealth: {
+      platforms: platformSyncHealth,
+      lastUpdated: new Date().toISOString(),
+    },
     limit,
     offset,
     hasHistoricalData: targetSnapshots.length > 0,
@@ -778,14 +883,25 @@ async function getTodayTopSolvers(options = {}) {
 
 /**
  * Returns aggregated daily/weekly/monthly trends across the entire cohort
+ * Supports days duration (e.g. 7, 14, 30) or explicit startDate and endDate
  */
 async function getOverallActivityTrends(options = {}) {
-  const days = options.days || 30;
-  const todayStr = getKolkataTodayString();
-  const startDateStr = getKolkataNDaysAgoString(days - 1);
+  let days = options.days ? parseInt(options.days, 10) : 30;
+  let startDateStr = '';
+  let endDateStr = '';
 
-  const snapshots = await getAllSnapshotsInDateRange(startDateStr, todayStr);
-  const daysList = getDateRangeDays(startDateStr, todayStr);
+  if (options.startDate && options.endDate) {
+    startDateStr = options.startDate;
+    endDateStr = options.endDate;
+    const rangeList = getDateRangeDays(startDateStr, endDateStr);
+    days = Math.max(1, rangeList.length);
+  } else {
+    endDateStr = getKolkataTodayString();
+    startDateStr = getKolkataNDaysAgoString(days - 1);
+  }
+
+  const snapshots = await getAllSnapshotsInDateRange(startDateStr, endDateStr);
+  const daysList = getDateRangeDays(startDateStr, endDateStr);
 
   const dailyTrendMap = new Map();
   daysList.forEach((d) => {
@@ -797,6 +913,9 @@ async function getOverallActivityTrends(options = {}) {
       hackerrank: 0,
       codeforces: 0,
       codechef: 0,
+      easy: 0,
+      medium: 0,
+      hard: 0,
       activeStudents: new Set(),
     });
   });
@@ -822,6 +941,14 @@ async function getOverallActivityTrends(options = {}) {
           entry.totalSolves += delta;
           if (entry[platform] !== undefined) entry[platform] += delta;
           entry.activeStudents.add(snaps[i].studentId);
+
+          // Track difficulty deltas
+          const easyDelta = Math.max(0, (snaps[i].easySolved || 0) - (snaps[i - 1].easySolved || 0));
+          const mediumDelta = Math.max(0, (snaps[i].mediumSolved || 0) - (snaps[i - 1].mediumSolved || 0));
+          const hardDelta = Math.max(0, (snaps[i].hardSolved || 0) - (snaps[i - 1].hardSolved || 0));
+          entry.easy += easyDelta;
+          entry.medium += mediumDelta;
+          entry.hard += hardDelta;
         }
       }
     }
@@ -835,6 +962,11 @@ async function getOverallActivityTrends(options = {}) {
     hackerrank: e.hackerrank,
     codeforces: e.codeforces,
     codechef: e.codechef,
+    difficultyBreakdown: {
+      easy: e.easy,
+      medium: e.medium,
+      hard: e.hard,
+    },
     activeStudentsCount: e.activeStudents.size,
   }));
 
@@ -843,7 +975,7 @@ async function getOverallActivityTrends(options = {}) {
   return {
     periodDays: days,
     startDate: startDateStr,
-    endDate: todayStr,
+    endDate: endDateStr,
     timezone: 'Asia/Kolkata',
     totalPeriodSolves,
     hasHistoricalData: snapshots.length > 0,
